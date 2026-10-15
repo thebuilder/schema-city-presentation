@@ -6,7 +6,7 @@ import {
   type Spacing,
   structureGroups,
 } from "@/deck/city/schema-city"
-import { excerpt } from "@/deck/city/source"
+import { highlight } from "@/deck/city/highlight"
 import { everyTry } from "@/deck/parts/layout-tries"
 import { type Lot, LayoutView } from "@/deck/parts/layout-view"
 
@@ -28,6 +28,62 @@ const FAMILY_SPACING: Spacing = {
 /** Ground between two buildings in the opening row, the board's own gap. */
 const ROW_GAP = FAMILY_SPACING.gap
 
+/*
+ * What each step does, cut down to the decision it makes. The real code in
+ * city.ts and neighbourhoods.ts carries caps, gaps and edge cases a slide has no
+ * room for; the positions on screen still come from that code.
+ */
+const CODE = [
+  {
+    caption: "city.ts",
+    code: `
+// more properties, a wider lot
+const footprint =
+  3.2 + 0.8 * Math.sqrt(properties)
+
+// one floor per group
+const floors = Math.max(groups, 1)`,
+  },
+  {
+    caption: "neighbourhoods.ts",
+    code: `
+// a parent heads its children,
+// and a family never splits
+for (const family of families) {
+  if (held + family.length > capacity) {
+    rows.push([])
+    held = 0
+  }
+  rows.at(-1).push(family)
+  held += family.length
+}`,
+  },
+  {
+    caption: "neighbourhoods.ts",
+    code: `
+// try 17 widths, keep the
+// smallest, squarest board
+for (let i = 0; i <= 16; i++) {
+  const board = shelve(widthAt(i))
+  const score =
+    board.area * squareness(board)
+  if (score < best.score) best = board
+}`,
+  },
+  {
+    caption: "city.ts",
+    code: `
+// lay out every district, then
+// again with linked types close
+let city = districts.map(layout)
+arrange(city)
+const order = looseOrder(city)
+city = districts.map((d) =>
+  layout(d, order))
+arrange(city)`,
+  },
+]
+
 const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 
 /*
@@ -37,7 +93,7 @@ const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
  * the district takes its place in the city. Every position on screen comes from
  * Schema City's own layout code or from a checked copy of its search.
  */
-export function Layout() {
+export async function Layout() {
   const graph = loadGraph("medium")
   const { placements, districts } = cityDistricts(graph)
   const placed = new Map(placements.map((each) => [each.id, each]))
@@ -93,24 +149,12 @@ export function Layout() {
 
   return (
     <LayoutView
-      code={[
-        {
-          caption: "city.ts",
-          code: excerpt("app/layout/city.ts", "const footprintOf =", 4),
-        },
-        {
-          caption: "neighbourhoods.ts :: layCluster",
-          code: excerpt("app/layout/neighbourhoods.ts", "const capacity = Math.max(", 16),
-        },
-        {
-          caption: "neighbourhoods.ts :: layoutNeighbourhoods",
-          code: excerpt("app/layout/neighbourhoods.ts", "for (let i = 0; i <= TRIES", 13),
-        },
-        {
-          caption: "city.ts :: cityDistricts",
-          code: excerpt("app/layout/city.ts", "const layAll =", "arrange(laid"),
-        },
-      ]}
+      code={await Promise.all(
+        CODE.map(async ({ caption, code }) => ({
+          caption,
+          lines: await highlight(code, "ts"),
+        }))
+      )}
       districts={districts.map((each) => ({
         id: each.id,
         maxX: each.maxX,

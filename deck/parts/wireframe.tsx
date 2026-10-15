@@ -2,11 +2,31 @@ import { loadGraph, slimGraph } from "@/deck/city/fixtures"
 import {
   layoutCity,
 } from "@/deck/city/schema-city"
-import { excerpt } from "@/deck/city/source"
+import { highlight } from "@/deck/city/highlight"
 import { WireframeView } from "@/deck/parts/wireframe-view"
 
 /** The busiest page in the demo schema: seven groups over three tabs, 29 properties. */
 const CLOSE_UP = "landingPage"
+
+/*
+ * The two ideas the slide stands on, cut down from BuildingMeshes.tsx: every part
+ * of every building is an instance of one box, and the glow is a few lines patched
+ * into that box's fragment shader rather than a post pass.
+ */
+const INSTANCING = `
+// one box mesh, one draw call,
+// one matrix per building part
+parts.forEach((part, i) => {
+  place(part, scratch)
+  mesh.setMatrixAt(i, scratch.matrix)
+})`
+
+const GLOW = `
+// how far to the nearest edge
+float edge = edgeGap(vBoxLocal);
+float line = 1.0 - smoothstep(
+  0.0, EDGE_WIDTH, edge);
+glow += colour * (body + rim * line);`
 
 /*
  * Why it stays fast. Three steps: one building as the triangles the GPU gets, the
@@ -14,7 +34,7 @@ const CLOSE_UP = "landingPage"
  * and the glow on, which is a few lines in the fragment shader rather than a pass.
  * The numbers are read off the renderer while the slide runs.
  */
-export function Wireframe() {
+export async function Wireframe() {
   const medium = loadGraph("medium")
   const crowd = loadGraph("pathological")
   const node = medium.nodes.find((each) => each.alias === CLOSE_UP)
@@ -29,17 +49,8 @@ export function Wireframe() {
         placements: layoutCity(crowd),
         types: crowd.nodes.length,
       }}
-      // The shader sits in a template literal, whose closing tick is not GLSL.
-      glow={excerpt(
-        "app/scene/BuildingMeshes.tsx",
-        "vec3 boxGap",
-        "totalEmissiveRadiance"
-      ).replace(/`$/, "")}
-      instancing={excerpt(
-        "app/scene/BuildingMeshes.tsx",
-        "items.forEach((item, i)",
-        "computeBoundingSphere"
-      )}
+      glow={await highlight(GLOW, "glsl")}
+      instancing={await highlight(INSTANCING, "ts")}
       single={{
         graph: slimGraph({
           ...medium,

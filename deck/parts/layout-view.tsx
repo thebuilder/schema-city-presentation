@@ -3,6 +3,7 @@
 import { type CSSProperties, useEffect, useState } from "react"
 import { useSlideStepper } from "@thebuilder/deckard-core/components"
 import { Code } from "@/deck/city/code"
+import type { Token } from "@/deck/city/highlight"
 
 /** One building's ground in the finished city, and the neighbourhood it stood in. */
 export type Lot = {
@@ -118,7 +119,7 @@ export function LayoutView({
   gap: number
   districts: (Box & { id: string; name: string })[]
   district: string
-  code: { caption: string; code: string }[]
+  code: { caption: string; lines: Token[][] }[]
 }) {
   const stepper = useSlideStepper()
   const step = Math.min(stepper?.currentStep ?? 0, STEPS.length - 1)
@@ -200,7 +201,7 @@ export function LayoutView({
       <style>{"@keyframes layout-arrive { from { opacity: 0 } }"}</style>
       <div className="flex min-h-0 flex-col justify-center">
         {excerpt ? (
-          <Code caption={excerpt.caption} code={excerpt.code} key={step} width={42} />
+          <Code caption={excerpt.caption} key={step} lines={excerpt.lines} />
         ) : null}
       </div>
       <div className="flex min-h-0 min-w-0 flex-col justify-center gap-4">

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useSlideStepper } from "@thebuilder/deckard-core/components"
 import { CityView, type RenderStats } from "@/deck/city/city-view"
 import { Code } from "@/deck/city/code"
+import type { Token } from "@/deck/city/highlight"
 import type { Placement, SchemaGraph } from "@/deck/city/schema-city"
 
 type Subject = { graph: SchemaGraph; placements: Placement[]; types: number }
@@ -25,8 +26,8 @@ export function WireframeView({
 }: {
   single: Subject
   city: Subject
-  instancing: string
-  glow: string
+  instancing: Token[][]
+  glow: Token[][]
 }) {
   const stepper = useSlideStepper()
   const step = STEPS[Math.min(stepper?.currentStep ?? 0, STEPS.length - 1)]
@@ -79,10 +80,9 @@ export function WireframeView({
         </dl>
         <Code
           caption={
-            step.wireframe ? "writeMatrices()" : "glowing() :: glsl"
+            step.wireframe ? "BuildingMeshes.tsx" : "fragment shader"
           }
-          code={step.wireframe ? instancing : glow}
-          width={42}
+          lines={step.wireframe ? instancing : glow}
         />
       </div>
       <CityView
