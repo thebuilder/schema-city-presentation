@@ -81,7 +81,7 @@ export function drawGlyphAtlas(monoFamily: string) {
   return { canvas, count: set.length }
 }
 
-export interface TitleBox {
+export interface TextBox {
   font: string
   left: number
   letterSpacing: string
@@ -90,47 +90,122 @@ export interface TitleBox {
   top: number
 }
 
-// Red is the title's coverage, sampled per cell to pick the cells that
-// lock. Green is the same shape blurred wide, the quiet zone the rain backs
-// away from so the word can be read.
-export function drawTitleMask(
-  canvasSize: readonly [number, number],
-  boxes: TitleBox[]
+// A rectangle of the slide, in slide pixels.
+export interface Area {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+function measurer() {
+  const context = document.createElement("canvas").getContext("2d")
+  if (!context) {
+    throw new Error("Measuring text needs a 2D canvas.")
+  }
+  return context
+}
+
+// CSS centres the font's ascent and descent in the line box, so the
+// baseline sits half the leading plus the ascent below the box top.
+function baselineOf(context: CanvasRenderingContext2D, box: TextBox) {
+  context.font = box.font
+  context.letterSpacing = box.letterSpacing
+  const metrics = context.measureText(box.text)
+  const ascent = metrics.fontBoundingBoxAscent
+  const descent = metrics.fontBoundingBoxDescent
+  return box.top + (box.lineHeight - (ascent + descent)) / 2 + ascent
+}
+
+// Red is coverage. Green is the same shape blurred by `blur` mask pixels,
+// for a glow or a quiet zone. `scale` is mask pixels per slide pixel, so a
+// mask can be drawn finer than the slide where the camera will get close.
+export function drawTextMask(
+  area: Area,
+  scale: number,
+  boxes: TextBox[],
+  blur = 0
 ) {
-  const scale = 0.5
   const canvas = document.createElement("canvas")
-  canvas.width = canvasSize[0] * scale
-  canvas.height = canvasSize[1] * scale
+  canvas.width = Math.ceil(area.width * scale)
+  canvas.height = Math.ceil(area.height * scale)
   const context = canvas.getContext("2d")
   if (!context) {
-    throw new Error("The title mask needs a 2D canvas.")
+    throw new Error("A text mask needs a 2D canvas.")
   }
 
   const paint = (style: string, filter: string) => {
     context.save()
     context.scale(scale, scale)
+    context.translate(-area.left, -area.top)
     context.filter = filter
     context.fillStyle = style
     context.textBaseline = "alphabetic"
     for (const box of boxes) {
-      context.font = box.font
-      context.letterSpacing = box.letterSpacing
-      // CSS centres the font's ascent and descent in the line box, so the
-      // baseline sits half the leading plus the ascent below the box top.
-      const metrics = context.measureText(box.text)
-      const ascent = metrics.fontBoundingBoxAscent
-      const descent = metrics.fontBoundingBoxDescent
-      const leading = (box.lineHeight - (ascent + descent)) / 2
-      context.fillText(box.text, box.left, box.top + leading + ascent)
+      const baseline = baselineOf(context, box)
+      context.fillText(box.text, box.left, baseline)
     }
     context.restore()
   }
 
   context.globalCompositeOperation = "lighter"
-  paint("rgb(0 255 0)", "blur(26px)")
+  if (blur > 0) {
+    paint("rgb(0 255 0)", `blur(${blur}px)`)
+  }
   paint("rgb(255 0 0)", "none")
 
   return canvas
+}
+
+// The slide area the boxes' text covers, with `pad` slide pixels around it.
+export function areaOf(boxes: TextBox[], pad: number): Area {
+  const context = measurer()
+  let left = Number.POSITIVE_INFINITY
+  let top = Number.POSITIVE_INFINITY
+  let right = Number.NEGATIVE_INFINITY
+  let bottom = Number.NEGATIVE_INFINITY
+  for (const box of boxes) {
+    context.font = box.font
+    context.letterSpacing = box.letterSpacing
+    left = Math.min(left, box.left)
+    top = Math.min(top, box.top)
+    right = Math.max(right, box.left + context.measureText(box.text).width)
+    bottom = Math.max(bottom, box.top + box.lineHeight)
+  }
+  return {
+    height: bottom - top + pad * 2,
+    left: left - pad,
+    top: top - pad,
+    width: right - left + pad * 2,
+  }
+}
+
+// One letter of a box, drawn fine enough to dive into, with the point the
+// camera breaks through: the middle of the letter, half way up its capital.
+export function drawLetter(box: TextBox, index: number, scale: number) {
+  const context = measurer()
+  context.font = box.font
+  context.letterSpacing = box.letterSpacing
+  const before = context.measureText(box.text.slice(0, index)).width
+  const through = context.measureText(box.text.slice(0, index + 1)).width
+  const character = box.text.charAt(index)
+  const area = {
+    height: box.lineHeight,
+    left: box.left + before,
+    top: box.top,
+    width: through - before,
+  }
+  const canvas = drawTextMask(area, scale, [
+    { ...box, left: area.left, text: character },
+  ])
+
+  const baseline = baselineOf(context, { ...box, text: character })
+  const cap = context.measureText(character).actualBoundingBoxAscent
+  return {
+    area,
+    canvas,
+    focus: [area.left + area.width / 2, baseline - cap / 2] as const,
+  }
 }
 
 // Resolves any CSS colour, oklch and color-mix included, to sRGB floats.

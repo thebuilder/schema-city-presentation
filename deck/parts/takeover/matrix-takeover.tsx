@@ -4,9 +4,9 @@ import { isCapturing } from "@thebuilder/deckard-core"
 import { useIsPresenterPreview } from "@thebuilder/deckard-core/components"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import type { Takeover } from "@/deck/parts/takeover/engine"
-import { resolveColour, type TitleBox } from "@/deck/parts/takeover/glyphs"
+import { resolveColour, type TextBox } from "@/deck/parts/takeover/glyphs"
 import { claimTakeover } from "@/deck/parts/takeover/takeover-state"
-import { timeline, wakeLines } from "@/deck/parts/takeover/timeline"
+import { diveInto, timeline, wakeLines } from "@/deck/parts/takeover/timeline"
 
 /*
  * live      the full sequence, from the corporate slide to the settled title
@@ -67,7 +67,7 @@ function offsetWithin(element: HTMLElement, root: HTMLElement) {
   return { left, top }
 }
 
-function titleBox(element: HTMLElement, root: HTMLElement, text: string): TitleBox {
+function textBox(element: HTMLElement, root: HTMLElement, text: string): TextBox {
   const style = getComputedStyle(element)
   const { left, top } = offsetWithin(element, root)
   return {
@@ -123,7 +123,13 @@ export function MatrixTakeover({
     const slide = corporateRef.current?.querySelector("svg")
     const titleElement = titleRef.current
     const creditsElement = creditsRef.current
-    if (!(mode && root && canvas && slide && titleElement && creditsElement)) {
+    const wakeElements = wakeRefs.current.filter(
+      (element): element is HTMLParagraphElement => element !== null
+    )
+    if (
+      !(mode && root && canvas && slide && titleElement && creditsElement) ||
+      wakeElements.length !== wakeLines.length
+    ) {
       return
     }
     if (mode === "still" || mode === "fallback") {
@@ -150,7 +156,8 @@ export function MatrixTakeover({
         const typing = count < line.length || index === wakeLines.length - 1
         const cursor = typing && time >= start && Math.floor(time * 2.5) % 2 === 0
         element.textContent = `${line.slice(0, count)}${cursor ? "█" : ""}`
-        element.style.opacity = time >= timeline.wakeEnd - 0.15 ? "0" : "1"
+        // The shader draws the prompt from here, to dive into it.
+        element.style.opacity = time >= timeline.diveStart ? "0" : "1"
       })
       const titleOn = time >= timeline.titleStart
       titleElement.style.opacity = titleOn ? "1" : "0"
@@ -196,7 +203,11 @@ export function MatrixTakeover({
         onFrame,
         readback: mode === "recording",
         slide,
-        titles: [titleBox(titleElement, root, title)],
+        diveInto,
+        titles: [textBox(titleElement, root, title)],
+        wake: wakeElements.map((element, index) =>
+          textBox(element, root, wakeLines[index] ?? "")
+        ),
       })
     })
 
@@ -264,12 +275,14 @@ export function MatrixTakeover({
 
       <div
         aria-hidden
-        className="absolute top-[var(--slide-padding-block)] left-[var(--slide-padding-inline)] flex flex-col gap-4 font-[family-name:var(--slide-font-mono)] text-[length:var(--slide-heading-size)] text-primary"
+        className="absolute top-[var(--slide-padding-block)] left-[var(--slide-padding-inline)] flex flex-col gap-4 font-[family-name:var(--slide-font-mono)] text-[length:var(--slide-heading-size)] text-primary leading-[1.3]"
         style={{ textShadow: "var(--slide-halo)" }}
       >
         {wakeLines.map((line, index) => (
           <p
             key={line}
+            // Laid out before it is typed, so the shader's copy lines up.
+            className="min-h-lh"
             ref={(element) => {
               wakeRefs.current[index] = element
             }}

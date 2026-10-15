@@ -11,10 +11,13 @@ import {
   texture,
 } from "vgpu"
 import {
+  areaOf,
   atlasGrid,
   drawGlyphAtlas,
-  drawTitleMask,
-  type TitleBox,
+  drawLetter,
+  drawTextMask,
+  type Area,
+  type TextBox,
 } from "@/deck/parts/takeover/glyphs"
 import { timeline } from "@/deck/parts/takeover/timeline"
 import takeoverShader from "@/deck/parts/takeover/takeover.wgsl"
@@ -25,7 +28,11 @@ export interface TakeoverScene {
   canvas: HTMLCanvasElement
   // The corporate slide as it is on screen, to be torn apart.
   slide: SVGSVGElement
-  titles: TitleBox[]
+  titles: TextBox[]
+  // The typed prompt, which the shader takes over from the DOM to dive into.
+  wake: TextBox[]
+  // Which line of it, and which letter of that line, the dive ends in.
+  diveInto: { line: number; index: number }
   colours: { bright: Rgba; ground: Rgba; ink: Rgba }
   monoFamily: string
   // Called with the sequence time before each frame draws, for the DOM layers.
@@ -55,12 +62,20 @@ const shaderTimeline = {
   crtEnd: timeline.crtEnd,
   crtLine: timeline.crtLine,
   crtStart: timeline.crtStart,
+  diveEnd: timeline.diveEnd,
+  diveStart: timeline.diveStart,
   lockEnd: timeline.lockEnd,
   lockStart: timeline.lockStart,
-  rainSpread: timeline.rainSpread,
-  rainStart: timeline.rainStart,
   settle: timeline.settle,
   titleStart: timeline.titleStart,
+}
+
+// Mask pixels per slide pixel for the two finer levels of the prompt.
+const wakeCloseScale = 6
+const letterScale = 24
+
+function boxOf(area: Area) {
+  return [area.left, area.top, area.left + area.width, area.top + area.height] as const
 }
 
 async function rasterise(svg: SVGSVGElement, scale: number) {
@@ -119,7 +134,24 @@ export async function createTakeover(scene: TakeoverScene): Promise<Takeover> {
       document.fonts.ready,
     ])
     const atlas = drawGlyphAtlas(scene.monoFamily)
-    const mask = drawTitleMask(canvasSize, scene.titles)
+    const mask = drawTextMask(
+      { height: canvasSize[1], left: 0, top: 0, width: canvasSize[0] },
+      0.5,
+      scene.titles,
+      26
+    )
+
+    // The prompt at three levels of detail, since there is no mip chain to
+    // pick one: as typed, finer for the first part of the dive, and the one
+    // letter it ends in finer still.
+    const wakeArea = areaOf(scene.wake, 8)
+    const wakeNear = drawTextMask(wakeArea, 1, scene.wake)
+    const wakeClose = drawTextMask(wakeArea, wakeCloseScale, scene.wake)
+    const diveLine = scene.wake[scene.diveInto.line]
+    if (!diveLine) {
+      throw new Error("The dive needs a line of the prompt to end in.")
+    }
+    const letter = drawLetter(diveLine, scene.diveInto.index, letterScale)
 
     const offscreen = scene.readback
       ? target(gpu, { format: "rgba8unorm", size: canvasSize })
@@ -129,6 +161,7 @@ export async function createTakeover(scene: TakeoverScene): Promise<Takeover> {
       label: "takeover",
       set: {
         atlas: upload(gpu, atlas.canvas, "glyph atlas"),
+        diveLetter: upload(gpu, letter.canvas, "dive letter"),
         mask: upload(gpu, mask, "title mask"),
         params: {
           ...shaderTimeline,
@@ -136,14 +169,19 @@ export async function createTakeover(scene: TakeoverScene): Promise<Takeover> {
           bright: scene.colours.bright,
           canvas: canvasSize,
           cell: cellSize,
+          focus: letter.focus,
           glyphCount: atlas.count,
+          letterBox: boxOf(letter.area),
           grid: [canvasSize[0] / cellSize[0], canvasSize[1] / cellSize[1]],
           ground: scene.colours.ground,
           ink: scene.colours.ink,
           time: 0,
+          wakeBox: boxOf(wakeArea),
         },
         samp: sampler(gpu, { magFilter: "linear", minFilter: "linear" }),
         slide: upload(gpu, slideImage, "corporate slide"),
+        wakeClose: upload(gpu, wakeClose, "prompt, close"),
+        wakeNear: upload(gpu, wakeNear, "prompt, near"),
       },
     })
     slideImage.close()
