@@ -112,6 +112,8 @@
   --slide-halo: none;
   --slide-signal: #c2264f;
   --slide-amber: #9a5b00;
+  --slide-azure: #2f6fb8;
+  --slide-dim: #3c6b60;
 
   --slide-chrome-foreground: var(--muted-foreground);
   --slide-chrome-emphasis: var(--primary);
@@ -167,6 +169,10 @@
      and the "before" state in signal, so slides that show either borrow these. */
   --slide-signal: #ff5b82;
   --slide-amber: #ffbc57;
+  /* The package's own azure and dim, so a city on a slide is coloured like the
+     city in the backoffice demo that follows it. */
+  --slide-azure: #8dbdf5;
+  --slide-dim: #4d8477;
 }
 
 .afterglow-theme {
