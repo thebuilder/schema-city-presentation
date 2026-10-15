@@ -18,18 +18,20 @@ import { cn } from "@/lib/utils"
  */
 
 // The scene listens on the window so its keys work wherever focus is. On a
-// slide those keys belong to the deck, and a click is the presenter stepping,
-// not a hand taking over the camera, so the scene is built without them.
-const deckInput = new Set(["keydown", "keyup", "pointerdown", "wheel"])
+// slide the arrow keys belong to the deck, so the scene never gets them. A
+// scripted scene also loses the pointer, since a click there is the presenter
+// stepping rather than a hand taking over the camera.
+const deckKeys = new Set(["keydown", "keyup"])
+const deckInput = new Set([...deckKeys, "pointerdown", "wheel"])
 
-function withoutWindowInput<T>(build: () => T): T {
+function withoutWindowInput<T>(blocked: Set<string>, build: () => T): T {
   const add = window.addEventListener
   window.addEventListener = ((
     type: string,
     listener: EventListenerOrEventListenerObject,
     options?: AddEventListenerOptions | boolean
   ) => {
-    if (!deckInput.has(type)) {
+    if (!blocked.has(type)) {
       add.call(window, type, listener, options)
     }
   }) as typeof window.addEventListener
@@ -106,6 +108,7 @@ interface Loaded {
 export function FsnWorld({
   className,
   focus,
+  interactive = false,
   load,
   open,
   still,
@@ -113,6 +116,12 @@ export function FsnWorld({
   className?: string
   /** The id of the object to pick, inside the open directory. */
   focus?: string
+  /**
+   * Hands the mouse to the scene, the way the site does: drag to orbit, scroll
+   * to zoom, double-click a directory to walk into it. The keys stay with the
+   * deck.
+   */
+  interactive?: boolean
   /** The filesystem to fly, fetched once the slide is up. */
   load: () => Promise<FsNode>
   /** The id of the directory on screen, the root when left out. */
@@ -141,18 +150,31 @@ export function FsnWorld({
         return
       }
       const release = still ? holdStill() : undefined
+      const nodes = measure(root, peekFromChildren)
       // A fresh canvas per scene, so a remount never inherits a disposed context.
       const canvas = document.createElement("canvas")
       canvas.className = "block h-full w-full"
       element.append(canvas)
-      const scene = withoutWindowInput(
+      const scene: WorldScene = withoutWindowInput(
+        interactive ? deckKeys : deckInput,
         () =>
           new WorldScene(canvas, {
             onAim: () => undefined,
-            onEnterArea: () => undefined,
+            // Flying back over a directory already walked into makes it the
+            // open one again, as it does on the site.
+            onEnterArea: (id) => {
+              shown.current = nodes.get(id) ?? shown.current
+            },
             onHover: () => undefined,
             onKeyboardNavigation: () => undefined,
-            onOpen: () => undefined,
+            onOpen: (node) => {
+              const directory = nodes.get(node.id)
+              if (directory?.kind !== "directory") {
+                return
+              }
+              scene.setDirectory(directory, directory.children ?? [], "forward")
+              shown.current = directory
+            },
             onSelect: () => undefined,
             onSwapKeys: () => undefined,
           })
@@ -166,7 +188,7 @@ export function FsnWorld({
         })
       )
       shown.current = null
-      setLoaded({ nodes: measure(root, peekFromChildren), root, scene })
+      setLoaded({ nodes, root, scene })
       teardown = () => {
         scene.destroy()
         canvas.remove()
@@ -179,7 +201,7 @@ export function FsnWorld({
       teardown?.()
       setLoaded(null)
     }
-  }, [load, still])
+  }, [interactive, load, still])
 
   useEffect(() => {
     if (!loaded) {
@@ -222,7 +244,13 @@ export function FsnWorld({
   return (
     <div
       aria-hidden
-      className={cn("pointer-events-none overflow-hidden", className)}
+      className={cn(
+        "overflow-hidden",
+        interactive ? "cursor-grab" : "pointer-events-none",
+        className
+      )}
+      // A click on an interactive world is aiming the camera, not stepping.
+      data-step-ignore-click={interactive ? "true" : undefined}
       ref={host}
     />
   )
