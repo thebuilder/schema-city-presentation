@@ -262,43 +262,74 @@ fn prompt(at: vec2f, zoom: f32) -> f32 {
 }
 
 // The camera pushes into the prompt until it is inside one letter's stroke.
-// The letter was rain all along, falling at a scale too small to see: as the
-// rain's cells grow past a few pixels the solid ink gives way to it, and at
-// the end of the dive that rain is the ordinary full-screen rain, cell for
-// cell, so the scene after it carries on without a seam.
+// Seen from far off the letter is solid ink. Closer, the ink resolves into
+// the characters it is built from, one per rain cell. Then the rain takes
+// them: each character lets go when a drop runs through its cell, or at its
+// own deadline, and falls away as part of the stream. By the end of the
+// dive that rain is the ordinary full-screen rain, cell for cell, so the
+// scene after it carries on without a seam.
 fn dive(p: vec2f, t: f32) -> vec3f {
   let span = params.diveEnd - params.diveStart;
   let u = clamp((t - params.diveStart) / span, 0.0, 1.0);
-  // Zoom is eased in log space, so the push feels like constant motion
+  // Zoom is eased in log space, so the push feels like steady motion
   // through the middle, with a slow start and a soft landing.
-  let eased = u * u * u * (u * (u * 6.0 - 15.0) + 10.0);
+  let eased = u * u * (3.0 - 2.0 * u);
   let depth = log(params.depth);
   let zoom = exp(depth * eased);
   // The letter glides to the centre of the screen as the camera closes in.
   let centre = params.canvas * 0.5;
   let aim = mix(params.focus, centre, smoothstep(0.0, 0.65, u));
+  let ink = params.ink.rgb;
+  let bright = params.bright.rgb;
 
   // A smear back along the zoom, as long as one frame of it, in taps close
   // enough together that they blend instead of ghosting.
-  let rate = depth * 30.0 * u * u * (u * (u - 2.0) + 1.0) / span;
+  let rate = depth * 6.0 * u * (1.0 - u) / span;
   var coverage = 0.0;
   for (var k = 0; k < 6; k += 1) {
     let back = exp(-rate * f32(k) / (60.0 * 6.0));
     coverage += prompt(params.focus + (p - aim) / (zoom * back), zoom * back);
   }
   coverage /= 6.0;
+  let solid = ink * 1.05 * coverage;
 
   let cellOnScreen = params.cell.y * zoom / params.depth;
-  let detail = smoothstep(2.0, 12.0, cellOnScreen);
-  var inside = params.ink.rgb * 1.05;
-  if (detail > 0.0) {
-    let rain = matrix((p - aim) * params.depth / zoom + centre, t, false);
-    // A trace of the ink stays behind the rain until the stroke fills the
-    // screen, so the letter thins out rather than switching off.
-    let trace = params.ink.rgb * 0.08 * (1.0 - smoothstep(0.85, 1.0, u));
-    inside = mix(inside, rain + trace, detail);
+  let grain = smoothstep(1.0, 2.0, cellOnScreen);
+  if (grain <= 0.0) {
+    return solid;
   }
-  return inside * coverage;
+
+  // The rain's own grid, scaled down by the full depth of the dive. A cell
+  // belongs to the letter when the letter covers its centre, so the edge
+  // steps cell by cell, the way a character grid would draw it.
+  let rainP = (p - aim) * params.depth / zoom + centre;
+  let cellPos = rainP / params.cell;
+  let cell = floor(cellPos);
+  let local = fract(cellPos);
+  let cellCentre = (cell + 0.5) * params.cell;
+  let member = prompt(params.focus + (cellCentre - centre) / params.depth, zoom);
+
+  // The solid ink gives way to the characters as the cells grow from a
+  // pixel or two to legible, so the letter seems to grain over and then
+  // resolve into its glyphs. They keep the ink's colour, over a faint fill,
+  // so the stroke stays one teal block while its texture changes.
+  let shape = glyph(floor(hash2(cell.y + 5.0, cell.x) * params.glyphCount), local);
+  let tone = mix(0.65, 1.0, hash2(cell.x + 7.0, cell.y + 3.0));
+  let character = (bright * 0.55 + ink * 0.7) * tone * shape + ink * 0.16;
+  let built = mix(ink * 1.05, character, smoothstep(1.5, 8.0, cellOnScreen));
+
+  let releaseFrom = params.diveStart + span * 0.78;
+  let deadline = params.diveStart + span * mix(0.8, 0.95, hash2(cell.x + 13.0, cell.y));
+  let passed = min(nextPass(cell, 0.0, releaseFrom), nextPass(cell, 17.0, releaseFrom));
+  let releaseAt = min(passed, deadline);
+  let gone = smoothstep(releaseAt, releaseAt + 0.12, t);
+  let flash = select(0.0, exp(-(t - releaseAt) * 8.0), t >= releaseAt);
+  var cells = (built + bright * flash * 1.5 * shape) * (1.0 - gone);
+  if (gone > 0.0) {
+    cells += matrix(rainP, t, false) * gone;
+  }
+
+  return mix(solid, cells * member, grain);
 }
 
 fn glitchAmount(t: f32) -> f32 {

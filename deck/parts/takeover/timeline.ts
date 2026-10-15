@@ -15,19 +15,19 @@ export const timeline = {
   crtEnd: 2.9,
   // A prompt types into the dark.
   wakeStart: 3.3,
-  // The camera dives into the U of "Umbraco". Close up, the letter turns out
-  // to be made of rain, and the dive ends inside its stroke, where the rain
-  // is all there is.
+  // The camera dives into the U of "Umbraco". Close up, the solid letter
+  // resolves into the characters it is built from, the rain carries them
+  // off, and the dive ends inside its stroke, where the rain is all there is.
   diveStart: 6.3,
-  diveEnd: 8.6,
+  diveEnd: 9.5,
   // Cells inside the title lock as drops run through them.
-  lockStart: 8.8,
-  lockEnd: 10.6,
+  lockStart: 9.7,
+  lockEnd: 11.5,
   // The crisp title decodes over the locked cells, then the credits.
-  titleStart: 10.8,
-  creditsStart: 11.6,
+  titleStart: 11.7,
+  creditsStart: 12.5,
   // From here the rain idles behind a finished title slide.
-  settle: 12.8,
+  settle: 13.7,
 } as const
 
 export const wakeLines = ["Wake up, Umbraco...", "The schema has you."]
