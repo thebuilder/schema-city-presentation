@@ -12,10 +12,8 @@ struct Params {
   // as left, top, right, bottom in slide pixels.
   wakeBox: vec4f,
   letterBox: vec4f,
-  // The point of the letter the dive ends in, and how far it zooms to get
-  // there: far enough that the stroke is wider than the screen.
+  // The point of the letter the camera breaks through.
   focus: vec2f,
-  depth: f32,
   // The slide's coordinate space and the character grid laid over it.
   canvas: vec2f,
   cell: vec2f,
@@ -261,75 +259,93 @@ fn prompt(at: vec2f, zoom: f32) -> f32 {
   return coverage;
 }
 
-// The camera pushes into the prompt until it is inside one letter's stroke.
-// Seen from far off the letter is solid ink. Closer, the ink resolves into
-// the characters it is built from, one per rain cell. Then the rain takes
-// them: each character lets go when a drop runs through its cell, or at its
-// own deadline, and falls away as part of the stream. By the end of the
-// dive that rain is the ordinary full-screen rain, cell for cell, so the
-// scene after it carries on without a seam.
+// The screen is a surface and the rain is behind it. The camera pushes
+// into the prompt, the surface bulges as it is pressed, and at contact it
+// gives: rings run out from the U across the letters, a hole tears open
+// from the middle of the letter and the camera goes through into the rain,
+// which comes up from a distance until it is the ordinary full-screen rain,
+// cell for cell, so the scene after the dive carries on without a seam.
 fn dive(p: vec2f, t: f32) -> vec3f {
   let span = params.diveEnd - params.diveStart;
   let u = clamp((t - params.diveStart) / span, 0.0, 1.0);
-  // Zoom is eased in log space, so the push feels like steady motion
-  // through the middle, with a slow start and a soft landing.
-  let eased = u * u * (3.0 - 2.0 * u);
-  let depth = log(params.depth);
-  let zoom = exp(depth * eased);
-  // The letter glides to the centre of the screen as the camera closes in.
-  let centre = params.canvas * 0.5;
-  let aim = mix(params.focus, centre, smoothstep(0.0, 0.65, u));
+  // The camera touches the surface, then breaks it.
+  let touch = 0.3;
+  let contact = 0.42;
+  let tau = t - (params.diveStart + span * contact);
+  let since = t - (params.diveStart + span * touch);
+  let through = clamp((u - contact) / (1.0 - contact), 0.0, 1.0);
   let ink = params.ink.rgb;
-  let bright = params.bright.rgb;
+  let centre = params.canvas * 0.5;
 
-  // A smear back along the zoom, as long as one frame of it, in taps close
-  // enough together that they blend instead of ghosting.
-  let rate = depth * 6.0 * u * (1.0 - u) / span;
+  // Zoom accelerates all the way, in log space: six times closer at contact,
+  // and the surface keeps rushing past after it.
+  let reach = log(6.0);
+  let lead = u / contact;
+  let zoom = exp(reach * lead * lead);
+  // The letter glides to the centre of the screen on the way in.
+  let aim = mix(params.focus, centre, smoothstep(0.0, contact, u));
+
+  let away = p - aim;
+  let r = length(away);
+  let outward = away / max(r, 1e-3);
+
+  // Pressed, the surface bulges towards the camera like a lens, and lets go
+  // as it tears.
+  let press = smoothstep(touch, contact, u) * (1.0 - smoothstep(0.0, 0.3, tau));
+  var q = aim + away * (1.0 - 0.3 * press * exp(-r * r / (420.0 * 420.0)));
+
+  // From the touch, rings run outwards across the letters like across
+  // water, and die away.
+  var slope = 0.0;
+  if (since > 0.0) {
+    let behind = 900.0 * since - r;
+    let fade = exp(-since * 1.1) * smoothstep(-60.0, 60.0, behind) * exp(-max(behind, 0.0) / 520.0);
+    slope = cos(behind * 0.03) * fade;
+    // In proportion to the letters, so the first rings bend them as much
+    // as the last instead of crumpling them while they are still small.
+    q += outward * slope * 7.0 * min(zoom, 6.0);
+  }
+
+  // A smear back along the zoom, as long as one frame of it.
+  let rate = reach * 2.0 * lead / (contact * span);
   var coverage = 0.0;
   for (var k = 0; k < 6; k += 1) {
     let back = exp(-rate * f32(k) / (60.0 * 6.0));
-    coverage += prompt(params.focus + (p - aim) / (zoom * back), zoom * back);
+    coverage += prompt(params.focus + (q - aim) / (zoom * back), zoom * back);
   }
   coverage /= 6.0;
-  let solid = ink * 1.05 * coverage;
+  // The rings catch the light as they pass, so the surface reads as one
+  // even where there is no letter on it.
+  let sheen = ink * max(slope, 0.0) * 0.22;
+  let surface = ink * 1.05 * coverage * (1.0 + slope * 0.25) + sheen;
 
-  let cellOnScreen = params.cell.y * zoom / params.depth;
-  let grain = smoothstep(1.0, 2.0, cellOnScreen);
-  if (grain <= 0.0) {
-    return solid;
+  if (tau <= 0.0) {
+    return surface;
   }
 
-  // The rain's own grid, scaled down by the full depth of the dive. A cell
-  // belongs to the letter when the letter covers its centre, so the edge
-  // steps cell by cell, the way a character grid would draw it.
-  let rainP = (p - aim) * params.depth / zoom + centre;
-  let cellPos = rainP / params.cell;
-  let cell = floor(cellPos);
-  let local = fract(cellPos);
-  let cellCentre = (cell + 0.5) * params.cell;
-  let member = prompt(params.focus + (cellCentre - centre) / params.depth, zoom);
+  // The hole opens from the middle of the letter, its edge wobbling with
+  // the rings, and is past the corners of the screen by the end.
+  let angle = atan2(away.y, away.x);
+  let open = pow(through, 1.6);
+  let wobble = 0.018 * sin(angle * 5.0 + tau * 7.0) + 0.012 * sin(angle * 11.0 - tau * 13.0);
+  let edge = 1250.0 * open * (1.0 + wobble) + slope * 24.0 * open;
+  let inside = smoothstep(edge + 1.5, edge - 1.5, r);
 
-  // The solid ink gives way to the characters as the cells grow from a
-  // pixel or two to legible, so the letter seems to grain over and then
-  // resolve into its glyphs. They keep the ink's colour, over a faint fill,
-  // so the stroke stays one teal block while its texture changes.
-  let shape = glyph(floor(hash2(cell.y + 5.0, cell.x) * params.glyphCount), local);
-  let tone = mix(0.65, 1.0, hash2(cell.x + 7.0, cell.y + 3.0));
-  let character = (bright * 0.55 + ink * 0.7) * tone * shape + ink * 0.16;
-  let built = mix(ink * 1.05, character, smoothstep(1.5, 8.0, cellOnScreen));
-
-  let releaseFrom = params.diveStart + span * 0.78;
-  let deadline = params.diveStart + span * mix(0.8, 0.95, hash2(cell.x + 13.0, cell.y));
-  let passed = min(nextPass(cell, 0.0, releaseFrom), nextPass(cell, 17.0, releaseFrom));
-  let releaseAt = min(passed, deadline);
-  let gone = smoothstep(releaseAt, releaseAt + 0.12, t);
-  let flash = select(0.0, exp(-(t - releaseAt) * 8.0), t >= releaseAt);
-  var cells = (built + bright * flash * 1.5 * shape) * (1.0 - gone);
-  if (gone > 0.0) {
-    cells += matrix(rainP, t, false) * gone;
+  // Behind the surface the rain starts out far off, smaller and dimmer,
+  // bent a little by the lip of the hole, and comes up to full size.
+  let scale = mix(0.45, 1.0, smoothstep(0.0, 1.0, through));
+  let lip = exp(-max(edge - r, 0.0) / 70.0) * (1.0 - through);
+  let rainP = centre + (p - centre) / scale - outward * lip * 50.0;
+  var world = vec3f(0.0);
+  if (inside > 0.0) {
+    world = matrix(rainP, t, false) * mix(0.55, 1.0, through);
   }
 
-  return mix(solid, cells * member, grain);
+  // The torn edge catches the light as it rolls back.
+  let rim = (exp(-abs(r - edge) / 6.0) * 0.45 + exp(-abs(r - edge) / 50.0) * 0.12)
+    * (1.0 - smoothstep(0.85, 1.0, through));
+
+  return mix(surface, world, inside) + ink * rim;
 }
 
 fn glitchAmount(t: f32) -> f32 {

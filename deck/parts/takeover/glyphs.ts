@@ -181,7 +181,7 @@ export function areaOf(boxes: TextBox[], pad: number): Area {
 }
 
 // One letter of a box, drawn fine enough to dive into, with the point the
-// camera aims for: the middle of its first upright stroke, half way up.
+// camera breaks through: the middle of the letter, half way up its capital.
 export function drawLetter(box: TextBox, index: number, scale: number) {
   const context = measurer()
   context.font = box.font
@@ -201,37 +201,10 @@ export function drawLetter(box: TextBox, index: number, scale: number) {
 
   const baseline = baselineOf(context, { ...box, text: character })
   const cap = context.measureText(character).actualBoundingBoxAscent
-  const aimY = baseline - cap / 2
-  const row = Math.min(
-    canvas.height - 1,
-    Math.max(0, Math.round((aimY - area.top) * scale))
-  )
-  const pixels = canvas
-    .getContext("2d")
-    ?.getImageData(0, row, canvas.width, 1).data
-  let first = -1
-  let last = -1
-  for (let x = 0; pixels && x < canvas.width; x += 1) {
-    const covered = (pixels[x * 4] ?? 0) > 127
-    if (covered && first < 0) {
-      first = x
-    }
-    if (covered) {
-      last = x
-    } else if (first >= 0) {
-      break
-    }
-  }
-  // A letter with no stroke on that row still gets a dive, into its middle.
-  const found = first >= 0
   return {
     area,
     canvas,
-    focus: [
-      found ? area.left + (first + last + 1) / 2 / scale : area.left + area.width / 2,
-      aimY,
-    ] as const,
-    stroke: found ? (last - first + 1) / scale : area.width / 4,
+    focus: [area.left + area.width / 2, baseline - cap / 2] as const,
   }
 }
 

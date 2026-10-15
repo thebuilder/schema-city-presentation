@@ -169,8 +169,6 @@ export async function createTakeover(scene: TakeoverScene): Promise<Takeover> {
           bright: scene.colours.bright,
           canvas: canvasSize,
           cell: cellSize,
-          // Deep enough that the stroke is wider than the screen at the end.
-          depth: Math.min(900, Math.max(60, (canvasSize[0] * 1.4) / letter.stroke)),
           focus: letter.focus,
           glyphCount: atlas.count,
           letterBox: boxOf(letter.area),

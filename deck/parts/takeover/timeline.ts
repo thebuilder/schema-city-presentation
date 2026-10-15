@@ -15,9 +15,9 @@ export const timeline = {
   crtEnd: 2.9,
   // A prompt types into the dark.
   wakeStart: 3.3,
-  // The camera dives into the U of "Umbraco". Close up, the solid letter
-  // resolves into the characters it is built from, the rain carries them
-  // off, and the dive ends inside its stroke, where the rain is all there is.
+  // The camera dives into the U of "Umbraco". The screen is a surface: it
+  // ripples as the camera touches it, tears open at the U, and the camera
+  // goes through into the rain behind it.
   diveStart: 6.3,
   diveEnd: 9.5,
   // Cells inside the title lock as drops run through them.
