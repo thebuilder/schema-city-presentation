@@ -55,7 +55,7 @@ export const slides: SlideDefinition[] = [
     slug: "the-wall",
     title: "The wall",
     notes:
-      "1:45, 2 minutes. Ask the room what breaks if you change SEO Composition. Nobody can answer from this view, and that is the point. The timer keeps running until the live demo answers it.",
+      "1:45, 2 minutes. Ask the room what breaks if you change SEO Composition. Nobody can answer from this view, and that is the point. Leave the question open. The live demo answers it.",
     layout: "fullscreen",
     stepCount: 2,
     header: "hidden",
@@ -95,7 +95,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Live",
     notes:
-      "9:45, 10 minutes. Switch to the backoffice. Overview, what is it connected to, the impact of changing SEO Composition (stop the timer from the wall), findings, compare against a snapshot.",
+      "9:45, 10 minutes. Switch to the backoffice. Overview, what is it connected to, the impact of changing SEO Composition, which answers the question from the wall, findings, compare against a snapshot.",
     background: "breaker",
     body: <Live />,
   },
