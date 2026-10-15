@@ -10,7 +10,7 @@ import {
   CityWorld,
   useCity,
 } from "@/deck/city/city-world"
-import { type CityPalette, useCityPalette } from "@/deck/city/palette"
+import { type CityPalette, useCityPalette } from "@/deck/city/scene-palette"
 import { SchemaTable, tableRows } from "@/deck/city/schema-table"
 import {
   Boards,
@@ -21,7 +21,7 @@ import {
   type DistrictKind,
   revealAt,
   type SchemaGraph,
-} from "@/deck/city/schema-city"
+} from "@/deck/city/scene-modules"
 import { useStep } from "@/deck/city/use-step"
 import { formatClock, useWallClock } from "@/deck/city/wall-timer"
 
@@ -295,7 +295,7 @@ function BootingRoads({
   since: () => number
   colour: string
   edges: SchemaGraph["edges"]
-  placementsById: Map<string, import("@/deck/city/schema-city").Placement>
+  placementsById: Map<string, import("@/deck/city/scene-modules").Placement>
 }) {
   const [opacity, setOpacity] = useState(0)
   useFrame(() => {

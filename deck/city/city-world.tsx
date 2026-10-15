@@ -3,7 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber"
 import { useLayoutEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
-import type { CityPalette } from "@/deck/city/palette"
+import type { CityPalette } from "@/deck/city/scene-palette"
 import {
   atmosphere,
   type BoardPalette,
@@ -25,7 +25,7 @@ import {
   SKY_VERTEX_SHADER,
   SLAB_HEIGHT,
   tint,
-} from "@/deck/city/schema-city"
+} from "@/deck/city/scene-modules"
 
 /*
  * The stage the package's buildings and boards stand on, rebuilt for slides. The
