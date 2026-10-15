@@ -25,6 +25,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@fsn/core": [
+        "./vendor/fsn/packages/core/src/index.ts"
+      ],
+      "@fsn/app/*": [
+        "./vendor/fsn/packages/app/src/*"
       ]
     }
   },
