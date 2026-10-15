@@ -49,6 +49,7 @@ export const slides: SlideDefinition[] = [
     title: "whoami",
     notes:
       "0:45, 1 minute. Who you are. Schema City is one of a growing set of Umbraco packages at umbraco.thebuilder.dk.",
+    stepCount: 3,
     body: <Whoami />,
   },
   {
@@ -65,13 +66,14 @@ export const slides: SlideDefinition[] = [
     notes:
       "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place.",
     layout: "fullscreen",
+    stepCount: 3,
     body: <UnixSystem />,
   },
   {
     slug: "fsn",
     title: "fsn.thebuilder.dk",
     notes:
-      "5:15, 1.5 minutes. Your rebuild, running in the browser. Once you have a city engine, every graph looks like a city, and the graph you look at most at work is an Umbraco content model.",
+      "5:15, 1.5 minutes. Your rebuild, running in the browser. Once you have a city engine, every graph looks like a city, and the graph you look at most at work is an Umbraco content model. Clicking into the site hands it the keyboard, so click the address strip to take the arrow keys back.",
     layout: "fullscreen",
     body: <Fsn />,
   },
