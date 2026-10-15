@@ -178,7 +178,10 @@ fn matrix(p: vec2f, t: f32, titled: bool) -> vec3f {
       let since = t - locked;
       let flash = exp(-since * 5.0);
       let steady = glyph(floor(hash2(cell.y, cell.x) * params.glyphCount), local);
-      let fade = mix(1.0, 0.3, smoothstep(params.titleStart, params.settle, t));
+      // Once the crisp title has decoded over them, the cells let go one by
+      // one, so the word is not left doubled by a blocky copy behind it.
+      let release = params.titleStart + 0.5 + hash2(cell.x + 31.0, cell.y) * 1.1;
+      let fade = 1.0 - smoothstep(release, release + 0.3, t);
       let solid = smoothstep(0.32, 0.6, letter);
       let lit = ((bright * (0.55 + flash * 1.6) + ink * 0.7) * steady
         + ink * (0.16 + flash * 0.3)) * fade * solid;
