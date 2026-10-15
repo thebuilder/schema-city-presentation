@@ -11,9 +11,7 @@ import {
 } from "@/deck/city/city-world"
 import { type CityPalette, useCityPalette } from "@/deck/city/scene-palette"
 import {
-  Buildings,
   buildFloorCells,
-  CAMERA_FOV,
   cityDistricts,
   connectionsOf,
   demoGraph,
@@ -23,8 +21,8 @@ import {
   type SchemaEdge,
   type SchemaGraph,
   type SchemaNode,
-  tint,
-} from "@/deck/city/scene-modules"
+} from "@/deck/city/schema-city"
+import { Buildings, CAMERA_FOV, tint } from "@/deck/city/schema-city-scene"
 import { useStep } from "@/deck/city/use-step"
 
 /*

@@ -5,27 +5,29 @@ import { useLayoutEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
 import type { CityPalette } from "@/deck/city/scene-palette"
 import {
-  atmosphere,
-  type BoardPalette,
-  type BuildingPalette,
   buildFloorCells,
-  buildLinkGeometry,
+  type BuildingPalette,
   buildPlazaCells,
-  buildRoadGeometry,
   cityBounds,
   cityDistricts,
   connectionsOf,
-  GRID_FRAGMENT_SHADER,
   ISLAND_PAD,
-  GRID_VERTEX_SHADER,
   type Placement,
   type SchemaEdge,
   type SchemaGraph,
+} from "@/deck/city/schema-city"
+import {
+  atmosphere,
+  type BoardPalette,
+  buildLinkGeometry,
+  buildRoadGeometry,
+  GRID_FRAGMENT_SHADER,
+  GRID_VERTEX_SHADER,
   SKY_FRAGMENT_SHADER,
   SKY_VERTEX_SHADER,
   SLAB_HEIGHT,
   tint,
-} from "@/deck/city/scene-modules"
+} from "@/deck/city/schema-city-scene"
 
 /*
  * The stage the package's buildings and boards stand on, rebuilt for slides. The

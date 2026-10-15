@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { SchemaTable, tableRows } from "@/deck/city/schema-table"
-import { demoGraph, type SchemaGraph } from "@/deck/city/scene-modules"
+import { demoGraph, type SchemaGraph } from "@/deck/city/schema-city"
 import { useStep } from "@/deck/city/use-step"
 import { formatClock, useWallClock } from "@/deck/city/wall-timer"
 
