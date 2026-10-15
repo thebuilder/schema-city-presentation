@@ -1,6 +1,6 @@
 # Schema City talk
 
-The deck for the Schema City talk at the Umbraco DK meetup on 22 October 2026.
+The deck for the Schema City talk at Umbraco Meetup DK on 22 October 2026.
 It is a [Deckard](https://deckard.thebuilder.dk) app with an ejected theme
 retuned to the Afterglow palette.
 
