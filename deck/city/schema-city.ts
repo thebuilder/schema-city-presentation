@@ -5,8 +5,8 @@
 // would drag in the Inspector, which needs the client's own "@/" alias.
 //
 // The paths are relative on purpose. `deckard validate` loads the deck through Vite
-// with only the "@/" alias, so the "@schema-city/*" path in tsconfig.json resolves
-// for Next and tsc but fails there.
+// with only the "@/" alias, so any other path alias resolves for Next and tsc but
+// fails there.
 import medium from "../../vendor/umbraco-schema-city/src/SchemaCity/Client/dev/fixtures/medium.json"
 import type { SchemaGraph } from "../../vendor/umbraco-schema-city/src/SchemaCity/Client/src/model/types"
 
