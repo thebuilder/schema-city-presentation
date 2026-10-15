@@ -25,7 +25,6 @@ import {
   revealAt,
 } from "@/deck/city/schema-city-scene"
 import { useStep } from "@/deck/city/use-step"
-import { formatClock, useWallClock } from "@/deck/city/wall-timer"
 
 /*
  * The wall comes back, and on the click its rows lift off the page and land
@@ -325,7 +324,6 @@ export function MorphWidget({
   const rowElements = useRef(new Map<string, HTMLElement>())
   const [slabs, setSlabs] = useState<Slab[]>([])
   const [startedAt, setStartedAt] = useState<number | null>(null)
-  const clock = useWallClock(false)
   const playing = current >= 1
 
   // Overhead height that makes the table about as wide on the ground as the
@@ -426,11 +424,6 @@ export function MorphWidget({
           }}
           rows={rows}
         />
-        {clock.started ? (
-          <p className="absolute top-6 right-10 font-bold text-[length:calc(var(--slide-label-size)*0.6)] text-[var(--slide-signal)] tabular-nums tracking-[var(--slide-label-tracking)]">
-            {formatClock(clock.seconds)}
-          </p>
-        ) : null}
       </div>
     </div>
   )
