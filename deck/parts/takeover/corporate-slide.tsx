@@ -157,7 +157,7 @@ export function CorporateSlide() {
         x="120"
         y="758"
       >
-        Umbraco DK Meetup | 22 October 2026
+        Umbraco Meetup DK | 22 October 2026
       </text>
 
       {/* A stock photo of a handshake, still carrying its preview watermark. */}

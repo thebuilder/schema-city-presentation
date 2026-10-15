@@ -5,7 +5,7 @@ export function Takeover() {
   return (
     <MatrixTakeover
       corporate={<CorporateSlide />}
-      credits="Daniel Schmidt // Umbraco DK // 22.10.2026"
+      credits="Daniel Schmidt // Umbraco Meetup DK // 22.10.2026"
       title="SCHEMA CITY"
     />
   )
