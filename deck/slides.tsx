@@ -3,7 +3,6 @@ import "server-only"
 import type { SlideDefinition } from "@thebuilder/deckard-core"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
-import { Fsn } from "@/deck/parts/fsn"
 import { Layout } from "@/deck/parts/layout"
 import { Legend } from "@/deck/parts/legend"
 import { Live } from "@/deck/parts/live"
@@ -67,18 +66,10 @@ export const slides: SlideDefinition[] = [
     slug: "unix-system",
     title: "I know this",
     notes:
-      "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place.",
+      "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer.",
     layout: "fullscreen",
     stepCount: 3,
     body: <UnixSystem />,
-  },
-  {
-    slug: "fsn",
-    title: "fsn.thebuilder.dk",
-    notes:
-      "5:15, 1.5 minutes. Your rebuild, running in the browser. Once you have a city engine, every graph looks like a city, and the graph you look at most at work is an Umbraco content model. Clicking into the site hands it the keyboard, so click the address strip to take the arrow keys back.",
-    layout: "fullscreen",
-    body: <Fsn />,
   },
   {
     slug: "morph",
