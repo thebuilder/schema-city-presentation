@@ -3,7 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber"
 import { useLayoutEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
-import type { CityPalette } from "@/deck/city/scene-palette"
+import type { CityPalette } from "@/deck/city/palette"
 import {
   buildFloorCells,
   type BuildingPalette,

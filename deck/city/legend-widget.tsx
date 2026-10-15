@@ -9,7 +9,7 @@ import {
   CityRoads,
   roofAnchors,
 } from "@/deck/city/city-world"
-import { type CityPalette, useCityPalette } from "@/deck/city/scene-palette"
+import { type CityPalette, useCityPalette } from "@/deck/city/palette"
 import {
   buildFloorCells,
   cityDistricts,

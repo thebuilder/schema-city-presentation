@@ -10,7 +10,7 @@ import {
   CityWorld,
   useCity,
 } from "@/deck/city/city-world"
-import { type CityPalette, useCityPalette } from "@/deck/city/scene-palette"
+import { type CityPalette, useCityPalette } from "@/deck/city/palette"
 import { SchemaTable, tableRows } from "@/deck/city/schema-table"
 import {
   demoGraph,
