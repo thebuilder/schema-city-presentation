@@ -111,13 +111,15 @@ export const slides: SlideDefinition[] = [
     title: "Layout",
     notes:
       "21:15, 1.5 minutes. Layout is the hard part. Show one decision it makes.",
+    stepCount: 4,
     body: <Layout />,
   },
   {
     slug: "wireframe",
     title: "Wireframe",
     notes:
-      "22:45, 1 minute 15. Why it stays fast with 200 document types: instancing and one glow pass.",
+      "22:45, 1 minute 15. Why it stays fast with 200 document types. Every building is one instanced mesh, and the glow is patched into that mesh's fragment shader, so there is no post-processing pass.",
+    stepCount: 3,
     body: <Wireframe />,
   },
   {
