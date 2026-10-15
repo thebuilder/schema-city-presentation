@@ -33,7 +33,7 @@ const { values } = parseArgs({
 })
 
 // The settled title plus a beat, so the video ends on the finished slide.
-const duration = 13
+const duration = 14.5
 const fps = Number(values.fps)
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const output = join(root, "public", "takeover", "takeover.webm")

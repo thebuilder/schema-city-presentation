@@ -8,6 +8,14 @@ struct Params {
   ink: vec4f,
   bright: vec4f,
   ground: vec4f,
+  // Where the prompt's masks and the dive letter's mask sit on the slide,
+  // as left, top, right, bottom in slide pixels.
+  wakeBox: vec4f,
+  letterBox: vec4f,
+  // The point of the letter the dive ends in, and how far it zooms to get
+  // there: far enough that the stroke is wider than the screen.
+  focus: vec2f,
+  depth: f32,
   // The slide's coordinate space and the character grid laid over it.
   canvas: vec2f,
   cell: vec2f,
@@ -20,8 +28,8 @@ struct Params {
   crtLine: f32,
   crtDot: f32,
   crtEnd: f32,
-  rainStart: f32,
-  rainSpread: f32,
+  diveStart: f32,
+  diveEnd: f32,
   lockStart: f32,
   lockEnd: f32,
   titleStart: f32,
@@ -33,6 +41,9 @@ struct Params {
 @group(0) @binding(2) var atlas: texture_2d<f32>;
 @group(0) @binding(3) var mask: texture_2d<f32>;
 @group(0) @binding(4) var samp: sampler;
+@group(0) @binding(5) var wakeNear: texture_2d<f32>;
+@group(0) @binding(6) var wakeClose: texture_2d<f32>;
+@group(0) @binding(7) var diveLetter: texture_2d<f32>;
 
 fn pcg(v: u32) -> u32 {
   let state = v * 747796405u + 2891336453u;
@@ -60,15 +71,11 @@ fn rainClock(t: f32) -> f32 {
   return min(t, params.settle) + after * 0.45;
 }
 
-// When a column's first drop leaves the top. The flood spreads outwards
-// from the centre, where the dead tube's last dot was.
+// When a column's first drop left the top. The rain has been falling for
+// a minute before the click, inside every letter, so the dive can find it
+// already running however far from the top a row is.
 fn columnStart(column: f32, seed: f32) -> f32 {
-  let half = params.grid.x * 0.5;
-  let away = abs(column + 0.5 - half) / half;
-  let jitter = hash2(column, seed + 3.0);
-  return params.rainStart + seed * 0.04
-    + away * params.rainSpread * mix(0.65, 1.0, jitter)
-    + jitter * 0.3;
+  return -60.0 - hash2(column, seed + 3.0) * 8.0;
 }
 
 struct Drop {
@@ -222,6 +229,75 @@ fn corrupted(uv: vec2f, t: f32, amount: f32, green: f32) -> vec3f {
   return colour;
 }
 
+// A mask placed on the slide by `box`, read at slide position `at`.
+fn placed(tex: texture_2d<f32>, box: vec4f, at: vec2f) -> vec4f {
+  let uv = (at - box.xy) / (box.zw - box.xy);
+  let inside = all(uv >= vec2f(0.0)) && all(uv <= vec2f(1.0));
+  return select(vec4f(0.0), textureSampleLevel(tex, samp, uv, 0.0), inside);
+}
+
+// Coverage that stays crisp under magnification: the bilinear ramp between
+// two mask pixels is narrowed back to about one screen pixel.
+fn crisp(coverage: f32, tex: texture_2d<f32>, box: vec4f, zoom: f32) -> f32 {
+  let texels = f32(textureDimensions(tex).x) / (box.z - box.x);
+  let width = clamp(0.5 * texels / zoom, 0.03, 0.5);
+  return smoothstep(0.5 - width, 0.5 + width, coverage);
+}
+
+// How much of the prompt covers slide position `at` when seen `zoom` times
+// closer, from whichever mask is detailed enough at that zoom.
+fn prompt(at: vec2f, zoom: f32) -> f32 {
+  let near = crisp(placed(wakeNear, params.wakeBox, at).r, wakeNear, params.wakeBox, zoom);
+  let close = crisp(placed(wakeClose, params.wakeBox, at).r, wakeClose, params.wakeBox, zoom);
+  var coverage = mix(near, close, smoothstep(1.5, 3.0, zoom));
+  let box = params.letterBox;
+  if (all(at >= box.xy) && all(at <= box.zw)) {
+    let finest = crisp(placed(diveLetter, box, at).r, diveLetter, box, zoom);
+    coverage = mix(coverage, finest, smoothstep(10.0, 20.0, zoom));
+  }
+  return coverage;
+}
+
+// The camera pushes into the prompt until it is inside one letter's stroke.
+// The letter was rain all along, falling at a scale too small to see: as the
+// rain's cells grow past a few pixels the solid ink gives way to it, and at
+// the end of the dive that rain is the ordinary full-screen rain, cell for
+// cell, so the scene after it carries on without a seam.
+fn dive(p: vec2f, t: f32) -> vec3f {
+  let span = params.diveEnd - params.diveStart;
+  let u = clamp((t - params.diveStart) / span, 0.0, 1.0);
+  // Zoom is eased in log space, so the push feels like constant motion
+  // through the middle, with a slow start and a soft landing.
+  let eased = u * u * u * (u * (u * 6.0 - 15.0) + 10.0);
+  let depth = log(params.depth);
+  let zoom = exp(depth * eased);
+  // The letter glides to the centre of the screen as the camera closes in.
+  let centre = params.canvas * 0.5;
+  let aim = mix(params.focus, centre, smoothstep(0.0, 0.65, u));
+
+  // A smear back along the zoom, as long as one frame of it, in taps close
+  // enough together that they blend instead of ghosting.
+  let rate = depth * 30.0 * u * u * (u * (u - 2.0) + 1.0) / span;
+  var coverage = 0.0;
+  for (var k = 0; k < 6; k += 1) {
+    let back = exp(-rate * f32(k) / (60.0 * 6.0));
+    coverage += prompt(params.focus + (p - aim) / (zoom * back), zoom * back);
+  }
+  coverage /= 6.0;
+
+  let cellOnScreen = params.cell.y * zoom / params.depth;
+  let detail = smoothstep(2.0, 12.0, cellOnScreen);
+  var inside = params.ink.rgb * 1.05;
+  if (detail > 0.0) {
+    let rain = matrix((p - aim) * params.depth / zoom + centre, t, false);
+    // A trace of the ink stays behind the rain until the stroke fills the
+    // screen, so the letter thins out rather than switching off.
+    let trace = params.ink.rgb * 0.08 * (1.0 - smoothstep(0.85, 1.0, u));
+    inside = mix(inside, rain + trace, detail);
+  }
+  return inside * coverage;
+}
+
 fn glitchAmount(t: f32) -> f32 {
   let ramp = pow(clamp(t / params.crtStart, 0.0, 1.0), 1.6);
   let tick = floor(t * 14.0);
@@ -242,7 +318,7 @@ fn glitchAmount(t: f32) -> f32 {
     let ramp = clamp(t / params.crtStart, 0.0, 1.0);
     colour = corrupted(uv, t, amount, ramp * ramp + amount * 0.25);
     // The rain bleeds through the cracks before it arrives for real.
-    let bleed = matrix(p, t + params.rainStart + params.rainSpread + 1.5, false);
+    let bleed = matrix(p, t, false);
     let column = floor(p.x / params.cell.x);
     let infected = step(hash2(column, floor(t * 6.0)), amount * 0.45);
     colour += bleed * infected * amount;
@@ -270,8 +346,10 @@ fn glitchAmount(t: f32) -> f32 {
     let dotLife = 1.0 - smoothstep(params.crtDot, params.crtEnd, t);
     let dotGlow = exp(-length(fromCentre) / (3.0 + 26.0 * dotLife)) * toDot * dotLife;
     colour += white * (lineGlow * toLine * 1.2 + dotGlow * 2.2);
-  } else if (t >= params.rainStart - 0.2) {
+  } else if (t >= params.diveEnd) {
     colour = params.ground.rgb + matrix(p, t, true);
+  } else if (t >= params.diveStart) {
+    colour = params.ground.rgb + dive(p, t);
   }
 
   // The tube is always on: scanlines, a soft vignette, a little breath.
