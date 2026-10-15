@@ -1,3 +1,6 @@
 [submodule "vendor/umbraco-schema-city"]
 	path = vendor/umbraco-schema-city
 	url = https://github.com/thebuilder/umbraco-schema-city.git
+[submodule "vendor/fsn"]
+	path = vendor/fsn
+	url = https://github.com/thebuilder/fsn.git

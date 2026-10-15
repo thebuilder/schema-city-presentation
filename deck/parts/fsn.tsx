@@ -3,15 +3,24 @@
 import { useIsPresenterPreview } from "@thebuilder/deckard-core/components"
 import { useEffect, useState } from "react"
 import { useStill } from "@/deck/parts/beats"
-import { FsnScene } from "@/deck/parts/fsn-scene"
+import { FsnWorld } from "@/deck/parts/fsn-world"
 
 const site = "https://fsn.thebuilder.dk/"
 
+// The site's own demo world. Its files are only ever looked at from outside
+// here, never opened, so every resource is a name with nothing behind it.
+const unread = (id: string) => ({ id, readable: false })
+const loadDemo = async () => {
+  const { createDemoFilesystem } = await import("@fsn/app/demo")
+  return createDemoFilesystem({ bytes: unread, text: unread, url: unread }).root
+}
+
 /*
  * The rebuild, live. The site runs in a frame filling the slide, so it can be
- * flown on stage. Three cases get the deck's own fsn scene instead: no
- * network, the presenter console's preview (one live copy of the site is
- * enough), and a screenshot, which should not depend on the venue's wifi.
+ * flown on stage. Three cases run fsn's own renderer from vendor/fsn instead,
+ * on the site's demo world: no network, the presenter console's preview (one
+ * live copy of the site is enough), and a screenshot, which should not depend
+ * on the venue's wifi.
  *
  * Clicking into the frame hands it the keyboard, so the arrow keys fly the
  * camera rather than step the deck. Click the address strip to hand them back.
@@ -64,7 +73,11 @@ export function Fsn() {
             title="fsn.thebuilder.dk"
           />
         ) : (
-          <FsnScene className="absolute inset-0" still={still} />
+          <FsnWorld
+            className="absolute inset-0"
+            load={loadDemo}
+            still={still}
+          />
         )}
       </div>
     </section>

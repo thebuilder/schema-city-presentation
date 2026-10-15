@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { useBeat, useStill } from "@/deck/parts/beats"
-import { FsnScene, fsnTarget } from "@/deck/parts/fsn-scene"
+import { FsnWorld } from "@/deck/parts/fsn-world"
+import { park, parkDoors, parkHome, parkSecurity } from "@/deck/parts/park"
 import { Terminal } from "@/deck/parts/terminal"
 
 /*
  * The control room, recreated rather than played. fsn is launched from a
- * shell, the tree boots up out of the floor and the camera circles it, the line
- * lands as a subtitle, and then the camera goes and finds the door locks.
+ * shell, the park is scanned in and the camera settles over it, the line lands
+ * as a subtitle, and then the camera walks into security and picks the door
+ * locks. The world is fsn's own renderer, so it looks the way fsn does.
  *
  * Beat 0 launches fsn, beat 1 is the line, beat 2 is the flight.
  */
@@ -16,6 +18,8 @@ const delays = [3800, 8500]
 
 // Long enough for the command to finish typing before the tree appears.
 const bootDelay = 1500
+
+const loadPark = () => Promise.resolve(park)
 
 export function UnixSystem() {
   const beat = useBeat(delays)
@@ -35,22 +39,15 @@ export function UnixSystem() {
 
   return (
     <section className="relative h-full w-full overflow-hidden">
-      <FsnScene
-        className={
-          booted
-            ? "absolute inset-0 opacity-100 transition-opacity duration-1000"
-            : "absolute inset-0 opacity-0"
-        }
-        focus={focus}
-        still={still}
-      />
-
-      {/* The tube's scanlines ride over the picture as well as under it. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ backgroundImage: "var(--slide-scanline)" }}
-      />
+      {booted ? (
+        <FsnWorld
+          className="absolute inset-0"
+          focus={focus ? parkDoors : undefined}
+          open={focus ? parkSecurity : parkHome}
+          load={loadPark}
+          still={still}
+        />
+      ) : null}
 
       <div className="absolute top-[var(--slide-padding-block)] left-[var(--slide-padding-inline)] border border-[var(--slide-surface-border)] bg-[var(--slide-surface)] px-6 py-4">
         <Terminal
@@ -70,7 +67,7 @@ export function UnixSystem() {
               focus ? "text-[color:var(--slide-signal)]" : "text-foreground"
             }
           >
-            {focus ? fsnTarget : "/usr/park"}
+            {focus ? parkDoors : parkHome}
           </span>
         </p>
       </div>
