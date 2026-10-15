@@ -3,7 +3,6 @@ import "server-only"
 import type { SlideDefinition } from "@thebuilder/deckard-core"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
-import { Fsn } from "@/deck/parts/fsn"
 import { Layout } from "@/deck/parts/layout"
 import { Legend } from "@/deck/parts/legend"
 import { Live } from "@/deck/parts/live"
@@ -56,7 +55,7 @@ export const slides: SlideDefinition[] = [
     slug: "the-wall",
     title: "The wall",
     notes:
-      "1:45, 2 minutes. Ask the room what breaks if you change SEO Composition. Nobody can answer from this view, and that is the point. The timer keeps running until the live demo answers it.",
+      "1:45, 2 minutes. The question the whole talk answers: what breaks if I change SEO Composition? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
     layout: "fullscreen",
     stepCount: 2,
     header: "hidden",
@@ -67,24 +66,16 @@ export const slides: SlideDefinition[] = [
     slug: "unix-system",
     title: "I know this",
     notes:
-      "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place.",
+      "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer.",
     layout: "fullscreen",
     stepCount: 3,
     body: <UnixSystem />,
   },
   {
-    slug: "fsn",
-    title: "fsn.thebuilder.dk",
-    notes:
-      "5:15, 1.5 minutes. Your rebuild, running in the browser. Once you have a city engine, every graph looks like a city, and the graph you look at most at work is an Umbraco content model. Clicking into the site hands it the keyboard, so click the address strip to take the arrow keys back.",
-    layout: "fullscreen",
-    body: <Fsn />,
-  },
-  {
     slug: "morph",
     title: "Same data",
     notes:
-      "6:45, 2 minutes. The thesis, with nothing written on screen. The data did not change, the interface did.",
+      "5:15, 2 minutes. The wall from the start, same rows, becomes a city. Nothing written on screen. The data did not change, the interface did.",
     layout: "fullscreen",
     background: "statement",
     stepCount: 2,
@@ -96,7 +87,7 @@ export const slides: SlideDefinition[] = [
     slug: "legend",
     title: "How to read it",
     notes:
-      "8:45, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces.",
+      "7:15, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces.",
     stepCount: 6,
     body: <Legend />,
   },
@@ -104,7 +95,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Live",
     notes:
-      "9:45, 10 minutes. Switch to the backoffice. Overview, what is it connected to, the impact of changing SEO Composition (stop the timer from the wall), findings, compare against a snapshot.",
+      "8:15, 13 minutes. Switch to the backoffice. Four questions the content tree cannot answer. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the wall. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
     background: "breaker",
     body: <Live />,
   },
@@ -112,30 +103,14 @@ export const slides: SlideDefinition[] = [
     slug: "pipeline",
     title: "Pipeline",
     notes:
-      "19:45, 1.5 minutes. Their own world feeds the picture: Umbraco services, the graph API, the layout, the scene.",
+      "21:15, 1.5 minutes. One slide on how it is built. Walk the blocks left to right: Umbraco, the graph API, the layout, the scene. Layout and wireframe are in backup if someone asks.",
     body: <Pipeline />,
-  },
-  {
-    slug: "layout",
-    title: "Layout",
-    notes:
-      "21:15, 1.5 minutes. Layout is the hard part. Show one decision it makes.",
-    stepCount: 4,
-    body: <Layout />,
-  },
-  {
-    slug: "wireframe",
-    title: "Wireframe",
-    notes:
-      "22:45, 1 minute 15. Why it stays fast with 200 document types. Every building is one instanced mesh, and the glow is patched into that mesh's fragment shader, so there is no post-processing pass.",
-    stepCount: 3,
-    body: <Wireframe />,
   },
   {
     slug: "close",
     title: "Go look at it",
     notes:
-      "24:00. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "22:45. Back to the wall: what breaks if I change SEO Composition? Now the room knows. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     background: "closing",
     body: <Close />,
   },
@@ -174,5 +149,21 @@ export const slides: SlideDefinition[] = [
         shows="Snapshot comparison, captured from the demo."
       />
     ),
+  },
+  {
+    slug: "layout",
+    title: "Backup: layout",
+    notes:
+      "Backup. Layout is the hard part. Show one decision it makes.",
+    stepCount: 4,
+    body: <Layout />,
+  },
+  {
+    slug: "wireframe",
+    title: "Backup: wireframe",
+    notes:
+      "Backup. Why it stays fast with 200 document types. Every building is one instanced mesh, and the glow is patched into that mesh's fragment shader, so there is no post-processing pass.",
+    stepCount: 3,
+    body: <Wireframe />,
   },
 ]
