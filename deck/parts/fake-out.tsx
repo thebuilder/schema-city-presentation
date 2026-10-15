@@ -1,10 +1,11 @@
-import { Placeholder } from "@/deck/parts/placeholder"
+import { CorporateSlide } from "@/deck/parts/takeover/corporate-slide"
+import { TakeoverArm } from "@/deck/parts/takeover/takeover-arm"
 
 export function FakeOut() {
   return (
-    <Placeholder
-      label="fake-out"
-      shows="The most boring corporate title slide: blue gradient, Calibri, stock handshake, an agenda in the footer."
-    />
+    <>
+      <CorporateSlide />
+      <TakeoverArm />
+    </>
   )
 }

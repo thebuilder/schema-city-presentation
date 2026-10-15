@@ -1,0 +1,150 @@
+/*
+ * The two pictures the shader reads besides the corporate slide: an atlas of
+ * rain glyphs, and the title as a coverage mask laid over the character grid.
+ * Both are drawn with Canvas 2D at mount, from the fonts the deck already
+ * loaded, so nothing here is a shipped image.
+ */
+
+// The film's rain is half-width katakana, mirrored, with digits mixed in.
+const katakana = "ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ"
+const digits = "0123456789"
+const symbols = "Z:.=*+-<>|"
+// A projector laptop without a Japanese face still gets rain, in Latin.
+const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+const japaneseFaces =
+  "'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', 'MS Gothic', 'Noto Sans CJK JP', IPAGothic"
+
+export const atlasGrid = [8, 8] as const
+
+// One atlas cell has the aspect of one canvas cell, at three times its size.
+const atlasCell = [60, 78] as const
+
+function hasJapaneseFace() {
+  // A face that lacks katakana draws the same tofu for it as for an
+  // unassigned code point, so two identical rasters mean there is no face.
+  const probe = document.createElement("canvas")
+  probe.width = 32
+  probe.height = 32
+  const context = probe.getContext("2d", { willReadFrequently: true })
+  if (!context) {
+    return false
+  }
+  const raster = (character: string) => {
+    context.clearRect(0, 0, 32, 32)
+    context.font = `24px ${japaneseFaces}`
+    context.fillText(character, 2, 26)
+    return context.getImageData(0, 0, 32, 32).data.join(",")
+  }
+  return raster("ｱ") !== raster("\u{10FFFD}")
+}
+
+export function drawGlyphAtlas(monoFamily: string) {
+  const japanese = hasJapaneseFace()
+  const set = (japanese ? katakana + digits + symbols : latin + digits + symbols)
+    .split("")
+    .slice(0, atlasGrid[0] * atlasGrid[1])
+
+  const canvas = document.createElement("canvas")
+  canvas.width = atlasGrid[0] * atlasCell[0]
+  canvas.height = atlasGrid[1] * atlasCell[1]
+  const context = canvas.getContext("2d")
+  if (!context) {
+    throw new Error("The glyph atlas needs a 2D canvas.")
+  }
+
+  context.fillStyle = "#ffffff"
+  context.textAlign = "center"
+  context.textBaseline = "middle"
+
+  set.forEach((character, index) => {
+    const x = (index % atlasGrid[0]) * atlasCell[0]
+    const y = Math.floor(index / atlasGrid[0]) * atlasCell[1]
+    const isKana = katakana.includes(character)
+    context.save()
+    context.translate(x + atlasCell[0] / 2, y + atlasCell[1] / 2)
+    if (isKana) {
+      // Half-width kana are drawn narrow and thin. Widen and embolden them
+      // so they hold up at rain size next to the digits.
+      context.scale(-1.45, 1)
+      context.font = `600 56px ${japaneseFaces}`
+      context.strokeStyle = "#ffffff"
+      context.lineWidth = 3
+      context.strokeText(character, 0, 2)
+    } else {
+      context.font = `700 54px ${monoFamily}`
+    }
+    context.fillText(character, 0, 2)
+    context.restore()
+  })
+
+  return { canvas, count: set.length }
+}
+
+export interface TitleBox {
+  font: string
+  left: number
+  letterSpacing: string
+  lineHeight: number
+  text: string
+  top: number
+}
+
+// Red is the title's coverage, sampled per cell to pick the cells that
+// lock. Green is the same shape blurred wide, the quiet zone the rain backs
+// away from so the word can be read.
+export function drawTitleMask(
+  canvasSize: readonly [number, number],
+  boxes: TitleBox[]
+) {
+  const scale = 0.5
+  const canvas = document.createElement("canvas")
+  canvas.width = canvasSize[0] * scale
+  canvas.height = canvasSize[1] * scale
+  const context = canvas.getContext("2d")
+  if (!context) {
+    throw new Error("The title mask needs a 2D canvas.")
+  }
+
+  const paint = (style: string, filter: string) => {
+    context.save()
+    context.scale(scale, scale)
+    context.filter = filter
+    context.fillStyle = style
+    context.textBaseline = "alphabetic"
+    for (const box of boxes) {
+      context.font = box.font
+      context.letterSpacing = box.letterSpacing
+      // CSS centres the font's ascent and descent in the line box, so the
+      // baseline sits half the leading plus the ascent below the box top.
+      const metrics = context.measureText(box.text)
+      const ascent = metrics.fontBoundingBoxAscent
+      const descent = metrics.fontBoundingBoxDescent
+      const leading = (box.lineHeight - (ascent + descent)) / 2
+      context.fillText(box.text, box.left, box.top + leading + ascent)
+    }
+    context.restore()
+  }
+
+  context.globalCompositeOperation = "lighter"
+  paint("rgb(0 255 0)", "blur(26px)")
+  paint("rgb(255 0 0)", "none")
+
+  return canvas
+}
+
+// Resolves any CSS colour, oklch and color-mix included, to sRGB floats.
+export function resolveColour(colour: string, fallback: string) {
+  const canvas = document.createElement("canvas")
+  canvas.width = 1
+  canvas.height = 1
+  const context = canvas.getContext("2d", { willReadFrequently: true })
+  if (!context) {
+    return [0, 0, 0, 1] as const
+  }
+  context.fillStyle = fallback
+  context.fillStyle = colour || fallback
+  context.fillRect(0, 0, 1, 1)
+  const [r, g, b] = context.getImageData(0, 0, 1, 1).data
+  return [r / 255, g / 255, b / 255, 1] as const
+}

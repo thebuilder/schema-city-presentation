@@ -1,3 +1,4 @@
+import { wgslTurbopackRule } from "@vgpu/wgsl/next"
 import type { NextConfig } from "next"
 
 /*
@@ -26,6 +27,11 @@ const nextConfig: NextConfig = {
         [`${name}/*`, `./node_modules/${name}/*`],
       ]),
     ),
+    // The takeover's shader is a .wgsl file, prepared at build time so the
+    // browser never loads the WGSL parser.
+    rules: {
+      "*.wgsl": wgslTurbopackRule({ minify: true }),
+    },
   },
 }
 
