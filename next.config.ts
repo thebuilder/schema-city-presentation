@@ -1,3 +1,4 @@
+import { wgslTurbopackRule } from "@vgpu/wgsl/next"
 import type { NextConfig } from "next"
 
 /*
@@ -31,6 +32,11 @@ const nextConfig: NextConfig = {
       // exports give them. The alias above is a path, which skips those
       // exports, so the addons are pointed at the folder they map to.
       "three/addons/*": "./node_modules/three/examples/jsm/*",
+    },
+    // The takeover's shader is a .wgsl file, prepared at build time so the
+    // browser never loads the WGSL parser.
+    rules: {
+      "*.wgsl": wgslTurbopackRule({ minify: true }),
     },
   },
 }

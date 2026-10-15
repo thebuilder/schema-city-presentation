@@ -1,10 +1,12 @@
-import { Placeholder } from "@/deck/parts/placeholder"
+import { CorporateSlide } from "@/deck/parts/takeover/corporate-slide"
+import { MatrixTakeover } from "@/deck/parts/takeover/matrix-takeover"
 
 export function Takeover() {
   return (
-    <Placeholder
-      label="takeover"
-      shows="The corporate slide glitches, the CRT collapses to a dot, code rain floods in, and SCHEMA CITY decodes out of it."
+    <MatrixTakeover
+      corporate={<CorporateSlide />}
+      credits="Daniel Schmidt // Umbraco Meetup DK // 22.10.2026"
+      title="SCHEMA CITY"
     />
   )
 }
