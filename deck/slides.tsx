@@ -58,6 +58,9 @@ export const slides: SlideDefinition[] = [
     notes:
       "1:45, 2 minutes. Ask the room what breaks if you change SEO Composition. Nobody can answer from this view, and that is the point. The timer keeps running until the live demo answers it.",
     layout: "fullscreen",
+    stepCount: 2,
+    header: "hidden",
+    footer: "hidden",
     body: <TheWall />,
   },
   {
@@ -84,6 +87,9 @@ export const slides: SlideDefinition[] = [
       "6:45, 2 minutes. The thesis, with nothing written on screen. The data did not change, the interface did.",
     layout: "fullscreen",
     background: "statement",
+    stepCount: 2,
+    header: "hidden",
+    footer: "hidden",
     body: <Morph />,
   },
   {
@@ -91,6 +97,7 @@ export const slides: SlideDefinition[] = [
     title: "How to read it",
     notes:
       "8:45, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces.",
+    stepCount: 6,
     body: <Legend />,
   },
   {

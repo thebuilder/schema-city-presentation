@@ -25,9 +25,10 @@ Before handing a change back, run `npx deckard validate`,
 ## Importing Schema City's own code
 
 `vendor/umbraco-schema-city` is a git submodule of the package repository.
-Slides import the client's scene, layout and model modules from it as
-`@schema-city/app/scene/...`, so the city on a slide is the city in the
-package. `next.config.ts` pins React, three and the other shared packages to
+Slides import the client's scene, layout and model modules from it through
+relative paths into `vendor/`, so the city on a slide is the city in the
+package. There is no path alias for it, because `deckard validate` loads the
+deck with only the `@/` alias and fails on any other. `next.config.ts` pins React, three and the other shared packages to
 this app's `node_modules`, so a module from the submodule never pulls a second
 copy. Keep the versions here equal to the client's `package.json`.
 
