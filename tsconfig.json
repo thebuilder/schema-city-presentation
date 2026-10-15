@@ -25,9 +25,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "@schema-city/*": [
-        "./vendor/umbraco-schema-city/src/SchemaCity/Client/src/*"
       ]
     }
   },

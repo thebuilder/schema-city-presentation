@@ -37,7 +37,7 @@ export const slides: SlideDefinition[] = [
     slug: "takeover",
     title: "Schema City",
     notes:
-      "0:00, 45 seconds. Let the takeover play without talking. When the title has settled: sorry, wrong deck.",
+      "0:00, 45 seconds. The takeover runs about 12 seconds, so let it play without talking. When the title has settled: sorry, wrong deck. Going back to the fake-out and forward again replays it. Stepping back here from whoami shows the settled title.",
     header: "hidden",
     footer: "hidden",
     layout: "fullscreen",
@@ -49,6 +49,7 @@ export const slides: SlideDefinition[] = [
     title: "whoami",
     notes:
       "0:45, 1 minute. Who you are. Schema City is one of a growing set of Umbraco packages at umbraco.thebuilder.dk.",
+    stepCount: 3,
     body: <Whoami />,
   },
   {
@@ -57,6 +58,9 @@ export const slides: SlideDefinition[] = [
     notes:
       "1:45, 2 minutes. Ask the room what breaks if you change SEO Composition. Nobody can answer from this view, and that is the point. The timer keeps running until the live demo answers it.",
     layout: "fullscreen",
+    stepCount: 2,
+    header: "hidden",
+    footer: "hidden",
     body: <TheWall />,
   },
   {
@@ -65,13 +69,14 @@ export const slides: SlideDefinition[] = [
     notes:
       "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place.",
     layout: "fullscreen",
+    stepCount: 3,
     body: <UnixSystem />,
   },
   {
     slug: "fsn",
     title: "fsn.thebuilder.dk",
     notes:
-      "5:15, 1.5 minutes. Your rebuild, running in the browser. Once you have a city engine, every graph looks like a city, and the graph you look at most at work is an Umbraco content model.",
+      "5:15, 1.5 minutes. Your rebuild, running in the browser. Once you have a city engine, every graph looks like a city, and the graph you look at most at work is an Umbraco content model. Clicking into the site hands it the keyboard, so click the address strip to take the arrow keys back.",
     layout: "fullscreen",
     body: <Fsn />,
   },
@@ -82,6 +87,9 @@ export const slides: SlideDefinition[] = [
       "6:45, 2 minutes. The thesis, with nothing written on screen. The data did not change, the interface did.",
     layout: "fullscreen",
     background: "statement",
+    stepCount: 2,
+    header: "hidden",
+    footer: "hidden",
     body: <Morph />,
   },
   {
@@ -89,6 +97,7 @@ export const slides: SlideDefinition[] = [
     title: "How to read it",
     notes:
       "8:45, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces.",
+    stepCount: 6,
     body: <Legend />,
   },
   {
@@ -111,13 +120,15 @@ export const slides: SlideDefinition[] = [
     title: "Layout",
     notes:
       "21:15, 1.5 minutes. Layout is the hard part. Show one decision it makes.",
+    stepCount: 4,
     body: <Layout />,
   },
   {
     slug: "wireframe",
     title: "Wireframe",
     notes:
-      "22:45, 1 minute 15. Why it stays fast with 200 document types: instancing and one glow pass.",
+      "22:45, 1 minute 15. Why it stays fast with 200 document types. Every building is one instanced mesh, and the glow is patched into that mesh's fragment shader, so there is no post-processing pass.",
+    stepCount: 3,
     body: <Wireframe />,
   },
   {
