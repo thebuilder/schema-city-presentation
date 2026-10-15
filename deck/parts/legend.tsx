@@ -1,10 +1,9 @@
-import { Placeholder } from "@/deck/parts/placeholder"
+import { LegendWidget } from "@/deck/city/legend-widget"
 
+/*
+ * One building assembles a mapping per click. The slide needs `stepCount: 6`,
+ * which LEGEND_STEPS in deck/city/legend-widget.tsx names.
+ */
 export function Legend() {
-  return (
-    <Placeholder
-      label="legend"
-      shows="One building assembles step by step: doc type, floors, windows, element types, traces."
-    />
-  )
+  return <LegendWidget />
 }

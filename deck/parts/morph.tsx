@@ -1,10 +1,9 @@
-import { Placeholder } from "@/deck/parts/placeholder"
+import { MorphWidget } from "@/deck/city/morph-widget"
 
+/*
+ * The wall again, and on the click its rows lift into the city. The slide
+ * needs `stepCount: 2`, which MORPH_STEPS in deck/city/morph-widget.tsx names.
+ */
 export function Morph() {
-  return (
-    <Placeholder
-      label="morph"
-      shows="The rows of the wall lift off the page and become the city."
-    />
-  )
+  return <MorphWidget />
 }

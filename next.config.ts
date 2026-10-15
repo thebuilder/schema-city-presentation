@@ -1,3 +1,4 @@
+import { wgslTurbopackRule } from "@vgpu/wgsl/next"
 import type { NextConfig } from "next"
 
 /*
@@ -20,12 +21,23 @@ const shared = [
 
 const nextConfig: NextConfig = {
   turbopack: {
-    resolveAlias: Object.fromEntries(
-      shared.flatMap((name) => [
-        [name, `./node_modules/${name}`],
-        [`${name}/*`, `./node_modules/${name}/*`],
-      ]),
-    ),
+    resolveAlias: {
+      ...Object.fromEntries(
+        shared.flatMap((name) => [
+          [name, `./node_modules/${name}`],
+          [`${name}/*`, `./node_modules/${name}/*`],
+        ]),
+      ),
+      // fsn, in vendor/fsn, imports three's addons by the name three's package
+      // exports give them. The alias above is a path, which skips those
+      // exports, so the addons are pointed at the folder they map to.
+      "three/addons/*": "./node_modules/three/examples/jsm/*",
+    },
+    // The takeover's shader is a .wgsl file, prepared at build time so the
+    // browser never loads the WGSL parser.
+    rules: {
+      "*.wgsl": wgslTurbopackRule({ minify: true }),
+    },
   },
 }
 
