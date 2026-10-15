@@ -10,20 +10,21 @@ import {
   CityWorld,
   useCity,
 } from "@/deck/city/city-world"
-import { type CityPalette, useCityPalette } from "@/deck/city/scene-palette"
+import { type CityPalette, useCityPalette } from "@/deck/city/palette"
 import { SchemaTable, tableRows } from "@/deck/city/schema-table"
 import {
-  Boards,
-  Buildings,
-  buildingRiseAt,
-  CAMERA_FOV,
   demoGraph,
   type DistrictKind,
-  revealAt,
   type SchemaGraph,
-} from "@/deck/city/scene-modules"
+} from "@/deck/city/schema-city"
+import {
+  Boards,
+  buildingRiseAt,
+  Buildings,
+  CAMERA_FOV,
+  revealAt,
+} from "@/deck/city/schema-city-scene"
 import { useStep } from "@/deck/city/use-step"
-import { formatClock, useWallClock } from "@/deck/city/wall-timer"
 
 /*
  * The wall comes back, and on the click its rows lift off the page and land
@@ -295,7 +296,7 @@ function BootingRoads({
   since: () => number
   colour: string
   edges: SchemaGraph["edges"]
-  placementsById: Map<string, import("@/deck/city/scene-modules").Placement>
+  placementsById: Map<string, import("@/deck/city/schema-city").Placement>
 }) {
   const [opacity, setOpacity] = useState(0)
   useFrame(() => {
@@ -323,7 +324,6 @@ export function MorphWidget({
   const rowElements = useRef(new Map<string, HTMLElement>())
   const [slabs, setSlabs] = useState<Slab[]>([])
   const [startedAt, setStartedAt] = useState<number | null>(null)
-  const clock = useWallClock(false)
   const playing = current >= 1
 
   // Overhead height that makes the table about as wide on the ground as the
@@ -424,11 +424,6 @@ export function MorphWidget({
           }}
           rows={rows}
         />
-        {clock.started ? (
-          <p className="absolute top-6 right-10 font-bold text-[length:calc(var(--slide-label-size)*0.6)] text-[var(--slide-signal)] tabular-nums tracking-[var(--slide-label-tracking)]">
-            {formatClock(clock.seconds)}
-          </p>
-        ) : null}
       </div>
     </div>
   )

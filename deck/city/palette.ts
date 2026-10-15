@@ -6,21 +6,47 @@ import type { BuildingPalette } from "@/deck/city/schema-city"
 /*
  * The city on a slide takes its colours from the deck theme, the way Schema City
  * takes them from the backoffice's, so a theme edit reaches the buildings too.
+ * Azure and dim come from tokens that carry the package's own values, so a city
+ * on a slide is coloured like the one in the live demo after it.
  *
  * Light mode writes its tokens in oklch, which THREE.Color cannot parse, so each
  * token is painted onto a one pixel canvas and read back as rgb.
  */
-const TOKENS: Record<keyof BuildingPalette, string> = {
+const TOKENS = {
   amber: "--slide-amber",
-  azure: "--accent-foreground",
+  azure: "--slide-azure",
   background: "--background",
-  dim: "--muted-foreground",
+  bright: "--accent-foreground",
+  dim: "--slide-dim",
+  foreground: "--foreground",
+  land: "--card",
   phosphor: "--primary",
   separator: "--secondary",
   signal: "--slide-signal",
+} as const
+
+/**
+ * The package's dark values, for a token the theme does not set. A missing token
+ * would otherwise paint as whatever the canvas held last.
+ */
+const FALLBACK: Record<keyof typeof TOKENS, string> = {
+  amber: "#ffbc57",
+  azure: "#8dbdf5",
+  background: "#05090a",
+  bright: "#d9ffef",
+  dim: "#4d8477",
+  foreground: "#e9f6f1",
+  land: "#0b1515",
+  phosphor: "#86fadd",
+  separator: "#081210",
+  signal: "#ff5b82",
 }
 
-export type CityPalette = BuildingPalette & { foreground: string }
+export type CityPalette = BuildingPalette &
+  Record<keyof typeof TOKENS, string> & {
+    /** The theme's mono stack, for the names printed on the boards. */
+    mono: string
+  }
 
 function readPalette(element: Element): CityPalette {
   const style = getComputedStyle(element)
@@ -28,8 +54,9 @@ function readPalette(element: Element): CityPalette {
   pixel.width = 1
   pixel.height = 1
   const context = pixel.getContext("2d", { willReadFrequently: true })
-  const rgb = (token: string) => {
-    const value = style.getPropertyValue(token).trim()
+  const rgb = (key: keyof typeof TOKENS) => {
+    const value = style.getPropertyValue(TOKENS[key]).trim()
+    if (!value) return FALLBACK[key]
     if (!context) return value
     context.clearRect(0, 0, 1, 1)
     context.fillStyle = value
@@ -37,10 +64,13 @@ function readPalette(element: Element): CityPalette {
     const [r, g, b] = context.getImageData(0, 0, 1, 1).data
     return `rgb(${r}, ${g}, ${b})`
   }
-  const palette = Object.fromEntries(
-    Object.entries(TOKENS).map(([key, token]) => [key, rgb(token)])
-  ) as BuildingPalette
-  return { ...palette, foreground: rgb("--foreground") }
+  const colours = Object.fromEntries(
+    Object.keys(TOKENS).map((key) => [key, rgb(key as keyof typeof TOKENS)])
+  ) as Record<keyof typeof TOKENS, string>
+  const mono =
+    style.getPropertyValue("--slide-font-mono").trim() ||
+    "ui-monospace, monospace"
+  return { ...colours, mono }
 }
 
 /**

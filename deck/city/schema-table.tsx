@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import type { SchemaGraph, SchemaNode } from "@/deck/city/scene-modules"
+import type { SchemaGraph, SchemaNode } from "@/deck/city/schema-city"
 
 /*
  * The content model as the wall of rows a backoffice grid would give you. Every
