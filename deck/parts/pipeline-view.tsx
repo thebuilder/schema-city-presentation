@@ -8,15 +8,8 @@ import {
   type SchemaGraph,
 } from "@/deck/city/schema-city"
 
-/** One type as each stage holds it, computed on the server from medium.json. */
-export type Packet = {
-  id: string
-  alias: string
-  umbraco: { name: string; groups: number; properties: number; children: number }
-  api: { groups: number; edges: number; isElement: boolean }
-  layout: { district: string; x: number; z: number; footprint: number; floors: number }
-  scene: { slabs: number; windows: number; pins: number; other: number }
-}
+/** One type, computed on the server from medium.json. */
+export type Packet = { id: string; alias: string; name: string; x: number; z: number }
 
 /** Seconds between two packets setting off. */
 const PERIOD = 1.8
@@ -95,22 +88,18 @@ function useLayoutTime(graph: SchemaGraph) {
   return ms
 }
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`
 const kb = (bytes: number) => `${Math.round(bytes / 1024)}`
-const fixed = (value: number) => value.toFixed(1).padStart(6)
 
 export function PipelineView({
   graph,
   placements,
   packets,
   bytes,
-  edges,
 }: {
   graph: SchemaGraph
   placements: Placement[]
   packets: Packet[]
   bytes: number
-  edges: number
 }) {
   const { held, track } = useStream(packets.length)
   const layoutMs = useLayoutTime(graph)
@@ -129,81 +118,44 @@ export function PipelineView({
       <style>{`@keyframes pipeline-arrive { from { color: var(--primary); text-shadow: var(--slide-halo) } }`}</style>
       <div className="grid grid-cols-4 gap-10">
         <Stage
-          call={["contentTypeService", ".GetAll()"]}
           figure={String(graph.nodes.length)}
           index="01"
           label="umbraco"
           unit="document types"
         >
-          {umbraco ? (
-            <Readout id={umbraco.alias}>
-              <span className="text-muted-foreground">IContentType</span>
-              {`"${umbraco.umbraco.name}"`}
-              <Row label="groups" value={umbraco.umbraco.groups} />
-              <Row label="properties" value={umbraco.umbraco.properties} />
-              <Row label="children" value={umbraco.umbraco.children} />
-            </Readout>
-          ) : null}
+          {umbraco ? <Readout id={umbraco.alias}>{umbraco.name}</Readout> : null}
+        </Stage>
+        <Stage figure={kb(bytes)} index="02" label="graph api" unit="KB of JSON">
+          {api ? <Readout id={api.alias}>{`"${api.alias}"`}</Readout> : null}
         </Stage>
         <Stage
-          call={["GET .../schema-city", "/graph"]}
-          figure={kb(bytes)}
-          index="02"
-          label="graph api"
-          unit={`KB json, ${edges} edges`}
-        >
-          {api ? (
-            <Readout id={api.alias}>
-              {`{ "alias":\n    "${api.alias}",\n  "isElement": ${api.api.isElement},\n  "groups": [${api.api.groups}],\n  "edges": ${api.api.edges} }`}
-            </Readout>
-          ) : null}
-        </Stage>
-        <Stage
-          call={["cityDistricts(graph)", ""]}
           figure={layoutMs === null ? "--" : layoutMs.toFixed(0)}
           index="03"
           label="layout"
-          unit="ms, in this browser"
+          unit="ms"
         >
           {layout ? (
             <Readout id={layout.alias}>
-              <span className="text-muted-foreground">Placement in</span>
-              {`"${layout.layout.district}"`}
-              <Row label="x" value={fixed(layout.layout.x)} />
-              <Row label="z" value={fixed(layout.layout.z)} />
-              <Row label="footprint" value={fixed(layout.layout.footprint)} />
-              <Row label="floors" value={layout.layout.floors} />
+              {`x ${layout.x.toFixed(0)}  z ${layout.z.toFixed(0)}`}
             </Readout>
           ) : null}
         </Stage>
         <Stage
-          call={["buildFloorCells()", ""]}
           figure={calls === null ? "--" : String(calls)}
           index="04"
           label="scene"
-          unit="draw calls, live"
+          unit="draw calls"
         >
-          <div className="flex h-full flex-col">
-            {scene ? (
-              <Readout id={scene.alias}>
-                <span className="text-muted-foreground">
-                  {`${plural(scene.scene.slabs, "slab")}, ${plural(scene.scene.windows, "window")}`}
-                </span>
-              </Readout>
-            ) : (
-              <div className="h-[2.4em]" />
-            )}
-            <CityView
-              className="min-h-0 flex-1"
-              distance={0.34}
-              graph={graph}
-              onStats={(stats) => setCalls(stats.calls)}
-              orbit={0.08}
-              pitch={0.9}
-              placements={placements}
-              selected={scene?.id ?? null}
-            />
-          </div>
+          <CityView
+            className="h-full"
+            distance={0.34}
+            graph={graph}
+            onStats={(stats) => setCalls(stats.calls)}
+            orbit={0.08}
+            pitch={0.9}
+            placements={placements}
+            selected={scene?.id ?? null}
+          />
         </Stage>
       </div>
       <Track packets={packets} track={track} />
@@ -214,14 +166,12 @@ export function PipelineView({
 function Stage({
   index,
   label,
-  call,
   figure,
   unit,
   children,
 }: {
   index: string
   label: string
-  call: [string, string]
   figure: string
   unit: string
   children: ReactNode
@@ -234,10 +184,9 @@ function Stage({
       <p className="border-[var(--slide-surface-border)] border-b px-5 py-3 font-semibold text-[length:var(--slide-label-size)] text-muted-foreground uppercase tracking-[var(--slide-label-tracking)]">
         <span className="text-primary">{index}</span> {label}
       </p>
-      <p className="h-[4.5em] whitespace-pre px-5 pt-4 text-[length:var(--slide-support-size)] text-primary leading-snug">
-        {call.join("\n")}
-      </p>
-      <div className="h-[300px] overflow-hidden px-5">{children}</div>
+      <div className="flex h-[380px] items-center justify-center overflow-hidden px-5">
+        {children}
+      </div>
       <p className="flex items-baseline gap-3 border-[var(--slide-surface-border)] border-t px-5 py-4">
         <span
           className="font-bold text-[length:var(--slide-heading-size)] text-foreground tabular-nums leading-none"
@@ -256,21 +205,12 @@ function Stage({
 /** One packet's view at a stage. Keyed by the packet, so each arrival flashes. */
 function Readout({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <div
-      className="grid gap-1 whitespace-pre py-2 text-[length:var(--slide-support-size)] text-foreground leading-snug [animation:pipeline-arrive_900ms_ease-out]"
+    <p
+      className="whitespace-nowrap text-[length:var(--slide-subheading-size)] text-foreground [animation:pipeline-arrive_900ms_ease-out]"
       key={id}
     >
       {children}
-    </div>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string | number }) {
-  return (
-    <span className="flex justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="tabular-nums">{value}</span>
-    </span>
+    </p>
   )
 }
 
