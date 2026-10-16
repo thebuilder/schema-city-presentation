@@ -3,6 +3,7 @@ import "server-only"
 import type { SlideDefinition } from "@thebuilder/deckard-core"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
+import { Ladder } from "@/deck/parts/ladder"
 import { Layout } from "@/deck/parts/layout"
 import { Legend } from "@/deck/parts/legend"
 import { Live } from "@/deck/parts/live"
@@ -70,6 +71,17 @@ export const slides: SlideDefinition[] = [
     layout: "fullscreen",
     stepCount: 3,
     body: <UnixSystem />,
+  },
+  {
+    slug: "ladder",
+    title: "The ladder",
+    notes:
+      "5:15, 1 minute. One word per rung and let the room laugh at the city. Same content model each time, only the interface changes.",
+    layout: "fullscreen",
+    header: "hidden",
+    footer: "hidden",
+    stepCount: 4,
+    body: <Ladder />,
   },
   {
     slug: "morph",
