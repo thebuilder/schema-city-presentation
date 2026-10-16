@@ -10,7 +10,7 @@ export const WALL_STEPS = 2
 
 export function WallWidget({
   graph = demoGraph,
-  question = "What breaks if you change SEO Composition?",
+  question = "What does a change to SEO Composition reach?",
   step,
 }: {
   graph?: SchemaGraph

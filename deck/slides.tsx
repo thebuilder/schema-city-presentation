@@ -55,7 +55,7 @@ export const slides: SlideDefinition[] = [
     slug: "the-wall",
     title: "The wall",
     notes:
-      "1:45, 2 minutes. The question the whole talk answers: what breaks if I change SEO Composition? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
+      "1:45, 2 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
     layout: "fullscreen",
     stepCount: 2,
     header: "hidden",
@@ -110,7 +110,7 @@ export const slides: SlideDefinition[] = [
     slug: "close",
     title: "Go look at it",
     notes:
-      "22:45. Back to the wall: what breaks if I change SEO Composition? Now the room knows. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "22:45. Back to the wall: what does a change to SEO Composition reach? Now the room knows. What it cannot see yet is your code, and that is the open question to hand them. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     background: "closing",
     body: <Close />,
   },
