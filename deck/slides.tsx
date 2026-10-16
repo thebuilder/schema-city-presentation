@@ -53,24 +53,24 @@ export const slides: SlideDefinition[] = [
     body: <Whoami />,
   },
   {
+    slug: "unix-system",
+    title: "I know this",
+    notes:
+      "1:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. Then the turn: here is how we read our content model today.",
+    layout: "fullscreen",
+    stepCount: 3,
+    body: <UnixSystem />,
+  },
+  {
     slug: "the-wall",
     title: "The wall",
     notes:
-      "1:45, 2 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
+      "3:15, 2 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
     layout: "fullscreen",
     stepCount: 2,
     header: "hidden",
     footer: "hidden",
     body: <TheWall />,
-  },
-  {
-    slug: "unix-system",
-    title: "I know this",
-    notes:
-      "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer.",
-    layout: "fullscreen",
-    stepCount: 3,
-    body: <UnixSystem />,
   },
   {
     slug: "ladder",
@@ -87,7 +87,7 @@ export const slides: SlideDefinition[] = [
     slug: "morph",
     title: "Same data",
     notes:
-      "5:15, 2 minutes. The wall from the start, same rows, becomes a city. Nothing written on screen. The data did not change, the interface did.",
+      "6:15, 2 minutes. The wall from the start, same rows, becomes a city. Nothing written on screen. The data did not change, the interface did.",
     layout: "fullscreen",
     background: "statement",
     stepCount: 2,
@@ -99,7 +99,7 @@ export const slides: SlideDefinition[] = [
     slug: "legend",
     title: "How to read it",
     notes:
-      "7:15, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces.",
+      "8:15, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces.",
     stepCount: 6,
     body: <Legend />,
   },
@@ -107,22 +107,15 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Live",
     notes:
-      "8:15, 13 minutes. Switch to the backoffice. Four questions the content tree cannot answer. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the wall. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
+      "9:15, 13 minutes. Switch to the backoffice. Four questions the content tree cannot answer. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the wall. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
     background: "breaker",
     body: <Live />,
-  },
-  {
-    slug: "pipeline",
-    title: "Pipeline",
-    notes:
-      "21:15, 1.5 minutes. One slide on how it is built. Walk the blocks left to right: Umbraco, the graph API, the layout, the scene. Layout and wireframe are in backup if someone asks.",
-    body: <Pipeline />,
   },
   {
     slug: "close",
     title: "Go look at it",
     notes:
-      "22:45. Back to the wall: what does a change to SEO Composition reach? Now the room knows. What it cannot see yet is your code, and that is the open question to hand them. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "22:15. Back to the wall: what does a change to SEO Composition reach? Now the room knows. What it cannot see yet is your code, and that is the open question to hand them. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     background: "closing",
     body: <Close />,
   },
@@ -161,6 +154,13 @@ export const slides: SlideDefinition[] = [
         shows="Snapshot comparison, captured from the demo."
       />
     ),
+  },
+  {
+    slug: "pipeline",
+    title: "Backup: pipeline",
+    notes:
+      "Backup, if someone asks how it is built. Walk the blocks left to right: Umbraco, the graph API, the layout, the scene. Layout and wireframe are in backup if someone asks.",
+    body: <Pipeline />,
   },
   {
     slug: "layout",

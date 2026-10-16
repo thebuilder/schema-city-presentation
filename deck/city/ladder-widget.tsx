@@ -283,27 +283,76 @@ function GraphRung({
       step += 1
     }
 
-    const draw = () => {
-      // Types with no links get pushed far out, so the frame fits the bulk of
-      // the graph and pins the strays to its edge instead of shrinking the rest.
-      const fit = (values: Float64Array) => {
-        const sorted = Array.from(values).sort((p, q) => p - q)
-        const at = (share: number) =>
-          sorted[Math.min(n - 1, Math.floor(share * (n - 1)))]
-        return [at(0.03), at(0.97)] as const
+    // The whole settle runs up front and plays back. Fitting the frame to the
+    // live layout rescaled the view every frame, and the raw spring steps
+    // overshoot near rest, so both read as jitter on a projector.
+    const frames: Float64Array[] = []
+    const record = () => {
+      const snapshot = new Float64Array(n * 2)
+      snapshot.set(x)
+      snapshot.set(y, n)
+      frames.push(snapshot)
+    }
+    record()
+    while (step < SETTLE_STEPS) {
+      for (let s = 0; s < STEPS_PER_FRAME && step < SETTLE_STEPS; s++) tick()
+      record()
+    }
+    // Each spring step overshoots and the next pulls back, so the raw frames
+    // flicker. A moving average over the recording keeps the drift and drops
+    // the flicker.
+    const SMOOTH = 8
+    const smoothed = frames.map((_, f) => {
+      const from = Math.max(0, f - SMOOTH)
+      const to = Math.min(frames.length - 1, f + SMOOTH)
+      const mean = new Float64Array(n * 2)
+      for (let g = from; g <= to; g++) {
+        for (let v = 0; v < n * 2; v++) mean[v] += frames[g][v]
       }
-      const [minX, maxX] = fit(x)
-      const [minY, maxY] = fit(y)
-      const scale = Math.min(
-        (VIEW.width * 0.9) / Math.max(1, maxX - minX),
-        (VIEW.height * 0.9) / Math.max(1, maxY - minY)
-      )
-      const clamp = (value: number, size: number) =>
-        Math.min(size - 12, Math.max(12, value))
+      for (let v = 0; v < n * 2; v++) mean[v] /= to - from + 1
+      return mean
+    })
+
+    // Types with no links get pushed far out, so the frame fits the bulk of the
+    // settled graph and pins the strays to its edge instead of shrinking the rest.
+    const fit = (values: Float64Array) => {
+      const sorted = Array.from(values).sort((p, q) => p - q)
+      const at = (share: number) =>
+        sorted[Math.min(n - 1, Math.floor(share * (n - 1)))]
+      return [at(0.03), at(0.97)] as const
+    }
+    const [minX, maxX] = fit(x)
+    const [minY, maxY] = fit(y)
+    const scale = Math.min(
+      (VIEW.width * 0.9) / Math.max(1, maxX - minX),
+      (VIEW.height * 0.9) / Math.max(1, maxY - minY)
+    )
+    const clamp = (value: number, size: number) =>
+      Math.min(size - 12, Math.max(12, value))
+
+    // What is on screen eases toward the recorded frame, which damps the
+    // spring layout's back and forth without changing where it ends up.
+    const shownX = Float64Array.from(smoothed[0].subarray(0, n))
+    const shownY = Float64Array.from(smoothed[0].subarray(n))
+    const EASE = 0.18
+    let played = 0
+
+    const draw = () => {
+      const target = smoothed[Math.min(played, smoothed.length - 1)]
+      for (let i = 0; i < n; i++) {
+        shownX[i] += (target[i] - shownX[i]) * EASE
+        shownY[i] += (target[n + i] - shownY[i]) * EASE
+      }
       const px = (i: number) =>
-        clamp(VIEW.width / 2 + (x[i] - (minX + maxX) / 2) * scale, VIEW.width)
+        clamp(
+          VIEW.width / 2 + (shownX[i] - (minX + maxX) / 2) * scale,
+          VIEW.width
+        )
       const py = (i: number) =>
-        clamp(VIEW.height / 2 + (y[i] - (minY + maxY) / 2) * scale, VIEW.height)
+        clamp(
+          VIEW.height / 2 + (shownY[i] - (minY + maxY) / 2) * scale,
+          VIEW.height
+        )
       circles.current.forEach((circle, i) => {
         circle?.setAttribute("cx", px(i).toFixed(1))
         circle?.setAttribute("cy", py(i).toFixed(1))
@@ -317,12 +366,12 @@ function GraphRung({
       })
     }
 
+    // A tail past the last frame lets the easing land.
+    const TAIL = 60
     const loop = () => {
-      for (let s = 0; s < STEPS_PER_FRAME && step < SETTLE_STEPS; s++) {
-        tick()
-      }
       draw()
-      if (step < SETTLE_STEPS) {
+      played += 1
+      if (played < smoothed.length + TAIL) {
         frame = requestAnimationFrame(loop)
       }
     }
