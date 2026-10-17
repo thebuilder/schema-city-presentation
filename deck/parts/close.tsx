@@ -69,7 +69,7 @@ export function Close() {
           <p className="text-[#86fadd]">
             dotnet add package TheBuilder.SchemaCity
           </p>
-          <p>github.com/thebuilder/umbraco-schema-city</p>
+          <p>marketplace.umbraco.com/package/thebuilder.schemacity</p>
           <p>umbraco.thebuilder.dk</p>
         </div>
       </div>
