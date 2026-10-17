@@ -186,6 +186,7 @@ export const slides: SlideDefinition[] = [
   },
   {
     slug: "backup-impact",
+    counted: false,
     title: "Backup: impact",
     notes:
       "Backup. A change to SEO Composition reaches 37 types and 188 content items. Adding seoTitle collides on Dup Alias Page.",
@@ -198,6 +199,7 @@ export const slides: SlideDefinition[] = [
   },
   {
     slug: "backup-findings",
+    counted: false,
     title: "Backup: findings",
     notes:
       "Backup. Findings, grouped by kind, breakages first. Each row says what it is about and what to do next.",
@@ -210,6 +212,7 @@ export const slides: SlideDefinition[] = [
   },
   {
     slug: "backup-snapshot",
+    counted: false,
     title: "Backup: snapshot",
     notes:
       "Backup. Compare against a snapshot from before four planned edits: 4 causes, 48 side effects, 1 unplanned.",
@@ -222,6 +225,7 @@ export const slides: SlideDefinition[] = [
   },
   {
     slug: "pipeline",
+    counted: false,
     title: "Backup: pipeline",
     notes:
       "Backup, if someone asks how it is built. Walk the blocks left to right: Umbraco, the graph API, the layout, the scene. Layout and wireframe are in backup if someone asks.",
@@ -229,6 +233,7 @@ export const slides: SlideDefinition[] = [
   },
   {
     slug: "layout",
+    counted: false,
     title: "Backup: layout",
     notes:
       "Backup. Layout is the hard part. Show one decision it makes.",
@@ -237,6 +242,7 @@ export const slides: SlideDefinition[] = [
   },
   {
     slug: "wireframe",
+    counted: false,
     title: "Backup: wireframe",
     notes:
       "Backup. Why it stays fast with 200 document types. Every building is one instanced mesh, and the glow is patched into that mesh's fragment shader, so there is no post-processing pass.",
