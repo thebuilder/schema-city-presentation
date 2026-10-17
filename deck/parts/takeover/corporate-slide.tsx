@@ -1,4 +1,5 @@
 import { useId } from "react"
+import { kmdLogo } from "@/deck/parts/takeover/kmd-logo"
 
 /*
  * The fake-out. Every colour and face in here is off-theme on purpose: this is
@@ -21,6 +22,9 @@ const agenda = [
   "Key Takeaways",
   "Q&A",
 ]
+
+const logoHeight = 108
+const logoWidth = (kmdLogo.width / kmdLogo.height) * logoHeight
 
 export const corporateSlideTitle =
   "Schema City: A Structured Approach to Content Model Governance"
@@ -102,31 +106,13 @@ export function CorporateSlide() {
         fillOpacity="0.1"
       />
 
-      {/* An unfilled logo placeholder, the clearest sign nobody owns this file. */}
-      <g transform="translate(120 96)">
-        <rect
-          fill="none"
-          height="88"
-          rx="6"
-          stroke="#ffffff"
-          strokeDasharray="10 8"
-          strokeOpacity="0.7"
-          strokeWidth="3"
-          width="300"
-        />
-        <text
-          fill="#ffffff"
-          fillOpacity="0.8"
-          fontFamily={corporateFont}
-          fontSize="26"
-          letterSpacing="3"
-          textAnchor="middle"
-          x="150"
-          y="54"
-        >
-          YOUR LOGO HERE
-        </text>
-      </g>
+      <image
+        height={logoHeight}
+        href={kmdLogo.src}
+        width={logoWidth}
+        x="120"
+        y="96"
+      />
 
       <g fill="#ffffff" fontFamily={corporateFont}>
         <text fontSize="96" fontWeight="700" x="116" y="398">

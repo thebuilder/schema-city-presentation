@@ -11,6 +11,7 @@ import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
 import { Morph } from "@/deck/parts/morph"
 import { Pipeline } from "@/deck/parts/pipeline"
+import { Place } from "@/deck/parts/place"
 import { Placeholder } from "@/deck/parts/placeholder"
 import { Takeover } from "@/deck/parts/takeover"
 import { TheWall } from "@/deck/parts/the-wall"
@@ -168,14 +169,15 @@ export const slides: SlideDefinition[] = [
       "23:25, 15 seconds. Pause before it. This is the line people take home.",
     header: "hidden",
     footer: "hidden",
-    background: "accent",
-    body: <Statement text="Now it's a place." />,
+    layout: "fullscreen",
+    background: "none",
+    body: <Place text="Now it's a place." />,
   },
   {
     slug: "close",
-    title: "Go look at it",
+    title: "Thank you",
     notes:
-      "23:40. Read the line, then the install line. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "23:40. Point at the marketplace link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",

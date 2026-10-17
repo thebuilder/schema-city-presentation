@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useStill } from "@/deck/parts/beats"
+import { Words } from "@/deck/parts/line"
+import styles from "@/deck/parts/line.module.css"
 import type { TerrainWorldOptions } from "@/deck/parts/terrain/world"
 
 /*
@@ -17,9 +19,24 @@ import type { TerrainWorldOptions } from "@/deck/parts/terrain/world"
 // be drawn large.
 const planet: TerrainWorldOptions["planet"] = { size: 620, x: 1440, y: 330 }
 
+// The words wait for the screen to finish powering on (1.4s in world.ts), so
+// they land on the lit world rather than in the dark.
+const AFTER_POWER_ON = 1300
+// The links follow once both words of the line have landed.
+const LINKS_AT = AFTER_POWER_ON + 700
+const LINE_GAP = 260
+
+const links = [
+  "thebuilder.dk",
+  "marketplace.umbraco.com/package/thebuilder.schemacity",
+]
+
 export function Close() {
   const host = useRef<HTMLDivElement>(null)
   const still = useStill()
+  // Counted from the world existing, not from the slide mounting, because the
+  // world is imported first and the power-on starts only once it is built.
+  const [lit, setLit] = useState(false)
 
   useEffect(() => {
     const element = host.current
@@ -36,9 +53,10 @@ export function Close() {
         }
         const world = createTerrainWorld(element, { planet, still })
         teardown = world.dispose
+        setLit(true)
       })
       // Without WebGL the slide keeps its words on the plain background.
-      .catch(() => undefined)
+      .catch(() => setLit(true))
 
     return () => {
       cancelled = true
@@ -54,25 +72,24 @@ export function Close() {
         ref={host}
       />
 
-      <div className="absolute top-[22rem] left-[var(--slide-padding-inline)] flex flex-col gap-10">
-        {/* The setup at heading size, so the full line stays clear of the
-            planet and the instruction is the biggest thing on the slide. */}
-        <div className="flex flex-col gap-4">
-          <p className="text-[length:var(--slide-heading-size)] text-[#87a39d] leading-none">
-            Your schema is a city.
-          </p>
+      {lit || still ? (
+        <div className="absolute top-[24rem] left-[var(--slide-padding-inline)] flex flex-col gap-12">
           <h1 className="text-[length:var(--slide-title-size)] text-[#d9ffef] leading-none">
-            Go look at it.
+            <Words delay={still ? 0 : AFTER_POWER_ON} text="Thank you" />
           </h1>
+          <div className="flex flex-col gap-3 font-[family-name:var(--slide-font-mono)] text-[length:var(--slide-support-size)] text-[#87a39d]">
+            {links.map((line, index) => (
+              <p
+                className={`${still ? styles.still : styles.word} ${index === 0 ? "text-[#86fadd]" : ""}`}
+                key={line}
+                style={{ animationDelay: `${LINKS_AT + index * LINE_GAP}ms` }}
+              >
+                {line}
+              </p>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-3 font-[family-name:var(--slide-font-mono)] text-[length:var(--slide-support-size)] text-[#87a39d]">
-          <p className="text-[#86fadd]">
-            dotnet add package TheBuilder.SchemaCity
-          </p>
-          <p>marketplace.umbraco.com/package/thebuilder.schemacity</p>
-          <p>umbraco.thebuilder.dk</p>
-        </div>
-      </div>
+      ) : null}
     </section>
   )
 }
