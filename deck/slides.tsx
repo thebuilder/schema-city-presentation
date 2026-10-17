@@ -1,11 +1,13 @@
 import "server-only"
 
 import type { SlideDefinition } from "@thebuilder/deckard-core"
+import { BackofficeGrid } from "@/deck/parts/backoffice-grid"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
 import { Ladder } from "@/deck/parts/ladder"
 import { Layout } from "@/deck/parts/layout"
 import { Legend } from "@/deck/parts/legend"
+import { Statement, Thought } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
 import { Morph } from "@/deck/parts/morph"
 import { Pipeline } from "@/deck/parts/pipeline"
@@ -19,7 +21,8 @@ import { Wireframe } from "@/deck/parts/wireframe"
 /*
  * The order and the speaker notes live here. Each visual lives in its own file
  * under deck/parts/, so the slides can be built in parallel without two people
- * editing the same lines. Timings add up to 25 minutes before questions.
+ * editing the same lines. Timings add up to 25 minutes before questions. Most slides are one line, so
+ * nearly all of the clock goes to the scenes and the demo.
  */
 export const slides: SlideDefinition[] = [
   {
@@ -48,24 +51,87 @@ export const slides: SlideDefinition[] = [
     slug: "whoami",
     title: "whoami",
     notes:
-      "0:45, 1 minute. Who you are. Schema City is one of a growing set of Umbraco packages at umbraco.thebuilder.dk.",
+      "0:45, 1 minute. Short. Who you are. Schema City is one of a growing set of Umbraco packages at umbraco.thebuilder.dk.",
     stepCount: 3,
     body: <Whoami />,
+  },
+  {
+    slug: "one-field",
+    title: "One field",
+    notes:
+      "1:45, 15 seconds. The room's own voice. Say it like you said it on Monday, and let them recognise themselves.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Thought text="I'll just add one field." />,
+  },
+  {
+    slug: "which-types",
+    title: "Which types",
+    notes:
+      "2:00, 15 seconds. Still casual. A fair question.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Thought text="Which types use this composition?" />,
+  },
+  {
+    slug: "expand",
+    title: "Expand",
+    notes:
+      "2:15, 15 seconds. Dry delivery gets the laugh. One beat between each expand.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Thought text="Settings. Document Types. Expand. Expand. Expand." />,
+  },
+  {
+    slug: "saved",
+    title: "Saved",
+    notes:
+      "2:30, 10 seconds. Brutally short. Say it and move.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Thought text="Saved." />,
+  },
+  {
+    slug: "blog",
+    title: "The blog",
+    notes:
+      "2:40, 20 seconds. The only heavy slide. Say it, then pause until it is uncomfortable.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Thought text="Why is the blog broken?" />,
+  },
+  {
+    slug: "backoffice",
+    title: "How we see it",
+    notes:
+      "3:00, 45 seconds. Let the screens sit. They will recognise every one. The line lands on its own a beat later, read it once.",
+    header: "hidden",
+    footer: "hidden",
+    body: <BackofficeGrid />,
   },
   {
     slug: "unix-system",
     title: "I know this",
     notes:
-      "1:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. Then the turn: here is how we read our content model today.",
+      "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. The line is on screen, so let it land before you say anything.",
     layout: "fullscreen",
     stepCount: 3,
     body: <UnixSystem />,
   },
   {
+    slug: "a-place",
+    title: "A place",
+    notes:
+      "5:15, 20 seconds. Calm, after the laugh. This is the idea the rest of the talk borrows.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Statement text="A filesystem you could read as a place." />,
+  },
+  {
     slug: "the-wall",
     title: "The wall",
     notes:
-      "3:15, 2 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
+      "5:35, 1.5 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
     layout: "fullscreen",
     stepCount: 2,
     header: "hidden",
@@ -76,7 +142,7 @@ export const slides: SlideDefinition[] = [
     slug: "ladder",
     title: "The ladder",
     notes:
-      "5:15, 1 minute. One word per rung and let the room laugh at the city. Same content model each time, only the interface changes.",
+      "7:05, 1 minute. One word per rung and let the room laugh at the city. Same content model each time, only the interface changes.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -87,7 +153,7 @@ export const slides: SlideDefinition[] = [
     slug: "morph",
     title: "Same data",
     notes:
-      "6:15, 2 minutes. The wall from the start, same rows, becomes a city. Nothing written on screen. The data did not change, the interface did.",
+      "8:05, 1.5 minutes. The wall from before, same rows, becomes a city. Say only: same data. The data did not change, the interface did.",
     layout: "fullscreen",
     background: "statement",
     stepCount: 2,
@@ -96,26 +162,65 @@ export const slides: SlideDefinition[] = [
     body: <Morph />,
   },
   {
+    slug: "built-something",
+    title: "So I built something",
+    notes:
+      "9:35, 20 seconds. The bridge. Say it plainly, like it was the obvious thing to do.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Statement text="So I built something." />,
+  },
+  {
     slug: "legend",
     title: "How to read it",
     notes:
-      "8:15, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces.",
+      "9:55, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces. Cut it if the room already reads the city.",
     stepCount: 6,
     body: <Legend />,
   },
   {
     slug: "live",
-    title: "Live",
+    title: "Let's see it",
     notes:
-      "9:15, 13 minutes. Switch to the backoffice. Four questions the content tree cannot answer. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the wall. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
+      "10:55, 12 minutes. Say it, then click the button. Four questions the content tree cannot answer. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
+    header: "hidden",
+    footer: "hidden",
     background: "breaker",
     body: <Live />,
   },
   {
-    slug: "close",
-    title: "Thank you",
+    slug: "used-to-be",
+    title: "The tree",
     notes:
-      "22:15. Back to the wall: what does a change to SEO Composition reach? Now the room knows. What it cannot see yet is your code, and that is the open question to hand them. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "22:55, 15 seconds. Slow. Let the words land one by one.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Statement text="The interface used to be the tree." />,
+  },
+  {
+    slug: "folders",
+    title: "Folders",
+    notes:
+      "23:10, 15 seconds. Three beats, one per word.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Statement text="Folders. Lists. Checkboxes." />,
+  },
+  {
+    slug: "a-place-now",
+    title: "Now it's a place",
+    notes:
+      "23:25, 15 seconds. Pause before it. This is the line people take home.",
+    header: "hidden",
+    footer: "hidden",
+    background: "accent",
+    body: <Statement text="Now it's a place." />,
+  },
+  {
+    slug: "close",
+    title: "Go look at it",
+    notes:
+      "23:40. Read the line, then the install line. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",

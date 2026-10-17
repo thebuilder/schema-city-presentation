@@ -5,7 +5,7 @@ import { useStill } from "@/deck/parts/beats"
 import type { TerrainWorldOptions } from "@/deck/parts/terrain/world"
 
 /*
- * The thank-you slide flies the terrain from thebuilder.dk, with the site's
+ * The closing slide flies the terrain from thebuilder.dk, with the site's
  * ringed planet standing in as an icon across from the words. The world is loaded
  * when the slide mounts, so three stays out of every other slide's bundle.
  *
@@ -55,9 +55,16 @@ export function Close() {
       />
 
       <div className="absolute top-[22rem] left-[var(--slide-padding-inline)] flex flex-col gap-10">
-        <h1 className="text-[length:var(--slide-title-size)] text-[#d9ffef] leading-none">
-          Thank you
-        </h1>
+        {/* The setup at heading size, so the full line stays clear of the
+            planet and the instruction is the biggest thing on the slide. */}
+        <div className="flex flex-col gap-4">
+          <p className="text-[length:var(--slide-heading-size)] text-[#87a39d] leading-none">
+            Your schema is a city.
+          </p>
+          <h1 className="text-[length:var(--slide-title-size)] text-[#d9ffef] leading-none">
+            Go look at it.
+          </h1>
+        </div>
         <div className="flex flex-col gap-3 font-[family-name:var(--slide-font-mono)] text-[length:var(--slide-support-size)] text-[#87a39d]">
           <p className="text-[#86fadd]">
             dotnet add package TheBuilder.SchemaCity
