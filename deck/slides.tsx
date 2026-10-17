@@ -7,7 +7,7 @@ import { FakeOut } from "@/deck/parts/fake-out"
 import { Ladder } from "@/deck/parts/ladder"
 import { Layout } from "@/deck/parts/layout"
 import { Legend } from "@/deck/parts/legend"
-import { Statement, Thought } from "@/deck/parts/line"
+import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
 import { Morph } from "@/deck/parts/morph"
 import { Pipeline } from "@/deck/parts/pipeline"
@@ -56,55 +56,10 @@ export const slides: SlideDefinition[] = [
     body: <Whoami />,
   },
   {
-    slug: "one-field",
-    title: "One field",
-    notes:
-      "1:45, 15 seconds. The room's own voice. Say it like you said it on Monday, and let them recognise themselves.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Thought text="I'll just add one field." />,
-  },
-  {
-    slug: "which-types",
-    title: "Which types",
-    notes:
-      "2:00, 15 seconds. Still casual. A fair question.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Thought text="Which types use this composition?" />,
-  },
-  {
-    slug: "expand",
-    title: "Expand",
-    notes:
-      "2:15, 15 seconds. Dry delivery gets the laugh. One beat between each expand.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Thought text="Settings. Document Types. Expand. Expand. Expand." />,
-  },
-  {
-    slug: "saved",
-    title: "Saved",
-    notes:
-      "2:30, 10 seconds. Brutally short. Say it and move.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Thought text="Saved." />,
-  },
-  {
-    slug: "blog",
-    title: "The blog",
-    notes:
-      "2:40, 20 seconds. The only heavy slide. Say it, then pause until it is uncomfortable.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Thought text="Why is the blog broken?" />,
-  },
-  {
     slug: "backoffice",
     title: "How we see it",
     notes:
-      "3:00, 45 seconds. Let the screens sit. They will recognise every one. The line lands on its own a beat later, read it once.",
+      "1:45, 1 minute. Let the screens sit. They will recognise every one. The line lands on its own a beat later, read it once.",
     header: "hidden",
     footer: "hidden",
     body: <BackofficeGrid />,
@@ -113,7 +68,7 @@ export const slides: SlideDefinition[] = [
     slug: "unix-system",
     title: "I know this",
     notes:
-      "3:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. The line is on screen, so let it land before you say anything.",
+      "2:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. The line is on screen, so let it land before you say anything.",
     layout: "fullscreen",
     stepCount: 3,
     body: <UnixSystem />,
@@ -122,7 +77,7 @@ export const slides: SlideDefinition[] = [
     slug: "a-place",
     title: "A place",
     notes:
-      "5:15, 20 seconds. Calm, after the laugh. This is the idea the rest of the talk borrows.",
+      "4:15, 20 seconds. Calm, after the laugh. This is the idea the rest of the talk borrows.",
     header: "hidden",
     footer: "hidden",
     body: <Statement text="A filesystem you could read as a place." />,
@@ -131,7 +86,7 @@ export const slides: SlideDefinition[] = [
     slug: "the-wall",
     title: "The wall",
     notes:
-      "5:35, 1.5 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
+      "4:35, 1.5 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
     layout: "fullscreen",
     stepCount: 2,
     header: "hidden",
@@ -142,7 +97,7 @@ export const slides: SlideDefinition[] = [
     slug: "ladder",
     title: "The ladder",
     notes:
-      "7:05, 1 minute. One word per rung and let the room laugh at the city. Same content model each time, only the interface changes.",
+      "6:05, 1 minute. One word per rung and let the room laugh at the city. Same content model each time, only the interface changes.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -153,7 +108,7 @@ export const slides: SlideDefinition[] = [
     slug: "morph",
     title: "Same data",
     notes:
-      "8:05, 1.5 minutes. The wall from before, same rows, becomes a city. Say only: same data. The data did not change, the interface did.",
+      "7:05, 1.5 minutes. The wall from before, same rows, becomes a city. Say only: same data. The data did not change, the interface did.",
     layout: "fullscreen",
     background: "statement",
     stepCount: 2,
@@ -165,7 +120,7 @@ export const slides: SlideDefinition[] = [
     slug: "built-something",
     title: "So I built something",
     notes:
-      "9:35, 20 seconds. The bridge. Say it plainly, like it was the obvious thing to do.",
+      "8:35, 20 seconds. The bridge. Say it plainly, like it was the obvious thing to do.",
     header: "hidden",
     footer: "hidden",
     body: <Statement text="So I built something." />,
@@ -174,7 +129,7 @@ export const slides: SlideDefinition[] = [
     slug: "legend",
     title: "How to read it",
     notes:
-      "9:55, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces. Cut it if the room already reads the city.",
+      "8:55, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces. Cut it if the room already reads the city.",
     stepCount: 6,
     body: <Legend />,
   },
@@ -182,7 +137,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "10:55, 12 minutes. Say it, then click the button. Four questions the content tree cannot answer. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
+      "9:55, 13 minutes. Say it, then click the button. Four questions the content tree cannot answer. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
