@@ -6,15 +6,16 @@ import type { TerrainWorldOptions } from "@/deck/parts/terrain/world"
 
 /*
  * The thank-you slide flies the terrain from thebuilder.dk, with the site's
- * ringed planet standing in as an icon above the words. The world is loaded
+ * ringed planet standing in as an icon across from the words. The world is loaded
  * when the slide mounts, so three stays out of every other slide's bundle.
  *
  * The colours are the site's and not the theme's tokens, because the world
  * under the words is dark in both colour modes.
  */
 
-// In canvas pixels, so the planet lines up with the text column below it.
-const planet: TerrainWorldOptions["planet"] = { size: 300, x: 246, y: 200 }
+// In canvas pixels. Right of the sun and clear of the text column, so it can
+// be drawn large.
+const planet: TerrainWorldOptions["planet"] = { size: 620, x: 1440, y: 330 }
 
 export function Close() {
   const host = useRef<HTMLDivElement>(null)
