@@ -28,7 +28,7 @@ const LINE_GAP = 260
 
 const links = [
   "thebuilder.dk",
-  "marketplace.umbraco.com/package/thebuilder.schemacity",
+  "github.com/thebuilder/umbraco-schema-city",
 ]
 
 export function Close() {
