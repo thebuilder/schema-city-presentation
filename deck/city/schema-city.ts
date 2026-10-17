@@ -36,10 +36,33 @@ export {
 } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/app/scene/buildings"
 export type { BuildingPalette } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/app/scene/building-paint"
 export type {
+  PropertyGroup,
+  SchemaDataType,
   SchemaEdge,
   SchemaGraph,
   SchemaNode,
+  SchemaProperty,
+  UsageReport,
 } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/model/types"
+export {
+  FINDING_LABEL,
+  type Finding,
+  findFindings,
+  findingGroups,
+} from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/model/findings"
+export {
+  aliasImpact,
+  impactOf,
+  pathWords,
+  totalsLine,
+} from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/model/impact"
+export { compareSchemas } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/model/snapshots"
+export {
+  type ChangeKind,
+  causeLine,
+  changeSummary,
+  groupChanges,
+} from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/model/changes"
 
 /** Where the client lives inside the submodule, for code read off disk. */
 export const CLIENT_DIR = "vendor/umbraco-schema-city/src/SchemaCity/Client"

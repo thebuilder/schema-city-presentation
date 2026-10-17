@@ -1,6 +1,11 @@
 import "server-only"
 
 import type { SlideDefinition } from "@thebuilder/deckard-core"
+import {
+  BROKEN_STEPS,
+  CHANGES_STEPS,
+  REACH_STEPS,
+} from "@/deck/examples/park-results"
 import { BackofficeGrid } from "@/deck/parts/backoffice-grid"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
@@ -10,6 +15,12 @@ import { Legend } from "@/deck/parts/legend"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
 import { Morph } from "@/deck/parts/morph"
+import {
+  ParkBroken,
+  ParkChanges,
+  ParkIntro,
+  ParkReach,
+} from "@/deck/parts/park-examples"
 import { Pipeline } from "@/deck/parts/pipeline"
 import { Place } from "@/deck/parts/place"
 import { Placeholder } from "@/deck/parts/placeholder"
@@ -143,6 +154,53 @@ export const slides: SlideDefinition[] = [
     footer: "hidden",
     background: "breaker",
     body: <Live />,
+  },
+  {
+    slug: "park",
+    title: "A messier park",
+    notes:
+      "After the demo, 20 seconds. Get the laugh. ct-baseline is tidy, so this is a schema built to go wrong: Jurassic Park's website, 39 types, every problem planted on purpose. Everything on the next three slides is Schema City's own checks run over it, nothing typed in by hand.",
+    layout: "fullscreen",
+    header: "hidden",
+    footer: "hidden",
+    background: "none",
+    body: <ParkIntro />,
+  },
+  {
+    slug: "park-broken",
+    title: "What's broken?",
+    notes:
+      "1.5 minutes. The findings, problems only, worst first. Click through three. A block editor still lists Mr. DNA's video after the Element Type was deleted, and content still holds 12 of those blocks. T. rex Paddock has feedingTime twice, a date picker of its own and a textstring from Feeding Schedule, and one value has to lose. Site B: the island lost its root flag, so the lab and the hatchery under it can never be created again, but their content is still there. Each row is Schema City's own sentence.",
+    layout: "fullscreen",
+    header: "hidden",
+    footer: "hidden",
+    background: "none",
+    stepCount: BROKEN_STEPS,
+    body: <ParkBroken />,
+  },
+  {
+    slug: "park-reach",
+    title: "What does it reach?",
+    notes:
+      "1.5 minutes. The question from the wall, asked of the park. Umbraco lists the three types that compose Paddock Security directly. Schema City follows the inheritance too, so every paddock, and the hatchery nobody can reach any more. Click: someone wants to add an alarm property. Raptor Pen already has one, Muldoon's own. You find out here, before the save fails.",
+    layout: "fullscreen",
+    header: "hidden",
+    footer: "hidden",
+    background: "none",
+    stepCount: REACH_STEPS,
+    body: <ParkReach />,
+  },
+  {
+    slug: "park-changes",
+    title: "What did my change do?",
+    notes:
+      "1 minute. A snapshot from before the release weekend against the park after it. Each edit is one cause with its side effects under it. Three were in the plan, so they are ticked. Click: the fourth was not. Park Systems lost its door locks, and nine types changed with it. Pause. Nedry.",
+    layout: "fullscreen",
+    header: "hidden",
+    footer: "hidden",
+    background: "none",
+    stepCount: CHANGES_STEPS,
+    body: <ParkChanges />,
   },
   {
     slug: "used-to-be",

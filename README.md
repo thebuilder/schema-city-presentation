@@ -17,6 +17,9 @@ window with the speaker notes.
 - `deck/parts/` holds one file per slide visual, so each can be built on its
   own. A slide that is not built yet renders a `Placeholder` describing what
   goes there.
+- `deck/examples/` holds the constructed examples after the demo: a Jurassic
+  Park schema with its problems planted on purpose, and the slides that run
+  Schema City's own checks over it.
 - `deck/theme/` is the theme. Read its `THEME.md` before changing a token.
 
 Before handing a change back, run `npx deckard validate`,

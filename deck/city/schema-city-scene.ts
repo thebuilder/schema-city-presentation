@@ -28,3 +28,8 @@ export {
   SKY_FRAGMENT_SHADER,
   SKY_VERTEX_SHADER,
 } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/app/scene/stage"
+export {
+  changeScale,
+  highlightScale,
+  type LensScale,
+} from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/app/scene/lens"
