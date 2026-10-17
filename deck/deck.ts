@@ -11,7 +11,7 @@ export const deck = defineDeck({
   },
   description: "Schema City at Umbraco Meetup DK, 22 October 2026.",
   footer: {
-    mode: "visible",
+    mode: "hidden",
   },
   header: {
     brand: "schema-city",

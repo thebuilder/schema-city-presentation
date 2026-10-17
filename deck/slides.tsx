@@ -113,10 +113,13 @@ export const slides: SlideDefinition[] = [
   },
   {
     slug: "close",
-    title: "Go look at it",
+    title: "Thank you",
     notes:
-      "22:15. Back to the wall: what does a change to SEO Composition reach? Now the room knows. What it cannot see yet is your code, and that is the open question to hand them. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
-    background: "closing",
+      "22:15. Back to the wall: what does a change to SEO Composition reach? Now the room knows. What it cannot see yet is your code, and that is the open question to hand them. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+    layout: "fullscreen",
+    background: "none",
+    header: "hidden",
+    footer: "hidden",
     body: <Close />,
   },
   {
