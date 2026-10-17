@@ -6,7 +6,7 @@
  * The path is spelled out under `@/` rather than through the `@schema-city/*`
  * alias, because `deckard validate` loads the deck with only `@/` mapped.
  */
-import medium from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/dev/fixtures/medium.json"
+import ctBaseline from "@/deck/city/ct-baseline.json"
 import type { SchemaGraph } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/model/types"
 
 export {
@@ -45,8 +45,10 @@ export type {
 export const CLIENT_DIR = "vendor/umbraco-schema-city/src/SchemaCity/Client"
 
 /**
- * The client's medium fixture, 86 Document Types exported from the seeded demo
- * site, as a default the client widgets can import directly. Swap in a
- * ct-baseline export by passing a different graph to each widget.
+ * The ct-baseline site the live demo opens, 32 Document Types as Schema City
+ * exported them on 17 Oct 2026. The wall, the ladder, the morph and the legend
+ * all default to it, so the city on the slides is the city the room sees in the
+ * backoffice a few minutes later. Re-export into ct-baseline.json if the site
+ * changes before the talk.
  */
-export const demoGraph = medium as unknown as SchemaGraph
+export const demoGraph = ctBaseline.graph as unknown as SchemaGraph

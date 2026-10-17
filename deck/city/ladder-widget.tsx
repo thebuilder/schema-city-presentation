@@ -9,6 +9,7 @@ import {
   CityRoads,
   CityWorld,
   useCity,
+  VIEW_DISTANCE,
 } from "@/deck/city/city-world"
 import { type CityPalette, useCityPalette } from "@/deck/city/palette"
 import { demoGraph, type SchemaGraph } from "@/deck/city/schema-city"
@@ -135,10 +136,23 @@ function treeLines(graph: SchemaGraph): TreeLine[] {
   return lines
 }
 
+/** Rows that fit under the label at the rung's type size. */
+const ROWS_PER_COLUMN = 27
+
+/**
+ * As few columns as hold every line, balanced by the browser, so 32 types read
+ * as two even lists instead of one full column and a stub.
+ */
+const columnsFor = (lines: number) =>
+  Math.min(4, Math.max(1, Math.ceil(lines / ROWS_PER_COLUMN)))
+
 function TreeRung({ graph }: { graph: SchemaGraph }) {
   const lines = useMemo(() => treeLines(graph), [graph])
   return (
-    <div className="h-full columns-4 gap-12 px-16 pt-28 pb-12 font-[family-name:var(--slide-font-mono)] text-[length:calc(var(--slide-label-size)*0.95)] leading-[1.45] [column-fill:auto]">
+    <div
+      className="h-full gap-12 px-16 pt-28 pb-12 font-[family-name:var(--slide-font-mono)] text-[length:calc(var(--slide-label-size)*0.95)] leading-[1.45]"
+      style={{ columnCount: columnsFor(lines.length) }}
+    >
       {lines.map((line) => (
         <p className="truncate whitespace-pre" key={line.key}>
           <span className="text-muted-foreground/60">{line.guide}</span>
@@ -159,7 +173,10 @@ function ListRung({ graph }: { graph: SchemaGraph }) {
     [graph]
   )
   return (
-    <ul className="h-full columns-4 gap-12 px-16 pt-28 pb-12 font-[family-name:var(--slide-font-mono)] text-[length:calc(var(--slide-label-size)*0.95)] text-muted-foreground leading-[1.45] [column-fill:auto]">
+    <ul
+      className="h-full gap-12 px-16 pt-28 pb-12 font-[family-name:var(--slide-font-mono)] text-[length:calc(var(--slide-label-size)*0.95)] text-muted-foreground leading-[1.45]"
+      style={{ columnCount: columnsFor(names.length) }}
+    >
       {names.map((name, index) => (
         <li className="truncate" key={`${name}-${index}`}>
           {name}
@@ -465,7 +482,7 @@ function City({
     () =>
       new THREE.Vector3(0.2, 0.62, 1)
         .normalize()
-        .multiplyScalar(city.ground.span * 1.02),
+        .multiplyScalar(city.ground.span * VIEW_DISTANCE),
     [city.ground.span]
   )
 

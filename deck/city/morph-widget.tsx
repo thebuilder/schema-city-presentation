@@ -9,6 +9,7 @@ import {
   CityRoads,
   CityWorld,
   useCity,
+  VIEW_DISTANCE,
 } from "@/deck/city/city-world"
 import { type CityPalette, useCityPalette } from "@/deck/city/palette"
 import { SchemaTable, tableRows } from "@/deck/city/schema-table"
@@ -149,7 +150,7 @@ function Morph({
     () =>
       target
         .clone()
-        .add(new THREE.Vector3(0.2, 0.62, 1).normalize().multiplyScalar(city.ground.span * 1.02)),
+        .add(new THREE.Vector3(0.2, 0.62, 1).normalize().multiplyScalar(city.ground.span * VIEW_DISTANCE)),
     [target, city.ground.span]
   )
 

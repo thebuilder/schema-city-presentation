@@ -55,6 +55,13 @@ export const boardPalette = (palette: CityPalette): BoardPalette => ({
   mono: palette.mono,
 })
 
+/**
+ * How far the three-quarter camera sits from the ground's centre, in spans. The
+ * ct-baseline city is one small district beside a wide Elements board, and the
+ * board's near edge ran off the bottom of the frame any closer than this.
+ */
+export const VIEW_DISTANCE = 1.6
+
 /** Everything the package derives from a graph before anything is drawn. */
 export function useCity(graph: SchemaGraph) {
   return useMemo(() => {

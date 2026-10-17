@@ -419,7 +419,7 @@ function Lights() {
 
 export function LegendWidget({
   graph = demoGraph,
-  alias = "eventPage",
+  alias = "contentPage",
   step,
 }: {
   graph?: SchemaGraph
