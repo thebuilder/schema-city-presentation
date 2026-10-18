@@ -138,7 +138,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "9:55, 13 minutes. Say it, then click the button. Four questions the content tree cannot answer. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
+      "9:55, 9 minutes. Say it, then click the button. Four questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the other two, because the park slides after this go deeper on both. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
@@ -148,7 +148,7 @@ export const slides: SlideDefinition[] = [
     slug: "used-to-be",
     title: "The tree",
     notes:
-      "22:55, 15 seconds. Slow. Let the words land one by one.",
+      "23:15, 15 seconds. Slow. Let the words land one by one.",
     header: "hidden",
     footer: "hidden",
     body: <Statement text="The interface used to be the tree." />,
@@ -157,7 +157,7 @@ export const slides: SlideDefinition[] = [
     slug: "folders",
     title: "Folders",
     notes:
-      "23:10, 15 seconds. Three beats, one per word.",
+      "23:30, 15 seconds. Three beats, one per word.",
     header: "hidden",
     footer: "hidden",
     body: <Statement text="Folders. Lists. Checkboxes." />,
@@ -166,7 +166,7 @@ export const slides: SlideDefinition[] = [
     slug: "a-place-now",
     title: "Now it's a place",
     notes:
-      "23:25, 15 seconds. Pause before it. This is the line people take home.",
+      "23:45, 15 seconds. Pause before it. This is the line people take home.",
     header: "hidden",
     footer: "hidden",
     layout: "fullscreen",
@@ -177,7 +177,7 @@ export const slides: SlideDefinition[] = [
     slug: "close",
     title: "Thank you",
     notes:
-      "23:40. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "24:00. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",
