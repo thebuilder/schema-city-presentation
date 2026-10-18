@@ -140,7 +140,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "9:55, 9 minutes. Say it, then click the button. Four questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the other two, because the example slides after this go deeper. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
+      "9:55, 9 minutes. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
