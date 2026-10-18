@@ -170,7 +170,7 @@ export const slides: SlideDefinition[] = [
     slug: "park-broken",
     title: "What's broken?",
     notes:
-      "19:15, 1.5 minutes. The findings, problems only, worst first. Click through three. A block editor still lists Mr. DNA's video after the Element Type was deleted, and content still holds 12 of those blocks. T. rex Paddock has feedingTime twice, a date picker of its own and a textstring from Feeding Schedule, and one value has to lose. Site B: someone unticked Allow at root on the island. No new island can be made, and the lab and the hatchery live on under the one old node. Each row is Schema City's own sentence.",
+      "19:15, 1.5 minutes. The findings, problems only, worst first. Click through three. A block editor still lists Mr. DNA's video after the Element Type was deleted, and content still holds 12 of those blocks. Restaurant is invariant but composes Page Meta, which varies by culture, so every language shares one meta title. Site B: someone unticked Allow at root on the island. No new island can be made, and the lab and the hatchery live on under the one old node. Each row is Schema City's own sentence.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",

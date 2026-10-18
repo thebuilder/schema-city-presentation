@@ -48,7 +48,7 @@ export type BrokenExample = {
 /** The kinds the speaker stops on, each with the types that belong in its picture. */
 const WALK: { kind: Finding["kind"]; with?: Finding["kind"][]; say?: string }[] = [
   { kind: "brokenBlock" },
-  { kind: "duplicateAlias" },
+  { kind: "cultureMismatch" },
   // The lab's row, because it names the island the dead end is about.
   { kind: "unreachableChain", with: ["deadEnd"], say: "siteBLab" },
 ]

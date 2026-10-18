@@ -254,7 +254,8 @@ function types(version: ParkVersion): TypeSpec[] {
       name: "Restaurant",
       icon: "icon-coffee",
       folder: "Pages",
-      // Invariant, so the menu below has one value whatever the culture.
+      // Invariant, yet Page Meta varies by culture, so its title and description
+      // keep one value for every language.
       template: true,
       compose: ["pageMeta"],
       groups: [
@@ -263,7 +264,7 @@ function types(version: ParkVersion): TypeSpec[] {
           group: "Menu",
           props: [
             p("chef", "Chef", "text"),
-            p("menu", "Menu", "rte", { cultures: true }),
+            p("menu", "Menu", "rte"),
           ],
         },
       ],
@@ -364,8 +365,6 @@ function types(version: ParkVersion): TypeSpec[] {
     ]),
     paddockType("tyrannosaurusPaddock", "T. rex Paddock", [
       p("goatFeeder", "Goat feeder", "toggle"),
-      // Feeding Schedule brings a feedingTime too, as text.
-      p("feedingTime", "Feeding time", "date"),
     ]),
     paddockType("brachiosaurusPaddock", "Brachiosaurus Paddock", [p("treeHeight", "Tree height", "decimal")]),
     paddockType("triceratopsPaddock", "Triceratops Paddock", [p("vetNotes", "Vet notes", "rte")]),
