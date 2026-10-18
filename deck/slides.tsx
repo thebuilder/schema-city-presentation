@@ -159,7 +159,7 @@ export const slides: SlideDefinition[] = [
     slug: "park",
     title: "A messier park",
     notes:
-      "After the demo, 20 seconds. The callback to the fsn opener. ct-baseline is tidy, so this is a schema built to go wrong: Jurassic Park's website, 39 types, every problem planted on purpose. Every finding, path and count on the next three slides is Schema City's own, run over it.",
+      "18:55, 20 seconds. After the demo. The callback to the fsn opener. ct-baseline is tidy, so this is a schema built to go wrong: Jurassic Park's website, 39 types, every problem planted on purpose. Every finding, path and count on the next three slides is Schema City's own, run over it.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -170,7 +170,7 @@ export const slides: SlideDefinition[] = [
     slug: "park-broken",
     title: "What's broken?",
     notes:
-      "1.5 minutes. The findings, problems only, worst first. Click through three. A block editor still lists Mr. DNA's video after the Element Type was deleted, and content still holds 12 of those blocks. T. rex Paddock has feedingTime twice, a date picker of its own and a textstring from Feeding Schedule, and one value has to lose. Site B: someone unticked Allow at root on the island. No new island can be made, and the lab and the hatchery live on under the one old node. Each row is Schema City's own sentence.",
+      "19:15, 1.5 minutes. The findings, problems only, worst first. Click through three. A block editor still lists Mr. DNA's video after the Element Type was deleted, and content still holds 12 of those blocks. T. rex Paddock has feedingTime twice, a date picker of its own and a textstring from Feeding Schedule, and one value has to lose. Site B: someone unticked Allow at root on the island. No new island can be made, and the lab and the hatchery live on under the one old node. Each row is Schema City's own sentence.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -182,7 +182,7 @@ export const slides: SlideDefinition[] = [
     slug: "park-reach",
     title: "What does it reach?",
     notes:
-      "1.5 minutes. The question from the wall, asked of the park. Umbraco lists the three types that compose Paddock Security directly. Schema City follows the inheritance too, so every paddock that inherits Paddock comes along. Four of the twelve items sit in Site B. Click: someone wants to add an alarm property. Raptor Pen already has one, Muldoon's own. You find out here, before you build it.",
+      "20:45, 1.5 minutes. The question from the wall, asked of the park. Umbraco lists the three types that compose Paddock Security directly. Schema City follows the inheritance too, so every paddock that inherits Paddock comes along. Four of the twelve items sit in Site B. Click: someone wants to add an alarm property. Raptor Pen already has one, Muldoon's own. You find out here, before you build it.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -194,7 +194,7 @@ export const slides: SlideDefinition[] = [
     slug: "park-changes",
     title: "What did my change do?",
     notes:
-      "1 minute. A snapshot from before the release weekend against the park after it. Each edit is one cause with its side effects under it. Three were in the plan, so they are ticked. Click: the fourth was not. Park Systems lost its door locks, and nine types changed with it, their stored values gone too. The alarm went in as fenceAlarm, the clash from the last slide renamed. Pause. Nedry.",
+      "22:15, 1 minute. A snapshot from before the release weekend against the park after it. Each edit is one cause with its side effects under it. Three were in the plan, so they are ticked. Click: the fourth was not. Park Systems lost its door locks, and nine types changed with it, their stored values gone too. The alarm went in as fenceAlarm, the clash from the last slide renamed. Pause. Nedry.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
