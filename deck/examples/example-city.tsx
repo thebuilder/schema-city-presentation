@@ -25,7 +25,7 @@ import {
 import { useStill } from "@/deck/parts/beats"
 
 /*
- * The park as Schema City draws it, standing to the right of a slide's text. A
+ * The site as Schema City draws it, standing to the right of a slide's text. A
  * slide says what to light and the city paints it with the app's own means: a
  * highlight is the binary ramp "Show in city" uses, a focus is the fade the app
  * gives everything outside a neighbourhood, a selection is the signal frame, and

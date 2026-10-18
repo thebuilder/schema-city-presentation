@@ -9,21 +9,21 @@ import type {
 } from "@/deck/city/schema-city"
 
 /*
- * Jurassic Park's website, as InGen's agency might have built it, for the
- * examples that follow the live demo. ct-baseline is tidy, so this one is not:
- * every problem the slides point at is planted here on purpose, and the slides
- * find it by running Schema City's own checks over the graph this file builds.
+ * An ordinary company site in two languages, for the examples that follow the
+ * live demo. ct-baseline is tidy, so this one is not: every problem the slides
+ * point at is planted here on purpose, and the slides find it by running Schema
+ * City's own checks over the graph this file builds.
  *
  * The graph is written the way SchemaGraphBuilder.cs writes one. Composed
  * properties land on every type down the composition chain, attributed to the
  * type that declares them; block and picker properties put an edge on every type
  * that carries them; a parent type is both an `inherits` and a `composition` edge.
  *
- * `parkGraph("after")` is the same park after a release weekend: three edits
- * someone planned and one nobody did. The snapshot slide compares the two.
+ * `siteGraph("after")` is the same site after a release: three edits someone
+ * planned and one nobody did. The snapshot slide compares the two.
  */
 
-export type ParkVersion = "before" | "after"
+export type SiteVersion = "before" | "after"
 
 type Editor = { name: string; editor: string; ui: string }
 
@@ -86,25 +86,18 @@ const p = (
 const blocks = (name: string, ...targets: string[]): Pointing => ({ kind: "blocks", name, targets })
 const picker = (name: string, ...targets: string[]): Pointing => ({ kind: "picker", name, targets })
 
-/** Mr. DNA's video block. The Element Type was deleted; the exhibits still list it. */
-const MR_DNA = "missing:mrDnaVideo"
+/** The video block. Its Element Type was deleted; the page blocks still list it. */
+const VIDEO = "missing:videoEmbed"
 
-const PADDOCKS = [
-  "raptorPen",
-  "tyrannosaurusPaddock",
-  "brachiosaurusPaddock",
-  "triceratopsPaddock",
-  "dilophosaurusPaddock",
-  "gallimimusValley",
-]
+const LOCATIONS = ["store", "office", "warehouse", "showroom", "serviceCenter", "outlet"]
 
-function types(version: ParkVersion): TypeSpec[] {
+function types(version: SiteVersion): TypeSpec[] {
   const after = version === "after"
   return [
     // Compositions
     {
-      alias: "pageMeta",
-      name: "Page Meta",
+      alias: "seo",
+      name: "SEO",
       icon: "icon-search",
       folder: "Compositions",
       cultures: true,
@@ -121,75 +114,71 @@ function types(version: ParkVersion): TypeSpec[] {
       ],
     },
     {
-      alias: "paddockSecurity",
-      name: "Paddock Security",
-      icon: "icon-lock",
+      alias: "locationDetails",
+      name: "Location Details",
+      icon: "icon-map-location",
       folder: "Compositions",
       groups: [
         {
-          tab: "Security",
-          group: "Fence",
+          tab: "Location",
+          group: "Address",
           props: [
-            p("fenceVoltage", "Fence voltage", "number", { mandatory: true }),
-            p("gateStatus", "Gate status", "dropdown", { mandatory: true }),
-            p("containmentLevel", "Containment level", "dropdown"),
-            p("lastInspection", "Last inspection", "date"),
-            // Added over the weekend, under the name the alias check left free.
-            ...(after ? [p("fenceAlarm", "Fence alarm", "toggle")] : []),
+            p("address", "Address", "textarea", { mandatory: true }),
+            p("postcode", "Postcode", "text", { mandatory: true }),
+            p("city", "City", "text"),
+            p("mapLink", "Map link", "link"),
+            // Added in the release, under the name the alias check left free.
+            ...(after ? [p("contactPhone", "Phone", "text")] : []),
           ],
         },
       ],
     },
     {
-      alias: "parkSystems",
-      name: "Park Systems",
-      icon: "icon-power",
+      alias: "navigation",
+      name: "Navigation",
+      icon: "icon-navigation",
       folder: "Compositions",
       groups: [
         {
-          tab: "Systems",
-          group: "Power",
+          tab: "Settings",
+          group: "Navigation",
           props: [
-            p("powerGrid", "Power grid", "dropdown"),
+            p("menuTitle", "Menu title", "text"),
             // Nobody planned this one.
-            ...(after ? [] : [p("doorLocks", "Door locks", "toggle", { mandatory: true })]),
-            p("backupGenerator", "Backup generator", "toggle"),
+            ...(after ? [] : [p("umbracoNaviHide", "Hide from menu", "toggle")]),
+            p("sitemapPriority", "Sitemap priority", "dropdown"),
           ],
         },
       ],
     },
     {
-      alias: "speciesProfile",
-      name: "Species Profile",
-      icon: "icon-dna",
+      alias: "teamInfo",
+      name: "Team Info",
+      icon: "icon-users",
       folder: "Compositions",
       groups: [
         {
-          tab: "Species",
-          group: "Profile",
+          tab: "Team",
+          group: "Team",
           props: [
-            p("species", "Species", "text", { mandatory: true }),
-            p("period", "Period", "dropdown"),
-            p("diet", "Diet", "dropdown"),
-            p("heightMetres", "Height (m)", "decimal"),
-            p("dnaSource", "DNA source", "textarea"),
+            p("manager", "Manager", "text", { mandatory: true }),
+            p("teamSize", "Team size", "number"),
+            p("teamPhoto", "Team photo", "image"),
+            p("languages", "Languages spoken", "dropdown"),
           ],
         },
       ],
     },
     {
-      alias: "feedingSchedule",
-      name: "Feeding Schedule",
-      icon: "icon-food",
+      alias: "openingHours",
+      name: "Opening Hours",
+      icon: "icon-time",
       folder: "Compositions",
       groups: [
         {
-          tab: "Care",
-          group: "Feeding",
-          props: [
-            p("feedingTime", "Feeding time", "text"),
-            p("feedType", "Feed type", "dropdown"),
-          ],
+          tab: "Location",
+          group: "Hours",
+          props: [p("openingHours", "Opening hours", "textarea"), p("holidayHours", "Holiday hours", "textarea")],
         },
       ],
     },
@@ -197,18 +186,18 @@ function types(version: ParkVersion): TypeSpec[] {
     // The site
     {
       alias: "home",
-      name: "Jurassic Park",
+      name: "Home",
       icon: "icon-home",
       folder: "Pages",
       root: true,
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
-      children: ["visitorCenter", "paddocks", "tours", "attractions", "newsroom"],
+      compose: ["seo"],
+      children: ["aboutUs", "locations", "events", "services", "news"],
       groups: [
         {
           tab: "Content",
-          group: "Welcome",
+          group: "Intro",
           props: [
             p("heading", "Heading", "text", { cultures: true, mandatory: true }),
             p("intro", "Introduction", "textarea", { cultures: true }),
@@ -219,7 +208,7 @@ function types(version: ParkVersion): TypeSpec[] {
           tab: "Content",
           group: "Blocks",
           props: [
-            p("homeBlocks", "Blocks", blocks("Home Blocks", "heroBanner", "quote", "imageGallery", "mapPin"), {
+            p("homeBlocks", "Blocks", blocks("Home Blocks", "hero", "quote", "imageGallery", "map"), {
               cultures: true,
             }),
           ],
@@ -227,22 +216,21 @@ function types(version: ParkVersion): TypeSpec[] {
       ],
     },
     {
-      alias: "visitorCenter",
-      name: "Visitor Center",
-      icon: "icon-store",
+      alias: "aboutUs",
+      name: "About Us",
+      icon: "icon-info",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta", "parkSystems"],
-      children: ["restaurant", "giftShop"],
+      compose: ["seo", "navigation"],
+      children: ["careers", "shop"],
       groups: [
         {
           tab: "Content",
-          group: "Exhibits",
+          group: "Page",
           props: [
             p("heading", "Heading", "text", { cultures: true }),
-            p("openingHours", "Opening hours", "text"),
-            p("exhibits", "Exhibits", blocks("Exhibit Blocks", "heroBanner", "imageGallery", MR_DNA, "richText"), {
+            p("blocks", "Blocks", blocks("Page Blocks", "hero", "imageGallery", VIDEO, "richText"), {
               cultures: true,
             }),
           ],
@@ -250,44 +238,41 @@ function types(version: ParkVersion): TypeSpec[] {
       ],
     },
     {
-      alias: "restaurant",
-      name: "Restaurant",
-      icon: "icon-coffee",
+      alias: "careers",
+      name: "Careers",
+      icon: "icon-briefcase",
       folder: "Pages",
-      // Invariant, yet Page Meta varies by culture, so its title and description
+      // Invariant, yet SEO varies by culture, so its meta title and description
       // keep one value for every language.
       template: true,
-      compose: ["pageMeta"],
+      compose: ["seo"],
       groups: [
         {
           tab: "Content",
-          group: "Menu",
-          props: [
-            p("chef", "Chef", "text"),
-            p("menu", "Menu", "rte"),
-          ],
+          group: "Jobs",
+          props: [p("contactPerson", "Contact person", "text"), p("jobsIntro", "Intro", "rte")],
         },
       ],
     },
     {
-      alias: "giftShop",
-      name: "Gift Shop",
+      alias: "shop",
+      name: "Shop",
       icon: "icon-shopping-basket",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
-      children: after ? ["merchProduct", "merchBundle"] : ["merchProduct"],
+      compose: ["seo"],
+      children: after ? ["product", "productBundle"] : ["product"],
       groups: [{ tab: "Content", group: "Shop", props: [p("heading", "Heading", "text", { cultures: true })] }],
     },
     {
-      alias: "merchProduct",
-      name: "Merch Product",
+      alias: "product",
+      name: "Product",
       icon: "icon-tag",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
+      compose: ["seo"],
       groups: [
         {
           tab: "Product",
@@ -305,20 +290,20 @@ function types(version: ParkVersion): TypeSpec[] {
     ...(after
       ? [
           {
-            alias: "merchBundle",
-            name: "Merch Bundle",
+            alias: "productBundle",
+            name: "Product Bundle",
             icon: "icon-box",
             folder: "Pages",
             cultures: true,
             template: true,
-            compose: ["pageMeta"],
+            compose: ["seo"],
             groups: [
               {
                 tab: "Product",
                 group: "Bundle",
                 props: [
                   p("bundleName", "Name", "text", { cultures: true }),
-                  p("products", "Products", picker("Product picker", "merchProduct")),
+                  p("products", "Products", picker("Product picker", "product")),
                   p("price", "Price", "decimal"),
                 ],
               },
@@ -327,23 +312,23 @@ function types(version: ParkVersion): TypeSpec[] {
         ]
       : []),
     {
-      alias: "paddocks",
-      name: "Paddocks",
+      alias: "locations",
+      name: "Locations",
       icon: "icon-map",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
-      children: PADDOCKS,
-      groups: [{ tab: "Content", group: "Map", props: [p("heading", "Heading", "text", { cultures: true })] }],
+      compose: ["seo"],
+      children: LOCATIONS,
+      groups: [{ tab: "Content", group: "List", props: [p("heading", "Heading", "text", { cultures: true })] }],
     },
     {
-      alias: "paddock",
-      name: "Paddock",
-      icon: "icon-fence",
-      folder: "Paddocks",
+      alias: "location",
+      name: "Location",
+      icon: "icon-pin-location",
+      folder: "Locations",
       cultures: true,
-      compose: ["paddockSecurity", "parkSystems", "pageMeta"],
+      compose: ["locationDetails", "navigation", "seo"],
       groups: [
         {
           tab: "Content",
@@ -352,55 +337,53 @@ function types(version: ParkVersion): TypeSpec[] {
             p("heading", "Heading", "text", { cultures: true, mandatory: true }),
             p("intro", "Introduction", "textarea", { cultures: true }),
             p("heroImage", "Hero image", "image"),
-            p("notices", "Notices", blocks("Paddock Blocks", "safetyNotice", "imageGallery")),
+            p("notices", "Notices", blocks("Location Blocks", "notice", "imageGallery")),
           ],
         },
       ],
     },
-    paddockType("raptorPen", "Raptor Pen", [
-      p("packSize", "Pack size", "number"),
-      // Muldoon's own, before anyone thought of the composition.
-      p("alarm", "Alarm", "toggle"),
-      p("feedingCrane", "Feeding crane", "toggle"),
+    locationType("store", "Store", [
+      // The store's own, from before the composition existed.
+      p("phone", "Phone", "text"),
+      p("parking", "Parking", "toggle"),
+      p("clickAndCollect", "Click and collect", "toggle"),
     ]),
-    paddockType("tyrannosaurusPaddock", "T. rex Paddock", [
-      p("goatFeeder", "Goat feeder", "toggle"),
-    ]),
-    paddockType("brachiosaurusPaddock", "Brachiosaurus Paddock", [p("treeHeight", "Tree height", "decimal")]),
-    paddockType("triceratopsPaddock", "Triceratops Paddock", [p("vetNotes", "Vet notes", "rte")]),
-    paddockType("dilophosaurusPaddock", "Dilophosaurus Paddock", [p("spitRange", "Spit range", "decimal")]),
-    paddockType("gallimimusValley", "Gallimimus Valley", [p("flockSize", "Flock size", "number")]),
+    locationType("office", "Office", [p("reception", "Reception", "toggle")]),
+    locationType("warehouse", "Warehouse", [p("loadingBays", "Loading bays", "number")]),
+    locationType("showroom", "Showroom", [p("bookingNote", "Booking note", "rte")]),
+    locationType("serviceCenter", "Service Center", [p("servicesOffered", "Services", "dropdown")]),
+    locationType("outlet", "Outlet", [p("discount", "Discount (%)", "number")]),
     {
-      alias: "tours",
-      name: "Tours",
-      icon: "icon-car",
+      alias: "events",
+      name: "Events",
+      icon: "icon-calendar",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
-      children: ["tourRoute"],
-      groups: [{ tab: "Content", group: "Tours", props: [p("heading", "Heading", "text", { cultures: true })] }],
+      compose: ["seo"],
+      children: ["event"],
+      groups: [{ tab: "Content", group: "List", props: [p("heading", "Heading", "text", { cultures: true })] }],
     },
     {
-      alias: "tourRoute",
-      name: "Tour Route",
-      icon: "icon-navigation",
+      alias: "event",
+      name: "Event",
+      icon: "icon-calendar-alt",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
+      compose: ["seo"],
       groups: [
         {
           tab: "Content",
-          group: "Route",
+          group: "Event",
           props: [
             p("heading", "Heading", "text", { cultures: true }),
-            p("duration", "Duration (min)", "number"),
-            p("vehicle", "Vehicle", picker("Vehicle picker", "tourVehicle")),
+            p("startDate", "Starts", "date"),
+            p("venue", "Venue", picker("Venue picker", "venue")),
             p(
-              "stops",
-              "Stops",
-              after ? blocks("Tour Stops", "tourStop", "mapPin") : blocks("Tour Stops", "tourStop"),
+              "agenda",
+              "Agenda",
+              after ? blocks("Agenda", "agendaItem", "map") : blocks("Agenda", "agendaItem"),
               { cultures: true }
             ),
           ],
@@ -408,69 +391,69 @@ function types(version: ParkVersion): TypeSpec[] {
       ],
     },
     {
-      alias: "attractions",
-      name: "Attractions",
-      icon: "icon-ticket",
+      alias: "services",
+      name: "Services",
+      icon: "icon-wrench",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
-      children: ["jungleRiverCruise", "pettingZoo"],
+      compose: ["seo"],
+      children: ["oldServicePage", "pickupPoint"],
       groups: [{ tab: "Content", group: "List", props: [p("heading", "Heading", "text", { cultures: true })] }],
     },
     {
-      alias: "jungleRiverCruise",
-      name: "Jungle River Cruise",
-      icon: "icon-anchor",
+      alias: "oldServicePage",
+      name: "Old Service Page",
+      icon: "icon-wrench",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
+      compose: ["seo"],
       groups: [
         {
           tab: "Content",
-          group: "Ride",
-          props: [p("boatCount", "Boats", "number"), p("rapidsWarning", "Rapids warning", "toggle")],
+          group: "Service",
+          props: [p("price", "Price", "decimal"), p("bookable", "Bookable", "toggle")],
         },
       ],
     },
     {
-      alias: "pettingZoo",
-      name: "Petting Zoo",
-      icon: "icon-hearts",
+      alias: "pickupPoint",
+      name: "Pickup Point",
+      icon: "icon-box",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta", "paddockSecurity"],
-      groups: [{ tab: "Content", group: "Zoo", props: [p("babies", "Babies on show", "number")] }],
+      compose: ["seo", "locationDetails"],
+      groups: [{ tab: "Content", group: "Pickup", props: [p("lockers", "Lockers", "number")] }],
     },
     {
-      alias: "newsroom",
-      name: "Newsroom",
+      alias: "news",
+      name: "News",
       icon: "icon-newspaper",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
-      children: ["pressRelease"],
+      compose: ["seo"],
+      children: ["article"],
       groups: [{ tab: "Content", group: "List", props: [p("heading", "Heading", "text", { cultures: true })] }],
     },
     {
-      alias: "pressRelease",
-      name: "Press Release",
+      alias: "article",
+      name: "Article",
       icon: "icon-article",
       folder: "Pages",
       cultures: true,
       template: true,
-      compose: ["pageMeta"],
+      compose: ["seo"],
       groups: [
         {
           tab: "Content",
-          group: "Release",
+          group: "Article",
           props: [
             p("heading", "Heading", "text", { cultures: true, mandatory: true }),
-            p("releaseDate", "Date", "date"),
-            p("spokesperson", "Spokesperson", "text"),
+            p("publishDate", "Date", "date"),
+            p("author", "Author", "text"),
             p("body", "Body", "rte", { cultures: true }),
           ],
         },
@@ -484,65 +467,65 @@ function types(version: ParkVersion): TypeSpec[] {
       icon: "icon-settings",
       folder: "Settings",
       root: true,
-      children: ["controlRoom", "tourVehicle"],
+      children: ["header", "venue"],
       groups: [{ tab: "Settings", group: "Site", props: [p("siteName", "Site name", "text")] }],
     },
     {
-      alias: "controlRoom",
-      name: "Control Room",
-      icon: "icon-terminal",
+      alias: "header",
+      name: "Header",
+      icon: "icon-layout",
       folder: "Settings",
-      compose: ["parkSystems"],
-      groups: [{ tab: "Systems", group: "Everything", props: controlRoomProps() }],
+      compose: ["navigation"],
+      groups: [{ tab: "Settings", group: "Header", props: headerProps() }],
     },
     {
-      alias: "tourVehicle",
-      name: "Tour Vehicle",
-      icon: "icon-car",
+      alias: "venue",
+      name: "Venue",
+      icon: "icon-company",
       folder: "Settings",
       groups: [
         {
-          tab: "Vehicle",
-          group: "Vehicle",
-          props: [p("model", "Model", "text"), p("track", "Track", "text"), p("nightVision", "Night vision", "toggle")],
+          tab: "Venue",
+          group: "Venue",
+          props: [p("venueName", "Name", "text"), p("capacity", "Capacity", "number"), p("stepFree", "Step-free", "toggle")],
         },
       ],
     },
 
-    // Isla Sorna, Site B. Its root flag was switched off, so nothing leads in.
+    // Last year's campaign site. Its Allow at root was unticked, so nothing leads in.
     {
-      alias: "islaSorna",
-      name: "Isla Sorna",
+      alias: "campaignSite",
+      name: "Campaign Site",
       icon: "icon-globe",
-      folder: "Site B",
+      folder: "Campaign",
       cultures: true,
       template: true,
-      children: ["siteBLab"],
-      groups: [{ tab: "Content", group: "Island", props: [p("heading", "Heading", "text", { cultures: true })] }],
+      children: ["campaignPage"],
+      groups: [{ tab: "Content", group: "Campaign", props: [p("heading", "Heading", "text", { cultures: true })] }],
     },
     {
-      alias: "siteBLab",
-      name: "Site B Lab",
-      icon: "icon-lab",
-      folder: "Site B",
+      alias: "campaignPage",
+      name: "Campaign Page",
+      icon: "icon-megaphone",
+      folder: "Campaign",
       cultures: true,
       template: true,
-      children: ["hatchery"],
-      groups: [{ tab: "Content", group: "Lab", props: [p("labCode", "Lab code", "text")] }],
+      children: ["popUpStore"],
+      groups: [{ tab: "Content", group: "Page", props: [p("campaignCode", "Campaign code", "text")] }],
     },
     {
-      alias: "hatchery",
-      name: "Hatchery",
-      icon: "icon-egg",
-      folder: "Site B",
+      alias: "popUpStore",
+      name: "Pop-up Store",
+      icon: "icon-store",
+      folder: "Campaign",
       cultures: true,
       template: true,
-      compose: ["speciesProfile", "paddockSecurity"],
-      groups: [{ tab: "Content", group: "Eggs", props: [p("clutchSize", "Clutch size", "number")] }],
+      compose: ["teamInfo", "locationDetails"],
+      groups: [{ tab: "Content", group: "Store", props: [p("openUntil", "Open until", "date")] }],
     },
 
     // Element Types
-    element("heroBanner", "Hero Banner", "icon-picture", [
+    element("hero", "Hero", "icon-picture", [
       p("heading", "Heading", "text"),
       p("image", "Image", "image"),
       p("link", "Link", "link"),
@@ -553,39 +536,35 @@ function types(version: ParkVersion): TypeSpec[] {
       p("caption", "Caption", "text"),
     ]),
     element("quote", "Quote", "icon-quote", [p("quote", "Quote", "textarea"), p("cite", "Cite", "text")]),
-    element("mapPin", "Map Pin", "icon-pin-location", [
+    element("map", "Map", "icon-map-location", [
       p("label", "Label", "text"),
-      p("x", "X", "number"),
-      p("y", "Y", "number"),
+      p("latitude", "Latitude", "decimal"),
+      p("longitude", "Longitude", "decimal"),
     ]),
-    element("safetyNotice", "Safety Notice", "icon-alert", [
+    element("notice", "Notice", "icon-alert", [
       p("message", "Message", "textarea", { mandatory: true }),
       p("level", "Level", "dropdown"),
     ]),
-    element("tourStop", "Tour Stop", "icon-flag", [
-      p("stopName", "Stop", "text"),
-      p(
-        "paddock",
-        "Paddock",
-        picker("Paddock picker", "tyrannosaurusPaddock", "brachiosaurusPaddock", "triceratopsPaddock", "dilophosaurusPaddock")
-      ),
-      p("narration", "Narration", "textarea"),
+    element("agendaItem", "Agenda Item", "icon-list", [
+      p("time", "Time", "text"),
+      p("location", "Location", picker("Location picker", "store", "office", "showroom", "serviceCenter")),
+      p("description", "Description", "textarea"),
     ]),
-    // Kept in case the animals get out. No block editor offers it.
-    element("lysineContingency", "Lysine Contingency", "icon-medicine", [p("dose", "Dose", "number")]),
+    // Left over from a redesign. No block editor offers it.
+    element("legacyBanner", "Legacy Banner", "icon-flag", [p("bannerText", "Text", "text")]),
   ]
 }
 
-function paddockType(alias: string, name: string, props: Prop[]): TypeSpec {
+function locationType(alias: string, name: string, props: Prop[]): TypeSpec {
   return {
     alias,
     name,
-    icon: "icon-fence",
-    folder: "Paddocks",
+    icon: "icon-pin-location",
+    folder: "Locations",
     cultures: true,
     template: true,
-    parent: "paddock",
-    compose: ["speciesProfile", "feedingSchedule"],
+    parent: "location",
+    compose: ["teamInfo", "openingHours"],
     groups: [{ tab: "Content", group: name, props }],
   }
 }
@@ -594,36 +573,29 @@ function element(alias: string, name: string, icon: string, props: Prop[]): Type
   return { alias, name, icon, folder: "Blocks", element: true, groups: [{ tab: "Content", group: name, props }] }
 }
 
-/** Twenty-two settings on one tab, whte_rbt.obj among them. */
-function controlRoomProps(): Prop[] {
+/** The header's switches, the long flat tab every site grows. */
+function headerProps(): Prop[] {
   const toggles = [
-    ["mainPower", "Main power"],
-    ["auxPower", "Auxiliary power"],
-    ["securityGrid", "Security grid"],
-    ["perimeterFence", "Perimeter fence"],
-    ["phoneLines", "Phone lines"],
-    ["motionTrackers", "Motion trackers"],
-    ["tourProgram", "Tour program"],
-    ["parkCameras", "Park cameras"],
-    ["nightLights", "Night lights"],
-    ["dockLink", "Dock link"],
-    ["boatSchedule", "Boat schedule"],
-    ["stormMode", "Storm mode"],
-    ["eastDockAccess", "East dock access"],
-    ["helipadLights", "Helipad lights"],
-    ["visitorCenterDoors", "Visitor Center doors"],
-    ["embryoColdStorage", "Embryo cold storage"],
-    ["restaurantPower", "Restaurant power"],
-    ["jurassicParkSystem", "Jurassic Park system"],
-    ["shutdownSequence", "Shutdown sequence"],
-    ["animalCount", "Animal count"],
-    ["kernelVersion", "Kernel version"],
+    ["showSearch", "Show search"],
+    ["showLanguagePicker", "Show language picker"],
+    ["showLogin", "Show login"],
+    ["showBasket", "Show basket"],
+    ["stickyHeader", "Sticky header"],
+    ["showBanner", "Show banner"],
+    ["showBreadcrumbs", "Show breadcrumbs"],
+    ["megaMenu", "Mega menu"],
+    ["darkLogo", "Dark logo"],
+    ["showPhone", "Show phone"],
+    ["showOpeningHours", "Show opening hours"],
+    ["cookieBanner", "Cookie banner"],
   ] as const
   return [
     ...toggles.map(([alias, name]) => p(alias, name, "toggle")),
-    p("whteRbtObj", "whte_rbt.obj", "textarea"),
+    p("bannerText", "Banner text", "textarea"),
+    p("logo", "Logo", "image"),
   ]
 }
+
 
 // Ids are made from the alias, as stable as a key, so the before and after graphs
 // match type for type and every build draws the same city.
@@ -644,7 +616,7 @@ function guid(text: string): string {
 const idOf = (alias: string) => guid(`type:${alias.replace(/^missing:/, "")}`)
 const camel = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+(.)/g, (_, c: string) => c.toUpperCase())
 
-export function parkGraph(version: ParkVersion = "before"): SchemaGraph {
+export function siteGraph(version: SiteVersion = "before"): SchemaGraph {
   const specs = types(version)
   const byAlias = new Map(specs.map((spec) => [spec.alias, spec]))
   const folderNames = [...new Set(specs.map((spec) => spec.folder))].sort()
@@ -784,36 +756,36 @@ export function parkGraph(version: ParkVersion = "before"): SchemaGraph {
   }
 }
 
-/** Content items per type. Isla Sorna's lab still holds what was made before the cut. */
+/** Content items per type. The campaign pages still hold what was made before the cut. */
 const CONTENT: Record<string, number> = {
   home: 1,
-  visitorCenter: 1,
-  restaurant: 1,
-  giftShop: 1,
-  merchProduct: 128,
-  paddocks: 1,
-  raptorPen: 1,
-  tyrannosaurusPaddock: 1,
-  brachiosaurusPaddock: 2,
-  triceratopsPaddock: 1,
-  dilophosaurusPaddock: 1,
-  gallimimusValley: 1,
-  tours: 1,
-  tourRoute: 3,
-  attractions: 1,
-  jungleRiverCruise: 0,
-  pettingZoo: 1,
-  newsroom: 1,
-  pressRelease: 46,
+  aboutUs: 1,
+  careers: 1,
+  shop: 1,
+  product: 128,
+  locations: 1,
+  store: 1,
+  office: 1,
+  warehouse: 2,
+  showroom: 1,
+  serviceCenter: 1,
+  outlet: 1,
+  events: 1,
+  event: 3,
+  services: 1,
+  oldServicePage: 0,
+  pickupPoint: 1,
+  news: 1,
+  article: 46,
   siteSettings: 1,
-  controlRoom: 1,
-  tourVehicle: 6,
-  islaSorna: 1,
-  siteBLab: 2,
-  hatchery: 4,
+  header: 1,
+  venue: 6,
+  campaignSite: 1,
+  campaignPage: 2,
+  popUpStore: 4,
 }
 
-export function parkUsage(): UsageReport {
+export function siteUsage(): UsageReport {
   const block = (dataType: string, values: number, elements: [alias: string, content: number][]) => ({
     dataTypeId: guid(`dataType:${dataType}`),
     values,
@@ -836,25 +808,25 @@ export function parkUsage(): UsageReport {
           drafts: 0,
           trashed: 0,
           rootInstances: alias === "home" || alias === "siteSettings" ? 1 : 0,
-          cultures: total > 0 ? ["en-US", "es-CR"] : [],
-          lastEdited: total > 0 ? "1993-06-11T09:00:00Z" : null,
+          cultures: total > 0 ? ["en-US", "da-DK"] : [],
+          lastEdited: total > 0 ? "2026-09-30T09:00:00Z" : null,
         },
       ])
     ),
-    references: [{ fromType: idOf("tourRoute"), toType: idOf("tourVehicle"), count: 3 }],
+    references: [{ fromType: idOf("event"), toType: idOf("venue"), count: 3 }],
     blocks: {
       partial: false,
       valuesRead: 64,
       unreadable: 0,
       byDataType: [
-        block("Exhibit Blocks", 1, [["heroBanner", 1], ["imageGallery", 3], ["mrDnaVideo", 12], ["richText", 4]]),
-        block("Home Blocks", 1, [["heroBanner", 1], ["quote", 1], ["imageGallery", 1]]),
-        block("Paddock Blocks", 7, [["safetyNotice", 9], ["imageGallery", 7]]),
-        block("Tour Stops", 3, [["tourStop", 14]]),
+        block("Page Blocks", 1, [["hero", 1], ["imageGallery", 3], ["videoEmbed", 12], ["richText", 4]]),
+        block("Home Blocks", 1, [["hero", 1], ["quote", 1], ["imageGallery", 1]]),
+        block("Location Blocks", 7, [["notice", 9], ["imageGallery", 7]]),
+        block("Agenda", 3, [["agendaItem", 14]]),
       ],
     },
   }
 }
 
 /** The id the graph gives a type, for a slide that names one. */
-export const parkId = idOf
+export const siteId = idOf

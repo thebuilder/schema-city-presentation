@@ -9,8 +9,8 @@ const ExampleCity = dynamic(
   { ssr: false }
 )
 
-/* The park booting above its one line, before anything on it is lit. */
-export function ParkIntro({ graph, text }: { graph: SchemaGraph; text: string }) {
+/* The site booting above its one line, before anything on it is lit. */
+export function SiteIntro({ graph, text }: { graph: SchemaGraph; text: string }) {
   return (
     <section className="relative h-full w-full overflow-hidden bg-background">
       <ExampleCity

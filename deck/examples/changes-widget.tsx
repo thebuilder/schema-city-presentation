@@ -3,7 +3,7 @@
 import type { SchemaGraph } from "@/deck/city/schema-city"
 import { useStep } from "@/deck/city/use-step"
 import { Evidence, ExampleFrame, Label } from "@/deck/examples/example-frame"
-import type { ChangesExample } from "@/deck/examples/park-results"
+import type { ChangesExample } from "@/deck/examples/site-results"
 
 export function ChangesWidget({
   graph,

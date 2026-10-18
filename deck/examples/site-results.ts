@@ -14,24 +14,24 @@ import {
   type SchemaGraph,
   totalsLine,
 } from "@/deck/city/schema-city"
-import { parkGraph, parkId, parkUsage } from "@/deck/examples/park-schema"
+import { siteGraph, siteId, siteUsage } from "@/deck/examples/site-schema"
 
 /*
- * What Schema City says about the park, worked out once on the server with the
+ * What Schema City says about the site, worked out once on the server with the
  * package's own model code. Every sentence a slide prints from here is the app's
  * sentence, not one written for the slide, so the examples cannot claim more than
  * the tool does. The slides receive plain arrays, since a Map does not cross to a
  * client component.
  */
 
-const before = parkGraph("before")
-const usage = parkUsage()
+const before = siteGraph("before")
+const usage = siteUsage()
 const nameOf = (graph: SchemaGraph) => {
   const names = new Map(graph.nodes.map((node) => [node.id, node.name]))
   return (id: string) => names.get(id) ?? id
 }
 
-export const parkCity = (): SchemaGraph => before
+export const siteCity = (): SchemaGraph => before
 
 export type FindingRow = { label: string; names: string[]; ids: string[] }
 export type FindingFocus = { label: string; ids: string[]; summary: string }
@@ -49,8 +49,8 @@ export type BrokenExample = {
 const WALK: { kind: Finding["kind"]; with?: Finding["kind"][]; say?: string }[] = [
   { kind: "brokenBlock" },
   { kind: "cultureMismatch" },
-  // The lab's row, because it names the island the dead end is about.
-  { kind: "unreachableChain", with: ["deadEnd"], say: "siteBLab" },
+  // The campaign page's row, because it names the type the dead end is about.
+  { kind: "unreachableChain", with: ["deadEnd"], say: "campaignPage" },
 ]
 
 /** Step 0 lights every problem. Each step after stops on one kind of WALK. */
@@ -71,7 +71,7 @@ export function brokenExample(): BrokenExample {
     lit: [...new Set(problems.flatMap((finding) => finding.nodeId ?? []))],
     focus: WALK.map(({ kind, with: also = [], say }) => {
       const first =
-        problems.find((finding) => finding.kind === kind && finding.nodeId === (say && parkId(say))) ??
+        problems.find((finding) => finding.kind === kind && finding.nodeId === (say && siteId(say))) ??
         problems.find((finding) => finding.kind === kind)
       return {
         label: FINDING_LABEL[kind],
@@ -98,17 +98,17 @@ export type ReachExample = {
 /** Step 0 is the reach. Step 1 checks a new alias against every type it lands on. */
 export const REACH_STEPS = 2
 
-/** The property someone wants to add to Paddock Security. */
-const PLANNED_ALIAS = "alarm"
+/** The property someone wants to add to Location Details. */
+const PLANNED_ALIAS = "phone"
 
 export function reachExample(): ReachExample {
-  const start = parkId("paddockSecurity")
+  const start = siteId("locationDetails")
   const name = nameOf(before)
   const impact = impactOf(before, start, {}, usage)
   const rows = impact.groups.flatMap((group) => group.rows)
   // Two hops through inheritance, which the composition's own list of users does
   // not show. A direct user would only repeat what Umbraco already lists.
-  const paths = ["raptorPen"]
+  const paths = ["store"]
     .map((alias) => rows.find((row) => row.alias === alias))
     .flatMap((row) => (row?.paths[0] ? [pathWords(start, row.paths[0], "dependents", name)] : []))
   const check = aliasImpact(before, start, PLANNED_ALIAS, usage)
@@ -122,7 +122,7 @@ export function reachExample(): ReachExample {
     alias: PLANNED_ALIAS,
     collision: {
       ids: collisions.map((collision) => collision.id),
-      line: collisions.map((collision) => `${collision.name} already has an ${PLANNED_ALIAS}`).join(", "),
+      line: collisions.map((collision) => `${collision.name} already has a ${PLANNED_ALIAS} property`).join(", "),
     },
   }
 }
@@ -147,10 +147,10 @@ export type ChangesExample = {
 export const CHANGES_STEPS = 2
 
 /** What the release plan named. The fourth cause is the one nobody wrote down. */
-const PLANNED = new Set(["paddockSecurity", "merchBundle", "tourRoute"])
+const PLANNED = new Set(["locationDetails", "productBundle", "event"])
 
 export function changesExample(): ChangesExample {
-  const groups = groupChanges(compareSchemas(before, parkGraph("after")))
+  const groups = groupChanges(compareSchemas(before, siteGraph("after")))
   // Planned first, the way a reviewer ticks them off, so the stranger is last.
   const causes = groups.causes
     .map((cause) => ({
@@ -167,5 +167,5 @@ export function changesExample(): ChangesExample {
   return { summary: changeSummary(groups), causes, kinds: [...groups.kinds] }
 }
 
-/** The graph after the weekend, which the snapshot slide draws. */
-export const parkCityAfter = (): SchemaGraph => parkGraph("after")
+/** The graph after the release, which the snapshot slide draws. */
+export const siteCityAfter = (): SchemaGraph => siteGraph("after")

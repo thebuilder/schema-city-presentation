@@ -5,7 +5,7 @@ import {
   BROKEN_STEPS,
   CHANGES_STEPS,
   REACH_STEPS,
-} from "@/deck/examples/park-results"
+} from "@/deck/examples/site-results"
 import { BackofficeGrid } from "@/deck/parts/backoffice-grid"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
@@ -15,15 +15,10 @@ import { Legend } from "@/deck/parts/legend"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
 import { Morph } from "@/deck/parts/morph"
-import {
-  ParkBroken,
-  ParkChanges,
-  ParkIntro,
-  ParkReach,
-} from "@/deck/parts/park-examples"
 import { Pipeline } from "@/deck/parts/pipeline"
 import { Place } from "@/deck/parts/place"
 import { Placeholder } from "@/deck/parts/placeholder"
+import { SiteBroken, SiteChanges, SiteIntro, SiteReach } from "@/deck/parts/site-examples"
 import { Takeover } from "@/deck/parts/takeover"
 import { TheWall } from "@/deck/parts/the-wall"
 import { UnixSystem } from "@/deck/parts/unix-system"
@@ -149,58 +144,58 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "9:55, 9 minutes. Say it, then click the button. Four questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the other two, because the park slides after this go deeper on both. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
+      "9:55, 9 minutes. Say it, then click the button. Four questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the other two, because the example slides after this go deeper on both. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
     body: <Live />,
   },
   {
-    slug: "park",
-    title: "A messier park",
+    slug: "examples",
+    title: "A messier site",
     notes:
-      "18:55, 20 seconds. After the demo. The callback to the fsn opener. ct-baseline is tidy, so this is a schema built to go wrong: Jurassic Park's website, 39 types, every problem planted on purpose. Every finding, path and count on the next three slides is Schema City's own, run over it.",
+      "18:55, 20 seconds. After the demo. ct-baseline is tidy, so this is a site built to go wrong. An ordinary company site in two languages, 39 types, every problem planted on purpose. Every finding, path and count on the next three slides is Schema City's own.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     background: "none",
-    body: <ParkIntro />,
+    body: <SiteIntro />,
   },
   {
-    slug: "park-broken",
+    slug: "examples-broken",
     title: "What's broken?",
     notes:
-      "19:15, 1.5 minutes. The findings, problems only, worst first. Click through three. A block editor still lists Mr. DNA's video after the Element Type was deleted, and content still holds 12 of those blocks. Restaurant is invariant but composes Page Meta, which varies by culture, so every language shares one meta title. Site B: someone unticked Allow at root on the island. No new island can be made, and the lab and the hatchery live on under the one old node. Each row is Schema City's own sentence.",
+      "19:15, 1.5 minutes. The findings, problems only, worst first. Click through three. About Us still lists a video block whose Element Type was deleted, and content still holds 12 of those blocks. Careers does not vary by culture but composes SEO, which does, so every language shares one meta title. Last year's campaign site lost its Allow at root. Nobody can make a new one, and its pages and pop-up stores live on under the one old node. Each row is Schema City's own sentence.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     background: "none",
     stepCount: BROKEN_STEPS,
-    body: <ParkBroken />,
+    body: <SiteBroken />,
   },
   {
-    slug: "park-reach",
+    slug: "examples-reach",
     title: "What does it reach?",
     notes:
-      "20:45, 1.5 minutes. The question from the wall, asked of the park. Umbraco lists the three types that compose Paddock Security directly. Schema City follows the inheritance too, so every paddock that inherits Paddock comes along. Four of the twelve items sit in Site B. Click: someone wants to add an alarm property. Raptor Pen already has one, Muldoon's own. You find out here, before you build it.",
+      "20:45, 1.5 minutes. The question from the wall, asked of this site. Umbraco lists the three types that compose Location Details directly. Schema City follows the inheritance too, so every location type that inherits Location comes along. Four of the twelve items are pop-up stores from the campaign. Click. Someone wants to add a phone property, and Store already has one of its own. You find out here, before you build it.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     background: "none",
     stepCount: REACH_STEPS,
-    body: <ParkReach />,
+    body: <SiteReach />,
   },
   {
-    slug: "park-changes",
+    slug: "examples-changes",
     title: "What did my change do?",
     notes:
-      "22:15, 1 minute. A snapshot from before the release weekend against the park after it. Each edit is one cause with its side effects under it. Three were in the plan, so they are ticked. Click: the fourth was not. Park Systems lost its door locks, and nine types changed with it, their stored values gone too. The alarm went in as fenceAlarm, the clash from the last slide renamed. Pause. Nedry.",
+      "22:15, 1 minute. A snapshot from before the release against the site after it. Each edit is one cause with its side effects under it. Three were in the plan, so they are ticked. Click. The fourth was not. Navigation lost umbracoNaviHide, and nine types changed with it. The phone went in as contactPhone, the clash from the last slide renamed. Pause. Every page someone hid from the menu is back in it.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     background: "none",
     stepCount: CHANGES_STEPS,
-    body: <ParkChanges />,
+    body: <SiteChanges />,
   },
   {
     slug: "used-to-be",

@@ -12,7 +12,7 @@ const ExampleCity = dynamic(
 )
 
 /*
- * Every example slide is the same picture: the park on the right, the question on
+ * Every example slide is the same picture: the site on the right, the question on
  * the left, and under it what Schema City answered. The gradient holds the sky
  * down behind the words, the way the place slide does.
  */
