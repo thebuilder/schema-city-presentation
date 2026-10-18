@@ -89,7 +89,7 @@ export type ReachExample = {
   totals: string
   /** The start and every type it reaches. */
   lit: string[]
-  /** One path per distance, shortest first, in the app's words. */
+  /** The path that goes further than Umbraco's list, in the app's words. */
   paths: string[]
   alias: string
   collision: { ids: string[]; line: string }
@@ -106,9 +106,9 @@ export function reachExample(): ReachExample {
   const name = nameOf(before)
   const impact = impactOf(before, start, {}, usage)
   const rows = impact.groups.flatMap((group) => group.rows)
-  // Two hops through inheritance, then a type no editor can reach any more: reach
-  // goes further than the composition's own list of users.
-  const paths = ["raptorPen", "hatchery"]
+  // Two hops through inheritance, which the composition's own list of users does
+  // not show. A direct user would only repeat what Umbraco already lists.
+  const paths = ["raptorPen"]
     .map((alias) => rows.find((row) => row.alias === alias))
     .flatMap((row) => (row?.paths[0] ? [pathWords(start, row.paths[0], "dependents", name)] : []))
   const check = aliasImpact(before, start, PLANNED_ALIAS, usage)
@@ -122,7 +122,7 @@ export function reachExample(): ReachExample {
     alias: PLANNED_ALIAS,
     collision: {
       ids: collisions.map((collision) => collision.id),
-      line: collisions.map((collision) => `${collision.name} already has ${PLANNED_ALIAS}`).join(", "),
+      line: collisions.map((collision) => `${collision.name} already has an ${PLANNED_ALIAS}`).join(", "),
     },
   }
 }
