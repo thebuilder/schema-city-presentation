@@ -18,12 +18,7 @@ import type {
  * properties land on every type down the composition chain, attributed to the
  * type that declares them; block and picker properties put an edge on every type
  * that carries them; a parent type is both an `inherits` and a `composition` edge.
- *
- * `siteGraph("after")` is the same site after a release: three edits someone
- * planned and one nobody did. The snapshot slide compares the two.
  */
-
-export type SiteVersion = "before" | "after"
 
 type Editor = { name: string; editor: string; ui: string }
 
@@ -91,8 +86,7 @@ const VIDEO = "missing:videoEmbed"
 
 const LOCATIONS = ["store", "office", "warehouse", "showroom", "serviceCenter", "outlet"]
 
-function types(version: SiteVersion): TypeSpec[] {
-  const after = version === "after"
+function types(): TypeSpec[] {
   return [
     // Compositions
     {
@@ -127,8 +121,6 @@ function types(version: SiteVersion): TypeSpec[] {
             p("postcode", "Postcode", "text", { mandatory: true }),
             p("city", "City", "text"),
             p("mapLink", "Map link", "link"),
-            // Added in the release, under the name the alias check left free.
-            ...(after ? [p("contactPhone", "Phone", "text")] : []),
           ],
         },
       ],
@@ -144,8 +136,7 @@ function types(version: SiteVersion): TypeSpec[] {
           group: "Navigation",
           props: [
             p("menuTitle", "Menu title", "text"),
-            // Nobody planned this one.
-            ...(after ? [] : [p("umbracoNaviHide", "Hide from menu", "toggle")]),
+            p("umbracoNaviHide", "Hide from menu", "toggle"),
             p("sitemapPriority", "Sitemap priority", "dropdown"),
           ],
         },
@@ -262,7 +253,7 @@ function types(version: SiteVersion): TypeSpec[] {
       cultures: true,
       template: true,
       compose: ["seo"],
-      children: after ? ["product", "productBundle"] : ["product"],
+      children: ["product"],
       groups: [{ tab: "Content", group: "Shop", props: [p("heading", "Heading", "text", { cultures: true })] }],
     },
     {
@@ -287,30 +278,6 @@ function types(version: SiteVersion): TypeSpec[] {
         },
       ],
     },
-    ...(after
-      ? [
-          {
-            alias: "productBundle",
-            name: "Product Bundle",
-            icon: "icon-box",
-            folder: "Pages",
-            cultures: true,
-            template: true,
-            compose: ["seo"],
-            groups: [
-              {
-                tab: "Product",
-                group: "Bundle",
-                props: [
-                  p("bundleName", "Name", "text", { cultures: true }),
-                  p("products", "Products", picker("Product picker", "product")),
-                  p("price", "Price", "decimal"),
-                ],
-              },
-            ],
-          } satisfies TypeSpec,
-        ]
-      : []),
     {
       alias: "locations",
       name: "Locations",
@@ -383,7 +350,7 @@ function types(version: SiteVersion): TypeSpec[] {
             p(
               "agenda",
               "Agenda",
-              after ? blocks("Agenda", "agendaItem", "map") : blocks("Agenda", "agendaItem"),
+              blocks("Agenda", "agendaItem"),
               { cultures: true }
             ),
           ],
@@ -520,7 +487,7 @@ function types(version: SiteVersion): TypeSpec[] {
       folder: "Campaign",
       cultures: true,
       template: true,
-      compose: ["teamInfo", "locationDetails"],
+      compose: ["teamInfo", "openingHours"],
       groups: [{ tab: "Content", group: "Store", props: [p("openUntil", "Open until", "date")] }],
     },
 
@@ -597,8 +564,8 @@ function headerProps(): Prop[] {
 }
 
 
-// Ids are made from the alias, as stable as a key, so the before and after graphs
-// match type for type and every build draws the same city.
+// Ids are made from the alias, as stable as a key, so every build draws the same
+// city.
 function hash(text: string, seed: number): number {
   let h = 2166136261 ^ seed
   for (let i = 0; i < text.length; i++) {
@@ -616,8 +583,8 @@ function guid(text: string): string {
 const idOf = (alias: string) => guid(`type:${alias.replace(/^missing:/, "")}`)
 const camel = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+(.)/g, (_, c: string) => c.toUpperCase())
 
-export function siteGraph(version: SiteVersion = "before"): SchemaGraph {
-  const specs = types(version)
+export function siteGraph(): SchemaGraph {
+  const specs = types()
   const byAlias = new Map(specs.map((spec) => [spec.alias, spec]))
   const folderNames = [...new Set(specs.map((spec) => spec.folder))].sort()
   const folders = folderNames.map((name) => ({ id: guid(`folder:${name}`), name, parentId: null }))
@@ -748,7 +715,7 @@ export function siteGraph(version: SiteVersion = "before"): SchemaGraph {
 
   const unique = new Map(edges.map((edge) => [JSON.stringify(edge), edge]))
   return {
-    generatedAt: version === "after" ? "2026-10-19T08:00:00Z" : "2026-10-16T08:00:00Z",
+    generatedAt: "2026-10-16T08:00:00Z",
     folders,
     nodes: nodes.sort((a, b) => a.alias.localeCompare(b.alias)),
     edges: [...unique.values()],

@@ -1,7 +1,7 @@
 "use client"
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { useMemo, useRef, useState } from "react"
+import { type ReactNode, type RefObject, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 import {
   boardPalette,
@@ -56,19 +56,39 @@ export type Frame = { left: number; right: number; bottom: number; top: number }
 const BESIDE_TEXT: Frame = { left: -0.2, right: 0.97, bottom: -0.9, top: 0.8 }
 const noop = () => undefined
 
+/** What a slide's own scene pieces need to stand in the city. */
+export type Stage = {
+  city: ReturnType<typeof useCity>
+  /** The layer labels pinned in the scene are drawn into, above the canvas. */
+  labels: RefObject<HTMLDivElement | null>
+  anchors: ReturnType<typeof roofAnchors>
+  palette: CityPalette
+  still: boolean
+}
+
 export function ExampleCity({
   graph,
   paint,
   frame = BESIDE_TEXT,
+  frameOn,
+  framePoints,
+  extras,
   className,
 }: {
   graph: SchemaGraph
   paint: CityPaint
   /** Where on screen the city goes, in normalised device units. */
   frame?: Frame
+  /** The types the camera keeps in view, all of the city when left out. */
+  frameOn?: string[]
+  /** Points the camera keeps in view as well, for pieces a slide adds. */
+  framePoints?: (city: Stage["city"]) => [number, number, number][]
+  /** A slide's own pieces, drawn in the city's space. */
+  extras?: (stage: Stage) => ReactNode
   className?: string
 }) {
   const host = useRef<HTMLDivElement>(null)
+  const labels = useRef<HTMLDivElement>(null)
   const palette = useCityPalette(host)
   const still = useStill()
   return (
@@ -80,21 +100,40 @@ export function ExampleCity({
           resize={{ offsetSize: true }}
           shadows="percentage"
         >
-          <ExampleScene frame={frame} graph={graph} paint={paint} palette={palette} still={still} />
+          <ExampleScene
+            extras={extras}
+            frame={frame}
+            frameOn={frameOn}
+            framePoints={framePoints}
+            graph={graph}
+            labels={labels}
+            paint={paint}
+            palette={palette}
+            still={still}
+          />
         </Canvas>
       ) : null}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" ref={labels} />
     </div>
   )
 }
 
 function ExampleScene({
+  extras,
   frame,
+  frameOn,
+  framePoints,
   graph,
+  labels,
   paint,
   palette,
   still,
 }: {
+  extras?: (stage: Stage) => ReactNode
+  labels: RefObject<HTMLDivElement | null>
   frame: Frame
+  frameOn?: string[]
+  framePoints?: (city: Stage["city"]) => [number, number, number][]
   graph: SchemaGraph
   paint: CityPaint
   palette: CityPalette
@@ -103,25 +142,44 @@ function ExampleScene({
   const city = useCity(graph)
   const camera = useThree((state) => state.camera)
   const { centre, span } = city.ground
-  const target = useMemo(() => new THREE.Vector3(centre.x, 0, centre.z), [centre])
   // Every board's corners and every roof: what a camera has to keep in view. The
   // corners of the ground as a whole would frame the empty space between boards.
+  // A slide that frames a few types keeps their footprints and roofs instead.
   const corners = useMemo(() => {
+    const roof = (placement: (typeof city.placements)[number]) =>
+      new THREE.Vector3(
+        placement.position.x,
+        (placement.y ?? 0) + (city.heights.get(placement.id) ?? placement.height),
+        placement.position.z
+      )
+    const extra = (framePoints?.(city) ?? []).map(([x, y, z]) => new THREE.Vector3(x, y, z))
+    if (frameOn) {
+      const among = new Set(frameOn)
+      return [
+        ...city.placements
+          .filter((placement) => among.has(placement.id))
+          .flatMap((placement) => {
+            const half = placement.footprint / 2 + 1
+            return [
+              roof(placement),
+              ...[-half, half].flatMap((dx) =>
+                [-half, half].map(
+                  (dz) => new THREE.Vector3(placement.position.x + dx, 0, placement.position.z + dz)
+                )
+              ),
+            ]
+          }),
+        ...extra,
+      ]
+    }
     const ground = city.districts.flatMap((district) =>
       [district.minX - ISLAND_PAD, district.maxX + ISLAND_PAD].flatMap((x) =>
         [district.minZ - ISLAND_PAD, district.maxZ + ISLAND_PAD].map((z) => new THREE.Vector3(x, 0, z))
       )
     )
-    const roofs = city.placements.map(
-      (placement) =>
-        new THREE.Vector3(
-          placement.position.x,
-          (placement.y ?? 0) + (city.heights.get(placement.id) ?? placement.height),
-          placement.position.z
-        )
-    )
-    return [...ground, ...roofs]
-  }, [city])
+    return [...ground, ...city.placements.map(roof), ...extra]
+  }, [city, frameOn, framePoints])
+  const rig = useRef<Rig | null>(null)
   const [roads, setRoads] = useState(still ? 1 : 0)
 
   const scale = useMemo(() => {
@@ -160,9 +218,15 @@ function ExampleScene({
     )
   }, [city.edges, paint.arcs])
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const t = still ? 0 : state.clock.elapsedTime
-    fit(camera as THREE.PerspectiveCamera, target, corners, START + t * ORBIT, state.size, frame)
+    const perspective = camera as THREE.PerspectiveCamera
+    const angle = START + t * ORBIT
+    const wanted = solve(perspective, corners, angle, frame)
+    // Ease toward each new framing, so a step moves the camera instead of cutting.
+    const k = still || !rig.current ? 1 : 1 - Math.exp(-delta * 2.2)
+    rig.current = rig.current ? blend(rig.current, wanted, k) : wanted
+    place(perspective, rig.current, angle, state.size)
     const next = revealAt(state.clock.elapsedTime, still).links
     if (Math.abs(next - roads) > 0.02 || (next === 1 && roads !== 1)) setRoads(next)
   })
@@ -216,6 +280,7 @@ function ExampleScene({
         opacity={roads}
         placementsById={city.placementsById}
       />
+      {extras?.({ city, anchors, labels, palette, still })}
     </>
   )
 }
@@ -236,28 +301,45 @@ function extent(camera: THREE.PerspectiveCamera, corners: THREE.Vector3[]) {
   return box
 }
 
+/** Where the camera looks from and how the lens is shifted, for one framing. */
+type Rig = { x: number; z: number; distance: number; dx: number; dy: number }
+
+const blend = (a: Rig, b: Rig, k: number): Rig => ({
+  x: a.x + (b.x - a.x) * k,
+  z: a.z + (b.z - a.z) * k,
+  distance: a.distance + (b.distance - a.distance) * k,
+  dx: a.dx + (b.dx - a.dx) * k,
+  dy: a.dy + (b.dy - a.dy) * k,
+})
+
+function aim(camera: THREE.PerspectiveCamera, x: number, z: number, distance: number, angle: number) {
+  const level = Math.cos(ELEVATION) * distance
+  camera.position.set(x + Math.sin(angle) * level, Math.sin(ELEVATION) * distance, z + Math.cos(angle) * level)
+  camera.lookAt(x, 0, z)
+}
+
 /**
- * Puts the camera on its three-quarter heading as close as the whole city allows,
- * then shifts the lens so the city lands inside the frame. A lens shift moves the
- * picture without turning the camera, so the city keeps its angle wherever it sits.
+ * Puts the camera on its three-quarter heading as close as the corners allow,
+ * then works out the lens shift that lands them inside the frame. A lens shift
+ * moves the picture without turning the camera, so the city keeps its angle
+ * wherever it sits.
  */
-function fit(
-  camera: THREE.PerspectiveCamera,
-  target: THREE.Vector3,
-  corners: THREE.Vector3[],
-  angle: number,
-  size: { width: number; height: number },
-  frame: Frame
-) {
+function solve(camera: THREE.PerspectiveCamera, corners: THREE.Vector3[], angle: number, frame: Frame): Rig {
   camera.clearViewOffset()
-  const place = (distance: number) => {
-    const level = Math.cos(ELEVATION) * distance
-    camera.position.set(
-      target.x + Math.sin(angle) * level,
-      target.y + Math.sin(ELEVATION) * distance,
-      target.z + Math.cos(angle) * level
-    )
-    camera.lookAt(target)
+  let minX = Infinity
+  let maxX = -Infinity
+  let minZ = Infinity
+  let maxZ = -Infinity
+  for (const corner of corners) {
+    minX = Math.min(minX, corner.x)
+    maxX = Math.max(maxX, corner.x)
+    minZ = Math.min(minZ, corner.z)
+    maxZ = Math.max(maxZ, corner.z)
+  }
+  const x = (minX + maxX) / 2
+  const z = (minZ + maxZ) / 2
+  const measure = (distance: number) => {
+    aim(camera, x, z, distance, angle)
     return extent(camera, corners)
   }
   const fits = (box: ReturnType<typeof extent>) =>
@@ -266,17 +348,26 @@ function fit(
   let far = 4000
   for (let i = 0; i < 24; i++) {
     const middle = (near + far) / 2
-    if (fits(place(middle))) far = middle
+    if (fits(measure(middle))) far = middle
     else near = middle
   }
-  const box = place(far)
-  const dx = (frame.left + frame.right) / 2 - (box.minX + box.maxX) / 2
-  const dy = (frame.bottom + frame.top) / 2 - (box.minY + box.maxY) / 2
+  const box = measure(far)
+  return {
+    x,
+    z,
+    distance: far,
+    dx: (frame.left + frame.right) / 2 - (box.minX + box.maxX) / 2,
+    dy: (frame.bottom + frame.top) / 2 - (box.minY + box.maxY) / 2,
+  }
+}
+
+function place(camera: THREE.PerspectiveCamera, rig: Rig, angle: number, size: { width: number; height: number }) {
+  aim(camera, rig.x, rig.z, rig.distance, angle)
   camera.setViewOffset(
     size.width,
     size.height,
-    (-dx * size.width) / 2,
-    (dy * size.height) / 2,
+    (-rig.dx * size.width) / 2,
+    (rig.dy * size.height) / 2,
     size.width,
     size.height
   )

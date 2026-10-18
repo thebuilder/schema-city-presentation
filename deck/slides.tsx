@@ -1,11 +1,7 @@
 import "server-only"
 
 import type { SlideDefinition } from "@thebuilder/deckard-core"
-import {
-  BROKEN_STEPS,
-  CHANGES_STEPS,
-  REACH_STEPS,
-} from "@/deck/examples/site-results"
+import { ADD_PROPERTY_STEPS, DELETED_BLOCK_STEPS } from "@/deck/examples/site-results"
 import { BackofficeGrid } from "@/deck/parts/backoffice-grid"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
@@ -18,7 +14,7 @@ import { Morph } from "@/deck/parts/morph"
 import { Pipeline } from "@/deck/parts/pipeline"
 import { Place } from "@/deck/parts/place"
 import { Placeholder } from "@/deck/parts/placeholder"
-import { SiteBroken, SiteChanges, SiteIntro, SiteReach } from "@/deck/parts/site-examples"
+import { AddProperty, DeletedBlock, SiteIntro } from "@/deck/parts/site-examples"
 import { Takeover } from "@/deck/parts/takeover"
 import { TheWall } from "@/deck/parts/the-wall"
 import { UnixSystem } from "@/deck/parts/unix-system"
@@ -144,7 +140,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "9:55, 9 minutes. Say it, then click the button. Four questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the other two, because the example slides after this go deeper on both. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
+      "9:55, 9 minutes. Say it, then click the button. Four questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the other two, because the example slides after this go deeper. What is already broken: the findings. What did my change actually do: the snapshot, 4 planned edits, 48 side effects, 1 nobody planned.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
@@ -154,7 +150,7 @@ export const slides: SlideDefinition[] = [
     slug: "examples",
     title: "A messier site",
     notes:
-      "18:55, 20 seconds. After the demo. ct-baseline is tidy, so this is a site built to go wrong. An ordinary company site in two languages, 39 types, every problem planted on purpose. Every finding, path and count on the next three slides is Schema City's own.",
+      "18:55, 20 seconds. After the demo. ct-baseline is tidy, so this is a site built to go wrong. An ordinary company site in two languages, 39 types, every problem planted on purpose. Every type, count and clash on the next two slides is Schema City's own.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -162,40 +158,28 @@ export const slides: SlideDefinition[] = [
     body: <SiteIntro />,
   },
   {
-    slug: "examples-broken",
-    title: "What's broken?",
+    slug: "add-property",
+    title: "Can I add a phone property?",
     notes:
-      "19:15, 1.5 minutes. The findings, problems only, worst first. Click through three. About Us still lists a video block whose Element Type was deleted, and content still holds 12 of those blocks. Careers does not vary by culture but composes SEO, which does, so every language shares one meta title. Last year's campaign site lost its Allow at root. Nobody can make a new one, and its pages and pop-up stores live on under the one old node. Each row is Schema City's own sentence.",
+      "19:15, 2 minutes. You want a phone property on Location Details. Click, this is what Umbraco tells you, two types compose it. Click, Schema City keeps going. Location is a parent, so all six location types inherit the property too, 8 types and 8 pages. Click, Store already has a phone property of its own. Umbraco would refuse the save. Here you see it before you start.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     background: "none",
-    stepCount: BROKEN_STEPS,
-    body: <SiteBroken />,
+    stepCount: ADD_PROPERTY_STEPS,
+    body: <AddProperty />,
   },
   {
-    slug: "examples-reach",
-    title: "What does it reach?",
+    slug: "deleted-block",
+    title: "Someone deleted the Video block",
     notes:
-      "20:45, 1.5 minutes. The question from the wall, asked of this site. Umbraco lists the three types that compose Location Details directly. Schema City follows the inheritance too, so every location type that inherits Location comes along. Four of the twelve items are pop-up stores from the campaign. Click. Someone wants to add a phone property, and Store already has one of its own. You find out here, before you build it.",
+      "21:15, 2 minutes. A cleanup removed the Video Element Type. Click, About Us and the Element Types its block list offers. Click, one link runs to an empty plot, because the type it points at is gone. Click, content still holds 12 of those blocks. Schema City lists it as a broken block, before an editor opens the page and finds out.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     background: "none",
-    stepCount: REACH_STEPS,
-    body: <SiteReach />,
-  },
-  {
-    slug: "examples-changes",
-    title: "What did my change do?",
-    notes:
-      "22:15, 1 minute. A snapshot from before the release against the site after it. Each edit is one cause with its side effects under it. Three were in the plan, so they are ticked. Click. The fourth was not. Navigation lost umbracoNaviHide, and nine types changed with it. The phone went in as contactPhone, the clash from the last slide renamed. Pause. Every page someone hid from the menu is back in it.",
-    layout: "fullscreen",
-    header: "hidden",
-    footer: "hidden",
-    background: "none",
-    stepCount: CHANGES_STEPS,
-    body: <SiteChanges />,
+    stepCount: DELETED_BLOCK_STEPS,
+    body: <DeletedBlock />,
   },
   {
     slug: "used-to-be",
