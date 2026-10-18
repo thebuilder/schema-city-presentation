@@ -130,6 +130,28 @@ function ExampleScene({
     return null
   }, [graph, paint.changes, paint.lit])
   const focus = useMemo(() => (paint.focus ? new Set(paint.focus) : null), [paint.focus])
+  // Under any lens the app paints every Element Type phosphor-dim, so amber is
+  // never mistaken for a ramp's end. A slide has no ramp legend to confuse, and
+  // green blocks read as pages there, so the Element Types a lens says nothing
+  // about stand apart in their own amber, drawn without the lens.
+  const groups = useMemo(() => {
+    const plain = new Set(
+      scale
+        ? graph.nodes
+            .filter((node) => node.isElement && !((scale.t.get(node.id) ?? 0) > 0))
+            .map((node) => node.id)
+        : []
+    )
+    const split = <T extends { buildingId: string }>(cells: T[], keep: boolean) =>
+      cells.filter((cell) => plain.has(cell.buildingId) === keep)
+    const part = (keep: boolean) => ({
+      cells: split(city.cells, keep),
+      windows: split(city.windows, keep),
+      plazas: split(city.plazas, keep),
+      placements: city.placements.filter((placement) => plain.has(placement.id) === keep),
+    })
+    return { lensed: part(false), plain: part(true) }
+  }, [city, graph, scale])
   const anchors = useMemo(() => roofAnchors(city.placements, city.heights), [city])
   const arcs = useMemo(() => {
     const among = new Set(paint.arcs ?? [])
@@ -156,22 +178,30 @@ function ExampleScene({
         reducedMotion={still}
         vias={[]}
       />
-      <Buildings
-        cells={city.cells}
-        heights={city.heights}
-        hovered={null}
-        neighbours={focus}
-        onFocus={noop}
-        onHover={noop}
-        onSelect={noop}
-        palette={buildingPalette(palette)}
-        placements={city.placements}
-        plazas={city.plazas}
-        reducedMotion={still}
-        scale={scale}
-        selected={paint.selected ?? null}
-        windows={city.windows}
-      />
+      {[
+        { key: "lensed", ...groups.lensed, scale },
+        { key: "plain", ...groups.plain, scale: null },
+      ].map((group) =>
+        group.placements.length > 0 ? (
+          <Buildings
+            cells={group.cells}
+            heights={city.heights}
+            hovered={null}
+            key={group.key}
+            neighbours={focus}
+            onFocus={noop}
+            onHover={noop}
+            onSelect={noop}
+            palette={buildingPalette(palette)}
+            placements={group.placements}
+            plazas={group.plazas}
+            reducedMotion={still}
+            scale={group.scale}
+            selected={paint.selected ?? null}
+            windows={group.windows}
+          />
+        ) : null
+      )}
       <CityRoads
         colour={palette.phosphor}
         edges={city.edges}

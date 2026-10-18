@@ -159,7 +159,7 @@ export const slides: SlideDefinition[] = [
     slug: "park",
     title: "A messier park",
     notes:
-      "After the demo, 20 seconds. Get the laugh. ct-baseline is tidy, so this is a schema built to go wrong: Jurassic Park's website, 39 types, every problem planted on purpose. Everything on the next three slides is Schema City's own checks run over it, nothing typed in by hand.",
+      "After the demo, 20 seconds. The callback to the fsn opener. ct-baseline is tidy, so this is a schema built to go wrong: Jurassic Park's website, 39 types, every problem planted on purpose. Everything on the next three slides is Schema City's own checks run over it, nothing typed in by hand.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",

@@ -17,7 +17,7 @@ import { ReachWidget } from "@/deck/examples/reach-widget"
  * hands the client only the graph and the rows it prints.
  */
 export function ParkIntro() {
-  return <ParkIntroView graph={parkCity()} text="Dennis Nedry built this one." />
+  return <ParkIntroView graph={parkCity()} text="Let's go back to the park." />
 }
 
 export function ParkBroken() {
