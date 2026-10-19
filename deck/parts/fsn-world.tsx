@@ -93,6 +93,97 @@ function isBelow(
   return false
 }
 
+/*
+ * fsn frames a directory straight on and then holds still, waiting for a hand
+ * on the controls. Nobody touches the controls on a slide, so the deck moves
+ * the camera itself: every framing fsn flies to is turned to an angle, and
+ * once it lands the camera circles the target and closes in, slowly enough
+ * to read the labels while it does.
+ *
+ * The camera, the controls and the flight are private to WorldScene, so this
+ * reaches them by name. It only adjusts poses fsn has already chosen, so a
+ * change in how fsn frames a directory still comes through.
+ */
+interface Rig {
+  camera: { position: Vec3 }
+  controls: { autoRotate: boolean; autoRotateSpeed: number; target: Vec3 }
+  flight: { toPosition: Vec3; toTarget: Vec3 } | null
+  flyToArea: (area: unknown, arrival: string) => void
+}
+
+interface Vec3 {
+  x: number
+  y: number
+  z: number
+}
+
+// Radians off fsn's straight-on framing for the first pose, on the side the
+// establishing shot opens from, so the approach keeps turning the same way.
+const approachAngle = 0.62
+// OrbitControls' units: 2 is a turn every 30 seconds, so this is about three
+// minutes a turn. Negative keeps the turn going the way the approach did.
+const circleSpeed = -0.35
+// How close the camera ends up, as a share of fsn's framing distance, and the
+// share of the remaining gap it closes each second.
+const closest = 0.7
+const closeRate = 0.025
+
+// Turns `point` about `pivot` around the vertical axis and pulls it in.
+function orbit(point: Vec3, pivot: Vec3, angle: number, scale: number) {
+  const dx = point.x - pivot.x
+  const dz = point.z - pivot.z
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+  point.x = pivot.x + (dx * cos + dz * sin) * scale
+  point.y = pivot.y + (point.y - pivot.y) * scale
+  point.z = pivot.z + (dz * cos - dx * sin) * scale
+}
+
+function drift(scene: WorldScene, still: boolean): () => void {
+  const rig = scene as unknown as Rig
+  const flyToArea = rig.flyToArea.bind(scene)
+  let angle = approachAngle
+  let scale = 1
+  let first = true
+
+  rig.flyToArea = (area, arrival) => {
+    // A later flight keeps the angle the circling has got to, so the camera
+    // does not swing back to straight on between directories.
+    if (!first) {
+      const { position } = rig.camera
+      const { target } = rig.controls
+      angle = Math.atan2(position.x - target.x, position.z - target.z)
+    }
+    first = false
+    flyToArea(area, arrival)
+    if (rig.flight) {
+      orbit(rig.flight.toPosition, rig.flight.toTarget, angle, scale)
+    } else {
+      // A still lands at once, with no flight to adjust.
+      orbit(rig.camera.position, rig.controls.target, angle, scale)
+    }
+  }
+
+  if (still) {
+    return () => undefined
+  }
+
+  rig.controls.autoRotate = true
+  rig.controls.autoRotateSpeed = circleSpeed
+  let last = performance.now()
+  let frame = requestAnimationFrame(function closeIn(now) {
+    const seconds = Math.min((now - last) / 1000, 0.1)
+    last = now
+    if (!rig.flight && scale > closest) {
+      const next = closest + (scale - closest) * Math.exp(-closeRate * seconds)
+      orbit(rig.camera.position, rig.controls.target, 0, next / scale)
+      scale = next
+    }
+    frame = requestAnimationFrame(closeIn)
+  })
+  return () => cancelAnimationFrame(frame)
+}
+
 // How long a move between neighbouring directories takes to land, so a pick
 // in the new one happens once the camera is there rather than on the way.
 const travel = 1500
@@ -157,6 +248,7 @@ export function FsnWorld({
             onSwapKeys: () => undefined,
           })
       )
+      const stopDrift = drift(scene, still)
       scene.setGlow(
         glowByDefault({
           coarsePointer: false,
@@ -168,6 +260,7 @@ export function FsnWorld({
       shown.current = null
       setLoaded({ nodes: measure(root, peekFromChildren), root, scene })
       teardown = () => {
+        stopDrift()
         scene.destroy()
         canvas.remove()
         release?.()
