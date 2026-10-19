@@ -31,7 +31,8 @@ export function StagedFrame({
   return (
     <section className="relative h-full w-full overflow-hidden bg-background">
       <ExampleCity className="absolute inset-0" frame={FRAME} {...city} />
-      <div className="pointer-events-none absolute inset-x-0 top-0 px-[var(--slide-padding-inline)] py-[var(--slide-padding-block)]">
+      {/* The city runs up behind the heading, so the heading sits on a fade of the page's own background. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 bg-[linear-gradient(to_bottom,var(--background)_60%,transparent)] px-[var(--slide-padding-inline)] pt-[var(--slide-padding-block)] pb-[calc(var(--slide-padding-block)*2)]">
         <h2 className="text-balance font-bold text-[length:var(--slide-heading-size)] text-primary uppercase leading-[1.08] tracking-[-0.015em] [text-shadow:var(--slide-halo)]">
           {line}
         </h2>

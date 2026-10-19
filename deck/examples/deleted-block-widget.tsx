@@ -5,7 +5,7 @@ import type { SchemaGraph } from "@/deck/city/schema-city"
 import { useStep } from "@/deck/city/use-step"
 import type { Stage } from "@/deck/examples/example-city"
 import type { DeletedBlockExample } from "@/deck/examples/site-results"
-import { Arc, Ghost, type Point, RISE_CELL, RISE_LIFT, Rise, Tag } from "@/deck/examples/stage-parts"
+import { Arc, Ghost, type Point, Rise, riseHeight, Tag } from "@/deck/examples/stage-parts"
 import { StagedFrame } from "@/deck/examples/staged-frame"
 
 /*
@@ -13,7 +13,7 @@ import { StagedFrame } from "@/deck/examples/staged-frame"
  * the whole site, then the camera comes down to the page and its block links
  * draw to the Element Types they resolve. The last link runs to an empty plot
  * where a wireframe stands in for the type that is gone, and the blocks content
- * still stores of it rise off the page's roof.
+ * still stores of it stack up on the page's roof.
  */
 export function DeletedBlockWidget({
   graph,
@@ -34,6 +34,7 @@ export function DeletedBlockWidget({
       framePoints={counting ? (city) => countPoints(city, example) : close ? (city) => framePoints(city, example) : undefined}
       graph={graph}
       line={`Someone deleted the ${example.missingName} block.`}
+      sub={counting ? `${example.stored} ${example.missingName} blocks are still in content` : null}
       paint={{
         selected: example.host,
         focus: close ? [example.host, ...example.targets.map((target) => target.id)] : undefined,
@@ -91,15 +92,6 @@ function Scene({ stage, example, current }: { stage: Stage; example: DeletedBloc
         on={current >= 3}
         still={still}
       />
-      <Tag
-        at={[from.x, from.y + riseHeight(example.stored) + 0.8, from.z]}
-        layer={stage.labels}
-        delay={1.4}
-        on={current >= 3}
-        tone="signal"
-      >
-        {example.stored} blocks still in content
-      </Tag>
     </>
   )
 }
@@ -153,9 +145,6 @@ function framePoints(city: Stage["city"], example: DeletedBlockExample): Point[]
     ...(host ? ([[host.position.x, top, host.position.z]] as Point[]) : []),
   ]
 }
-
-/** How far the stored blocks stack above the roof. */
-const riseHeight = (count: number) => RISE_LIFT + (count > 0 ? RISE_CELL : 0)
 
 /** The page and the blocks over it, with room around them, for the camera's last move. */
 function countPoints(city: Stage["city"], example: DeletedBlockExample): Point[] {

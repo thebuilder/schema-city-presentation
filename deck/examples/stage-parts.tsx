@@ -7,7 +7,7 @@ import * as THREE from "three"
 
 /*
  * The pieces a staged example adds to the city: a link that draws itself, the
- * wireframe of a type that is gone, markers that rise off a roof, and a label
+ * wireframe of a type that is gone, blocks that stack on a roof, and a label
  * pinned to a point. Each one waits for `on`, then plays from the moment it
  * turned on, so a click starts the motion instead of the motion running ahead
  * of the speaker. Under reduced motion or a capture everything is simply there.
@@ -134,11 +134,35 @@ export function Ghost({
 }
 
 /** The spacing of the blocks Rise stacks. */
-export const RISE_CELL = 2.2
-/** How high above the roof the blocks settle. */
-export const RISE_LIFT = 4
+const RISE_CELL = 2
+/** How many blocks a layer of the pile holds, three across and two deep. */
+const RISE_ACROSS = 3
+const RISE_DEEP = 2
 
-/** Small blocks that rise off a roof one after another and settle in a grid. */
+/** How high the pile stands on the roof. */
+export const riseHeight = (count: number) => Math.ceil(count / (RISE_ACROSS * RISE_DEEP)) * RISE_CELL
+
+/*
+ * The city is unlit, so a flat colour turns a box into a hexagon. Shading each
+ * face by hand, the top brightest and the sides darker, gives the blocks their
+ * depth without adding lights the buildings around them would not use.
+ */
+const FACE_SHADE = [0.72, 0.72, 1, 0.35, 0.5, 0.5]
+
+function shadedBox(size: number) {
+  const box = new THREE.BoxGeometry(size, size, size)
+  const colours = new Float32Array(box.attributes.position.count * 3)
+  box.groups.forEach((group, face) => {
+    for (let index = group.start; index < group.start + group.count; index++) {
+      const vertex = box.index ? box.index.getX(index) : index
+      colours.fill(FACE_SHADE[face] ?? 1, vertex * 3, vertex * 3 + 3)
+    }
+  })
+  box.setAttribute("color", new THREE.BufferAttribute(colours, 3))
+  return box
+}
+
+/** Blocks that drop onto a roof one after another and stack into a pile you can count. */
 export function Rise({
   at,
   count,
@@ -154,53 +178,66 @@ export function Rise({
   delay?: number
   still: boolean
 }) {
-  const columns = Math.ceil(Math.sqrt(count))
-  const cell = RISE_CELL
-  const meshes = useRef<(THREE.Mesh | null)[]>([])
-  const material = useMemo(() => new THREE.MeshBasicMaterial({ color: colour, toneMapped: false }), [colour])
-  const box = useMemo(() => new THREE.BoxGeometry(RISE_CELL * 0.5, RISE_CELL * 0.5, RISE_CELL * 0.5), [])
+  const layer = RISE_ACROSS * RISE_DEEP
+  const meshes = useRef<(THREE.Group | null)[]>([])
+  const fill = useMemo(() => new THREE.MeshBasicMaterial({ color: colour, vertexColors: true, toneMapped: false }), [colour])
+  const edge = useMemo(
+    () => new THREE.LineBasicMaterial({ color: new THREE.Color(colour).multiplyScalar(0.3), toneMapped: false }),
+    [colour]
+  )
+  const size = RISE_CELL * 0.86
+  const box = useMemo(() => shadedBox(size), [size])
+  const edges = useMemo(() => new THREE.EdgesGeometry(box), [box])
   const since = useSince(on, delay)
   useFrame((state) => {
     const t = since(state.clock.elapsedTime)
     meshes.current.forEach((mesh, index) => {
       if (!mesh) return
-      const own = t === null ? 0 : still ? 1 : ease((t - index * 0.12) / 0.5)
+      const own = t === null ? 0 : still ? 1 : ease((t - index * 0.12) / 0.45)
       mesh.visible = own > 0
-      // A flat grid hovering over the roof, which reads as a count from above.
-      const row = Math.floor(index / columns)
-      const column = index % columns
+      const level = Math.floor(index / layer)
+      const across = index % RISE_ACROSS
+      const deep = Math.floor((index % layer) / RISE_ACROSS)
+      // Each block falls the last few units into its place, so the pile is seen being counted.
       mesh.position.set(
-        (column - (columns - 1) / 2) * cell,
-        own * RISE_LIFT,
-        (row - (Math.ceil(count / columns) - 1) / 2) * cell
+        (across - (RISE_ACROSS - 1) / 2) * RISE_CELL,
+        level * RISE_CELL + size / 2 + (1 - own) * 5,
+        (deep - (RISE_DEEP - 1) / 2) * RISE_CELL
       )
-      mesh.scale.setScalar(Math.max(0.001, own))
     })
   })
   return (
     <group position={at}>
       {Array.from({ length: count }, (_, index) => (
-        <mesh
-          geometry={box}
+        <group
           // biome-ignore lint/suspicious/noArrayIndexKey: the blocks are identical and never reorder.
           key={index}
-          material={material}
           ref={(mesh) => {
             meshes.current[index] = mesh
           }}
-        />
+        >
+          <mesh geometry={box} material={fill} />
+          <lineSegments geometry={edges} material={edge} />
+        </group>
       ))}
     </group>
   )
 }
 
-/** A label pinned to a point in the city, fading in once `on`. */
+const SIDES = {
+  centre: "translate(-50%, -50%)",
+  left: "translate(calc(-100% - 0.75rem), -50%)",
+  right: "translate(0.75rem, -50%)",
+}
+
+/** A label pinned to a point in the city, on a plate so it reads over the buildings, fading in once `on`. */
 export function Tag({
   at,
   layer,
   on,
   delay = 0,
   tone = "plain",
+  side = "centre",
   children,
 }: {
   at: Point
@@ -209,20 +246,36 @@ export function Tag({
   on: boolean
   delay?: number
   tone?: "plain" | "signal"
+  /** Which side of the point the plate sits, for two labelled buildings that stand side by side. */
+  side?: "centre" | "left" | "right"
   children: ReactNode
 }) {
   return (
-    <Html center portal={layer as RefObject<HTMLElement>} position={at} style={{ pointerEvents: "none" }}>
+    <Html portal={layer as RefObject<HTMLElement>} position={at} style={{ pointerEvents: "none" }}>
       <span
-        className="whitespace-nowrap font-bold text-[length:var(--slide-label-size)] uppercase tracking-[var(--slide-label-tracking)] transition-opacity duration-500 [text-shadow:var(--slide-halo)]"
+        className="flex w-max items-center gap-3 whitespace-nowrap border bg-[var(--slide-surface)] px-3 py-1.5 font-semibold text-[length:var(--slide-support-size)] leading-none backdrop-blur-sm transition-opacity duration-500"
         style={{
+          borderColor: tone === "signal" ? "var(--slide-signal)" : "var(--slide-surface-border)",
           color: tone === "signal" ? "var(--slide-signal)" : "var(--foreground)",
           opacity: on ? 1 : 0,
+          transform: SIDES[side],
           transitionDelay: on ? `${delay}s` : "0s",
         }}
       >
         {children}
       </span>
     </Html>
+  )
+}
+
+/** A property alias inside a label, in the colour of the link that brings it or the clash it causes. */
+export function Chip({ colour, children }: { colour: string; children: ReactNode }) {
+  return (
+    <span
+      className="border px-2 py-1 font-mono text-[length:var(--slide-label-size)] leading-none"
+      style={{ borderColor: colour, color: colour }}
+    >
+      {children}
+    </span>
   )
 }

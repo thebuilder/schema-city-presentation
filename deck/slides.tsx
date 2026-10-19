@@ -9,7 +9,7 @@ import { FakeOut } from "@/deck/parts/fake-out"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
 import { Place } from "@/deck/parts/place"
-import { AddProperty, DeletedBlock, SiteIntro } from "@/deck/parts/site-examples"
+import { AddProperty, DeletedBlock } from "@/deck/parts/site-examples"
 import { Takeover } from "@/deck/parts/takeover"
 import { Trex } from "@/deck/parts/trex"
 import { UnixSystem } from "@/deck/parts/unix-system"
@@ -119,11 +119,9 @@ export const slides: SlideDefinition[] = [
     title: "A messier site",
     notes:
       "18:55, 20 seconds. After the demo. ct-baseline is tidy, so this is a site built to go wrong. An ordinary company site in two languages, 39 types, every problem planted on purpose. Every type, count and clash on the next two slides is Schema City's own.",
-    layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
-    background: "none",
-    body: <SiteIntro />,
+    body: <Statement text="Now, a messier site." />,
   },
   {
     slug: "add-property",

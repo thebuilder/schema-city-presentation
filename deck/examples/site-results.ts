@@ -73,7 +73,7 @@ export type AddPropertyExample = {
   /** The types that compose it directly, the ones Umbraco lists. */
   direct: { id: string; name: string }[]
   /** Everything further along, with the type it is reached through. */
-  further: { id: string; via: string }[]
+  further: { id: string; name: string; via: string }[]
   totals: string
   /** The types that already have a property with the alias. */
   collisions: { id: string; name: string }[]
@@ -97,7 +97,7 @@ export function addPropertyExample(): AddPropertyExample {
     direct: direct.map((row) => ({ id: row.id, name: row.name })),
     further: further.map((row) => {
       const path = row.paths[0] ?? []
-      return { id: row.id, via: path.at(-2)?.id ?? start }
+      return { id: row.id, name: row.name, via: path.at(-2)?.id ?? start }
     }),
     totals: totalsLine(impact.types, impact.content),
     collisions: (check?.collisions ?? []).map((collision) => ({ id: collision.id, name: collision.name })),
