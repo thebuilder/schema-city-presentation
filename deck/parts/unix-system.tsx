@@ -18,16 +18,13 @@ import { Terminal } from "@/deck/parts/terminal"
  * activates velociraptor.webp and opens it: the raptor is inside. Beat 3
  * closes it, activates the doors and locks them, the panels sliding shut and
  * the light going green. Each window
- * waits for its flight to land, so it reads as opened from the block the beam
- * points at.
+ * waits for its pillar to land and blink twice as picked, so it reads as
+ * opened from the block the beam points at.
  */
 const delays = [3800, 8500, 13000]
 
 // Long enough for the command to finish typing before the tree appears.
 const bootDelay = 1500
-
-// Long enough for fsn's flight to the picked block to land.
-const landDelay = 1400
 
 const loadPark = () => Promise.resolve(park)
 
@@ -65,10 +62,12 @@ export function UnixSystem() {
 
   const focus = beat >= 2
   const picked = beat >= 3 ? parkDoors : parkRaptor
-  // The raptor's window closes as the doors are picked, so one window is open
-  // at a time, the way a person would work it.
-  const raptorOpen = useAfter(beat === 2, landDelay, still)
-  const doorsOpen = useAfter(beat >= 3, landDelay, still)
+  // A window opens once its pillar has blinked as picked, so it reads as
+  // opened from that block. The raptor's closes as the doors are picked, so
+  // one window is open at a time, the way a person would work it.
+  const [pickedId, setPickedId] = useState<string | null>(null)
+  const raptorOpen = beat === 2 && pickedId === parkRaptor
+  const doorsOpen = beat >= 3 && pickedId === parkDoors
   const locked = useAfter(doorsOpen, DOOR_LOCK_MS, still)
 
   return (
@@ -79,6 +78,7 @@ export function UnixSystem() {
           focus={focus ? picked : undefined}
           open={focus ? parkSecurity : parkHome}
           load={loadPark}
+          onPicked={setPickedId}
           still={still}
         />
       ) : null}

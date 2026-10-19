@@ -109,8 +109,13 @@ interface Rig {
   controls: { autoRotate: boolean; autoRotateSpeed: number; target: Vec3 }
   flight: { toPosition: Vec3; toTarget: Vec3 } | null
   flyToArea: (area: unknown, arrival: string) => void
+  hoverShown: Pick | null
+  hoverStrength: number
   hoverTarget: Pick | null
   pickMeshes: Map<unknown, Pick[]>
+  selectionBox: { visible: boolean }
+  updateHoverHighlight: (delta: number) => void
+  writeHover: (pick: Pick, strength: number) => void
 }
 
 interface Pick {
@@ -129,6 +134,66 @@ function activate(scene: WorldScene, id: string) {
     .flat()
     .find((candidate) => candidate.node.id === id)
   rig.hoverTarget = pick ?? null
+  return pick
+}
+
+/*
+ * A hover lift on its own is too quiet to read from the back of a room, so a
+ * pick blinks twice once the camera has settled, the pillar flaring well past
+ * fsn's own highlight with the selection box going with it, and then rests in
+ * the ordinary hover. fsn's hover update is set aside for the blink so its
+ * easing does not smooth the flashes away, and handed back after.
+ */
+const blinkFlashes = 2
+const blinkPeriod = 300
+const blinkStrength = 2.6
+// Long enough for the refocus flight that follows a pick, should it run on.
+const blinkWaitLimit = 2500
+
+function blink(scene: WorldScene, pick: Pick, done: () => void): () => void {
+  const rig = scene as unknown as Rig
+  const update = rig.updateHoverHighlight
+  const begun = performance.now()
+  let start: number | null = null
+  let frame = 0
+
+  const finish = () => {
+    rig.updateHoverHighlight = update
+    rig.selectionBox.visible = true
+    rig.hoverShown = pick
+    rig.hoverStrength = 1
+    rig.writeHover(pick, 1)
+  }
+
+  rig.updateHoverHighlight = (delta) => {
+    if (start === null) {
+      update.call(scene, delta)
+      return
+    }
+    const elapsed = performance.now() - start
+    const on = elapsed % blinkPeriod < blinkPeriod / 2
+    rig.hoverShown = pick
+    rig.hoverStrength = on ? blinkStrength : 0
+    rig.writeHover(pick, rig.hoverStrength)
+    rig.selectionBox.visible = on
+  }
+
+  frame = requestAnimationFrame(function wait(now) {
+    if (start === null && (!rig.flight || now - begun > blinkWaitLimit)) {
+      start = now
+    }
+    if (start !== null && now - start >= blinkFlashes * blinkPeriod) {
+      finish()
+      done()
+      return
+    }
+    frame = requestAnimationFrame(wait)
+  })
+
+  return () => {
+    cancelAnimationFrame(frame)
+    finish()
+  }
 }
 
 interface Vec3 {
@@ -145,8 +210,11 @@ const approachAngle = 0.62
 const circleSpeed = -0.35
 // How close the camera ends up, as a share of fsn's framing distance, and the
 // share of the remaining gap it closes each second.
-const closest = 0.7
-const closeRate = 0.025
+const closest = 0.5
+const closeRate = 0.04
+// Where the closing in starts, so the first pose is already near enough to
+// read the directory names.
+const startScale = 0.7
 
 // Turns `point` about `pivot` around the vertical axis and pulls it in.
 function orbit(point: Vec3, pivot: Vec3, angle: number, scale: number) {
@@ -163,7 +231,7 @@ function drift(scene: WorldScene, still: boolean): () => void {
   const rig = scene as unknown as Rig
   const flyToArea = rig.flyToArea.bind(scene)
   let angle = approachAngle
-  let scale = 1
+  let scale = startScale
   let first = true
 
   rig.flyToArea = (area, arrival) => {
@@ -218,6 +286,7 @@ export function FsnWorld({
   className,
   focus,
   load,
+  onPicked,
   open,
   still,
 }: {
@@ -226,6 +295,8 @@ export function FsnWorld({
   focus?: string
   /** The filesystem to fly, fetched once the slide is up. */
   load: () => Promise<FsNode>
+  /** Called with the id of `focus` once its pick has finished blinking. */
+  onPicked?: (id: string) => void
   /** The id of the directory on screen, the root when left out. */
   open?: string
   still: boolean
@@ -320,18 +391,30 @@ export function FsnWorld({
     // neighbours' names fill the screen. refocus straight after keeps the
     // pick and takes the camera back to the directory's own framing, so the
     // room can see the door locks and what stands around them.
+    let stopBlink: (() => void) | undefined
     const pick = () => {
       scene.focusNode(target)
       scene.refocus()
-      activate(scene, target.id)
+      const picked = activate(scene, target.id)
+      if (still || !picked) {
+        onPicked?.(target.id)
+        return
+      }
+      stopBlink = blink(scene, picked, () => {
+        stopBlink = undefined
+        onPicked?.(target.id)
+      })
     }
     if (still || previous?.id === directory.id) {
       pick()
-      return
+      return () => stopBlink?.()
     }
     const timer = window.setTimeout(pick, travel)
-    return () => window.clearTimeout(timer)
-  }, [focus, loaded, open, still])
+    return () => {
+      window.clearTimeout(timer)
+      stopBlink?.()
+    }
+  }, [focus, loaded, onPicked, open, still])
 
   return (
     <div
