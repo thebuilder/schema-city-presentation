@@ -54,15 +54,19 @@ import { useStep } from "@/deck/city/use-step"
  * which is why the zoom-out lands on a city that already contains them.
  */
 
-type Beat = { term: string; name?: "focus" | "composition" | "sharers" }
+type Beat = { line: string; name: "focus" | "composition" | "sharers" }
 
-/** One label per step, the term and the type it is about. */
+/*
+ * One line per step, saying what the Umbraco term becomes in the city, over
+ * the name of the type it is about. The term is what the room has to learn,
+ * so it is the large text, and the type stays as a small label.
+ */
 const BEATS: (Beat | null)[] = [
-  { term: "Document Type", name: "focus" },
-  { term: "Property groups", name: "focus" },
-  { term: "Properties", name: "focus" },
-  { term: "Composition", name: "composition" },
-  { term: "Also uses it", name: "sharers" },
+  { line: "A Document Type is a building.", name: "focus" },
+  { line: "Property groups are its floors.", name: "focus" },
+  { line: "Properties are its windows.", name: "focus" },
+  { line: "A composition gets its own plot.", name: "composition" },
+  { line: "Every type that uses it links to it.", name: "sharers" },
   null,
 ]
 
@@ -762,7 +766,7 @@ function Scene({
   )
 }
 
-function castName(cast: Cast, name: NonNullable<Beat["name"]>) {
+function castName(cast: Cast, name: Beat["name"]) {
   return name === "sharers"
     ? cast.sharers.map((node) => node.name).join(" and ")
     : cast[name].name
@@ -803,10 +807,10 @@ export function BuildupWidget({
         style={{ opacity: beat ? 1 : 0 }}
       >
         <p className="font-bold text-[length:var(--slide-support-size)] text-primary uppercase tracking-[var(--slide-label-tracking)] [text-shadow:var(--slide-halo)]">
-          {beat?.term ?? ""}
+          {beat && cast ? castName(cast, beat.name) : ""}
         </p>
         <p className="mt-3 font-bold text-[length:var(--slide-heading-size)] text-foreground leading-tight [text-shadow:var(--slide-halo)]">
-          {beat?.name && cast ? castName(cast, beat.name) : ""}
+          {beat?.line ?? ""}
         </p>
       </div>
     </div>

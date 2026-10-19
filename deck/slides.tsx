@@ -97,7 +97,7 @@ export const slides: SlideDefinition[] = [
     slug: "buildup",
     title: "Same data",
     notes:
-      "6:15, 2.25 minutes. The only reveal. Click through slowly, one sentence a click. Content page, the one you just saw in the backoffice, rises as a building. Click, its floors are its property groups. Click, the windows are its properties. Click, Page Meta, the composition it uses, and the arc between them. Click, Article page uses it too. Click, and pull up: same data, every Document Type. The data did not change, the interface did. Then, plainly: so I built something.",
+      "6:15, 2.25 minutes. The only reveal. Click through slowly, one sentence a click, the line on screen says what each Umbraco term becomes. Content page, the one you just saw in the backoffice, rises as a building. Click, its floors are its property groups. Click, the windows are its properties. Click, Page Meta, the composition it uses, and the arc between them. Click, Article page and Articles page use it too, each linked once it is built. Click, and pull up: same data, every Document Type. The data did not change, the interface did. Then, plainly: so I built something.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
