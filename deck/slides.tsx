@@ -55,11 +55,12 @@ export const slides: SlideDefinition[] = [
     slug: "backoffice",
     title: "How we see it",
     notes:
-      "1:45, 2 minutes. The screen builds itself: Home page, Metadata tab, one property at a time, each inherited from Page Meta. They know it. The line lands once it is full, read it once. Click: everything dims but Page Meta in the tree, a Document Type, and wires run from it to every property it gave Home page. The question the whole talk answers: what does a change to Page Meta reach? Ask the room. This screen tells you where the properties come from, not where they go. Leave it open.",
+      "1:45, 3 minutes. The screen builds itself: Home page, Metadata tab, one property at a time, each inherited from Page Meta. They know it. The line lands once it is full, read it once. Click: the Compositions dialog, Hero, Header, Footer and Page Meta ticked. Home page is four other types underneath, and the tabs blend them together. Click: the Modules property and its ten blocks. You can see what Home page allows, not that three other page types allow the same ten. Click: Structure, six page types allowed under it. Every screen tells you what goes into Home page. None of them tells you where anything goes. Click: everything dims but Page Meta in the tree, a Document Type, and wires run from it to every property it gave Home page. The question the whole talk answers: what does a change to Page Meta reach? Ask the room. Leave it open.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
-    stepCount: 2,
+    // BACKOFFICE_STEPS in deck/parts/backoffice.tsx.
+    stepCount: 5,
     body: <Backoffice />,
   },
   {

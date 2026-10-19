@@ -5,6 +5,7 @@ import {
   ArrowUpDown,
   ArrowUpToLine,
   Bookmark,
+  Boxes,
   Calculator,
   ChevronDown,
   ChevronRight,
@@ -22,6 +23,7 @@ import {
   Info,
   LayoutGrid,
   Link,
+  List,
   type LucideIcon,
   Megaphone,
   Merge,
@@ -30,10 +32,23 @@ import {
   Quote,
   Search,
   Settings,
+  Square,
+  SquareCheck,
+  ToggleRight,
+  TriangleAlert,
+  Users,
   Video,
   Waypoints,
+  X,
 } from "lucide-react"
-import { type CSSProperties, type Ref, useLayoutEffect, useRef, useState } from "react"
+import {
+  type CSSProperties,
+  type ReactNode,
+  type Ref,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import ctBaseline from "@/deck/city/ct-baseline.json"
 import { useStep } from "@/deck/city/use-step"
 import { useStill } from "@/deck/parts/beats"
@@ -47,12 +62,34 @@ import { Words } from "@/deck/parts/line"
  * the city is built from, so the screen and the city agree.
  *
  * Step 0 builds the tab a property at a time, each one marked as inherited
- * from Page Meta, and the line lands once it is full. Step 1 dims everything
- * but Page Meta in the tree and the six marks that point at it, draws a wire
- * from one to each of the others, and asks the question.
+ * from Page Meta, and the line lands once it is full. The next three steps
+ * open the other places the backoffice explains Home page from: the
+ * compositions it is made of, the blocks its Modules property allows, and
+ * the page types allowed under it. Each one says what Home page takes in and
+ * nothing about who else takes the same. The last step goes back to Metadata,
+ * dims everything but Page Meta in the tree and the six marks that point at
+ * it, draws a wire from one to each of the others, and asks the question.
  */
 
-export const BACKOFFICE_STEPS = 2
+export const BACKOFFICE_STEPS = 5
+
+// The step each screen belongs to, after the opening build.
+const COMPOSITIONS = 1
+const BLOCKS = 2
+const STRUCTURE = 3
+const ASKED = 4
+
+// The line under each screen, in the speaker's voice.
+const CAPTIONS = [
+  "This is how we see our content model.",
+  "Home page is built from four other types.",
+  "Ten kinds of block can go on it.",
+  "Six page types can live under it.",
+]
+
+// Milliseconds between items as a panel fills, after it has slid in.
+const PANEL_AT = 250
+const ITEM_GAP = 90
 
 // The backoffice is drawn at a laptop's size and scaled up, so its text is the
 // size the room is used to seeing it, only larger. The scale leaves the lower
@@ -92,6 +129,7 @@ interface DocType {
 }
 
 const graph = ctBaseline.graph as unknown as {
+  edges: { from: string; kind: string; to: string }[]
   folders: { id: string; name: string; parentId: string | null }[]
   nodes: DocType[]
 }
@@ -102,12 +140,42 @@ const metadata = homePage?.groups.find(
   (group) => group.type === "Group" && group.fromCompositionId === pageMeta?.id
 )
 
+const byId = new Map(graph.nodes.map((node) => [node.id, node]))
+const edgesFrom = (kind: string) =>
+  graph.edges
+    .filter((edge) => edge.kind === kind && edge.from === homePage?.id)
+    .flatMap((edge) => byId.get(edge.to) ?? [])
+
+// Every composition the dialog offers, and the ones Home page has ticked.
+const compositionsFolder = graph.folders.find((folder) => folder.name === "Compositions")
+const compositions = graph.nodes
+  .filter((node) => node.folderId === compositionsFolder?.id)
+  .sort((a, b) => a.name.localeCompare(b.name))
+const composed = new Set(edgesFrom("composition").map((node) => node.id))
+
+const modulesProperty = homePage?.groups
+  .flatMap((group) => group.properties ?? [])
+  .find((property) => property.alias === "modules") as
+  | (Property & { targets?: { nodeId: string }[] })
+  | undefined
+const contentGroup = homePage?.groups.find(
+  (group) => group.type === "Group" && group.properties?.includes(modulesProperty as Property)
+)
+const blocks = (modulesProperty?.targets ?? []).flatMap(
+  (target) => byId.get(target.nodeId) ?? []
+)
+const children = edgesFrom("allowedChild")
+
 // Umbraco draws its icons from Lucide, so these are the same shapes.
 const ICONS: Record<string, LucideIcon> = {
+  "icon-alert": TriangleAlert,
   "icon-article": FileText,
   "icon-bookmark": Bookmark,
   "icon-calculator": Calculator,
+  "icon-bulleted-list": List,
   "icon-code": Code,
+  "icon-document": File,
+  "icon-folder": Folder,
   "icon-grid": Grid3x3,
   "icon-help-alt": CircleHelp,
   "icon-info": Info,
@@ -117,8 +185,10 @@ const ICONS: Record<string, LucideIcon> = {
   "icon-page-up": ArrowUpToLine,
   "icon-picture": Image,
   "icon-quote": Quote,
+  "icon-search": Search,
   "icon-settings": Settings,
   "icon-split": Columns2,
+  "icon-users": Users,
   "icon-video": Video,
 }
 
@@ -192,7 +262,10 @@ interface Wire {
 }
 
 export function Backoffice() {
-  const asked = useStep() >= 1
+  const step = useStep()
+  const asked = step >= ASKED
+  const view =
+    step === BLOCKS ? "content" : step === STRUCTURE ? "structure" : "metadata"
   const still = useStill()
   const arrived = useArrived(still)
   const root = useRef<HTMLDivElement>(null)
@@ -241,7 +314,8 @@ export function Backoffice() {
       {/* A picture of an app whose panes scroll, so its lists run on past
           their boxes the way the real ones do. */}
       <div
-        className="absolute top-0 left-0 flex flex-col"
+        // Clipped, so a panel parked off its right edge stays out of view.
+        className="absolute top-0 left-0 flex flex-col overflow-hidden"
         data-slide-scroll-area=""
         ref={root}
         style={{
@@ -292,9 +366,21 @@ export function Backoffice() {
           </aside>
 
           <main className="flex min-w-0 flex-1 flex-col">
-            <EditorHeader asked={asked} />
-            <Tabs asked={asked} />
-            <div className="flex flex-col gap-4 px-4 pt-4">
+            <EditorHeader asked={asked} view={view} />
+            {view === "structure" ? (
+              <StructurePanel still={still} />
+            ) : (
+              <Tabs
+                asked={asked}
+                choosing={step === COMPOSITIONS}
+                view={view}
+              />
+            )}
+            {view === "content" ? <ContentPanel still={still} /> : null}
+            <div
+              className="flex flex-col gap-4 px-4 pt-4"
+              style={{ display: view === "metadata" ? undefined : "none" }}
+            >
               <div
                 className="rounded-[3px] border border-dashed py-2.5 text-center text-[13px]"
                 style={{ ...dim(asked), borderColor: "#c7c8cf" }}
@@ -388,6 +474,63 @@ export function Backoffice() {
             />
           ))}
         </svg>
+
+        <Sidebar
+          open={step === COMPOSITIONS}
+          still={still}
+          subtitle="Inherit tabs and properties from an existing Document Type."
+          title="Compositions"
+        >
+          {compositions.map((node, index) => {
+            const Icon = ICONS[node.icon] ?? File
+            const ticked = composed.has(node.id)
+            const Box = ticked ? SquareCheck : Square
+            return (
+              <div
+                className="flex items-center gap-3 rounded-[3px] border px-3 py-2.5 text-[13px]"
+                key={node.id}
+                style={{
+                  ...enter(step === COMPOSITIONS, PANEL_AT + ITEM_GAP * index, still),
+                  background: ticked ? colours.accentWash : "white",
+                  borderColor: ticked ? colours.accent : colours.border,
+                }}
+              >
+                <Box
+                  className="size-4"
+                  style={{ color: ticked ? colours.accent : colours.muted }}
+                />
+                <Icon className="size-4" />
+                <span className={ticked ? "font-bold" : undefined}>{node.name}</span>
+              </div>
+            )
+          })}
+        </Sidebar>
+
+        <Sidebar
+          open={step === BLOCKS}
+          still={still}
+          subtitle={`${modulesProperty?.dataTypeName ?? ""}, Block List`}
+          title="Available blocks"
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {blocks.map((node, index) => {
+              const Icon = ICONS[node.icon] ?? Boxes
+              return (
+                <div
+                  className="flex flex-col items-center gap-2 rounded-[3px] border bg-white px-2 py-3 text-center text-[12px]"
+                  key={node.id}
+                  style={{
+                    ...enter(step === BLOCKS, PANEL_AT + ITEM_GAP * index, still),
+                    borderColor: colours.border,
+                  }}
+                >
+                  <Icon className="size-5" style={{ color: colours.header }} />
+                  {node.name}
+                </div>
+              )
+            })}
+          </div>
+        </Sidebar>
       </div>
 
       <div
@@ -395,14 +538,19 @@ export function Backoffice() {
         data-slide-surface=""
         style={{
           opacity: asked || !arrived ? 0 : 1,
-          transitionDelay: asked || still ? "0ms" : `${LINE_AT}ms`,
+          transitionDelay: asked || still || step > 0 ? "0ms" : `${LINE_AT}ms`,
         }}
       >
         <p
           className="font-semibold text-[length:var(--slide-heading-size)] text-primary leading-[1.1]"
           data-slide-statement-text=""
+          // A new key per screen, so each caption switches on afresh.
+          key={step}
         >
-          <Words delay={LINE_AT} text="This is how we see our content model." />
+          <Words
+            delay={step === 0 ? LINE_AT : PANEL_AT}
+            text={CAPTIONS[Math.min(step, CAPTIONS.length - 1)]}
+          />
         </p>
       </div>
 
@@ -601,7 +749,7 @@ function InheritedMark({
   )
 }
 
-function EditorHeader({ asked }: { asked: boolean }) {
+function EditorHeader({ asked, view }: { asked: boolean; view: string }) {
   const views: [string, LucideIcon][] = [
     ["Design", File],
     ["Structure", Network],
@@ -647,7 +795,7 @@ function EditorHeader({ asked }: { asked: boolean }) {
         >
           <Icon className="size-[18px]" />
           {label}
-          {label === "Design" ? (
+          {label === (view === "structure" ? "Structure" : "Design") ? (
             <span
               className="absolute inset-x-3 bottom-0 h-[3px] rounded-t"
               style={{ background: colours.tab }}
@@ -659,7 +807,15 @@ function EditorHeader({ asked }: { asked: boolean }) {
   )
 }
 
-function Tabs({ asked }: { asked: boolean }) {
+function Tabs({
+  asked,
+  choosing,
+  view,
+}: {
+  asked: boolean
+  choosing: boolean
+  view: string
+}) {
   const tabs = homePage?.groups.filter((group) => group.type === "Tab") ?? []
   // Hero adds its fields to the Content tab, so the tab is listed once.
   const names = [...new Set(tabs.map((tab) => tab.name))]
@@ -675,7 +831,7 @@ function Tabs({ asked }: { asked: boolean }) {
         const own = tabs.some(
           (tab) => tab.name === name && !tab.fromCompositionId
         )
-        const active = name === "Metadata"
+        const active = name === (view === "content" ? "Content" : "Metadata")
         return (
           <div
             className="relative flex items-center gap-1.5 border-r px-5"
@@ -700,7 +856,12 @@ function Tabs({ asked }: { asked: boolean }) {
       <div className="ml-auto flex items-center gap-2 px-3 text-[12px]">
         <span
           className="flex items-center gap-1 rounded-[3px] border px-2 py-1"
-          style={{ borderColor: colours.border }}
+          style={{
+            background: choosing ? colours.accentWash : "white",
+            borderColor: choosing ? colours.accent : colours.border,
+            boxShadow: choosing ? `0 0 8px ${colours.accent}` : "none",
+            transition: "all 400ms ease-out",
+          }}
         >
           <Merge className="size-3.5" />
           Compositions
@@ -712,6 +873,144 @@ function Tabs({ asked }: { asked: boolean }) {
           <ArrowUpDown className="size-3.5" />
           Reorder
         </span>
+      </div>
+    </div>
+  )
+}
+
+/*
+ * Umbraco opens a picker or a configuration as a panel from the right edge,
+ * over the editor, so these slide in the same way.
+ */
+function Sidebar({
+  open,
+  still,
+  title,
+  subtitle,
+  children,
+}: {
+  open: boolean
+  still: boolean
+  title: string
+  subtitle: string
+  children: ReactNode
+}) {
+  return (
+    <div
+      className="absolute top-0 right-0 bottom-0 flex w-[520px] flex-col border-l shadow-[-12px_0_32px_rgba(27,38,79,0.18)]"
+      style={{
+        background: colours.canvas,
+        borderColor: colours.border,
+        transform: open ? "none" : "translateX(105%)",
+        transition: still ? "none" : "transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+      }}
+    >
+      <div
+        className="flex h-[66px] shrink-0 items-center justify-between border-b bg-white px-5"
+        style={{ borderColor: colours.border }}
+      >
+        <div className="flex flex-col gap-0.5">
+          <span className="font-bold text-[16px]">{title}</span>
+          <span className="text-[11px]" style={{ color: colours.muted }}>
+            {subtitle}
+          </span>
+        </div>
+        <X className="size-4" />
+      </div>
+      <div className="flex flex-col gap-2 p-5">{children}</div>
+    </div>
+  )
+}
+
+/** The Content tab, down to the Modules property whose blocks the panel lists. */
+function ContentPanel({ still }: { still: boolean }) {
+  const arrived = useArrived(still)
+  return (
+    <div className="flex flex-col gap-4 px-4 pt-4">
+      <div
+        className="rounded-[3px] border bg-white"
+        style={{ ...enter(arrived, 0, still), borderColor: colours.border }}
+      >
+        <div className="border-b px-3 py-3" style={{ borderColor: colours.border }}>
+          <span
+            className="inline-block rounded-[3px] px-2 py-1 text-[12px]"
+            style={{ background: colours.editor, color: colours.muted }}
+          >
+            {contentGroup?.name}
+          </span>
+        </div>
+        <div className="flex gap-4 px-4 py-1.5">
+          <div className="flex w-[300px] shrink-0 justify-between gap-3 text-[13px]">
+            <span>{modulesProperty?.name}</span>
+            <span className="italic" style={{ color: colours.muted }}>
+              {modulesProperty?.alias}
+            </span>
+          </div>
+          <div
+            className="flex h-[34px] min-w-0 flex-1 items-center rounded-[3px] border-2 px-3 text-[11px]"
+            style={{
+              background: colours.accentWash,
+              borderColor: colours.accent,
+              boxShadow: `0 0 8px ${colours.accent}`,
+            }}
+          >
+            {modulesProperty?.dataTypeName}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The Structure view: where Home page may stand, and what may stand under it. */
+function StructurePanel({ still }: { still: boolean }) {
+  const arrived = useArrived(still)
+  return (
+    <div className="flex flex-col gap-4 px-4 pt-4">
+      <div
+        className="rounded-[3px] border bg-white"
+        style={{ ...enter(arrived, 0, still), borderColor: colours.border }}
+      >
+        <div className="border-b px-4 py-3 font-bold text-[14px]" style={{ borderColor: colours.border }}>
+          Permissions
+        </div>
+        <div className="flex gap-6 border-b px-4 py-3 text-[13px]" style={{ borderColor: colours.border }}>
+          <span className="w-[260px] shrink-0">Allow at root</span>
+          <ToggleRight className="size-6" style={{ color: colours.accent }} />
+        </div>
+        <div className="flex gap-6 px-4 py-3 text-[13px]">
+          <div className="flex w-[260px] shrink-0 flex-col gap-1">
+            <span>Allowed child node types</span>
+            <span className="text-[11px]" style={{ color: colours.muted }}>
+              Allow content of the specified types to be created underneath content of this type.
+            </span>
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            {children.map((node, index) => {
+              const Icon = ICONS[node.icon] ?? File
+              return (
+                <div
+                  className="flex items-center gap-2.5 rounded-[3px] border-2 px-3 py-2"
+                  key={node.id}
+                  style={{
+                    ...enter(arrived, PANEL_AT + ITEM_GAP * index, still),
+                    background: colours.accentWash,
+                    borderColor: colours.accent,
+                  }}
+                >
+                  <Icon className="size-4" />
+                  {node.name}
+                </div>
+              )
+            })}
+            <div
+              className="rounded-[3px] border border-dashed py-2 text-center"
+              style={{ borderColor: "#c7c8cf" }}
+            >
+              Choose
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
