@@ -56,7 +56,7 @@ export const slides: SlideDefinition[] = [
     slug: "backoffice",
     title: "How we see it",
     notes:
-      "1:45, 2 minutes. Let the screen sit. They know it: Home page, every property inherited from Page Meta. The line lands on its own a beat later, read it once. Click: the question the whole talk answers. What does a change to Page Meta reach? Ask the room. This screen tells you where the properties come from, not where they go. Leave it open.",
+      "1:45, 2 minutes. The screen builds itself: Home page, Metadata tab, one property at a time, each inherited from Page Meta. They know it. The line lands once it is full, read it once. Click: everything dims but Page Meta in the tree, a Document Type, and wires run from it to every property it gave Home page. The question the whole talk answers: what does a change to Page Meta reach? Ask the room. This screen tells you where the properties come from, not where they go. Leave it open.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",

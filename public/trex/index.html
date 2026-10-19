@@ -800,9 +800,22 @@ function initAudio() {
   const comp = AC.createDynamicsCompressor(); master = AC.createGain(); master.gain.value = .9; master.connect(comp); comp.connect(AC.destination);
   noiseBuf = AC.createBuffer(1, AC.sampleRate * 3, AC.sampleRate);
   const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  const hiss = noiseSrc(), hp = AC.createBiquadFilter(), lp = AC.createBiquadFilter(), g1 = AC.createGain();
-  hp.type = 'highpass'; hp.frequency.value = 900; lp.type = 'lowpass'; lp.frequency.value = 7000; g1.gain.value = .07;
-  hiss.connect(hp).connect(lp).connect(g1).connect(master); hiss.start();
+  // Rain as drops rather than hiss: a bed of soft, darkened noise under a layer
+  // of sparse ticks, each a short decaying burst, so it patters instead of
+  // sounding like an untuned radio.
+  const bed = noiseSrc(), hp = AC.createBiquadFilter(), lp = AC.createBiquadFilter(), g1 = AC.createGain();
+  hp.type = 'highpass'; hp.frequency.value = 350; lp.type = 'lowpass'; lp.frequency.value = 2200; g1.gain.value = .035;
+  bed.connect(hp).connect(lp).connect(g1).connect(master); bed.start();
+  const patter = AC.createBuffer(1, AC.sampleRate * 4, AC.sampleRate), pd = patter.getChannelData(0);
+  for (let i = 0; i < pd.length; i++) {
+    if (Math.random() < 700 / AC.sampleRate) {
+      const a = .2 + Math.random() * .8, decay = AC.sampleRate * (.001 + Math.random() * .004);
+      for (let j = 0; j < decay * 5 && i + j < pd.length; j++) pd[i + j] += (Math.random() * 2 - 1) * a * Math.exp(-j / decay);
+    }
+  }
+  const drops = AC.createBufferSource(), bp = AC.createBiquadFilter(), g3 = AC.createGain();
+  drops.buffer = patter; drops.loop = true; bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = .6; g3.gain.value = .22;
+  drops.connect(bp).connect(g3).connect(master); drops.start();
   const drum = noiseSrc(), lp2 = AC.createBiquadFilter(), g2 = AC.createGain();
   drum.playbackRate.value = .7; lp2.type = 'lowpass'; lp2.frequency.value = 480; g2.gain.value = .14;
   drum.connect(lp2).connect(g2).connect(master); drum.start(0, 1.3);
@@ -810,7 +823,8 @@ function initAudio() {
 function noiseSrc() { const s = AC.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s; }
 function thunderSound(close) {
   if (!soundOn || !AC) return;
-  const t0 = AC.currentTime + .1 + (1 - close) * 1.3;
+  // The rumble follows the flash closely; a far strike still lags, a near one hardly at all.
+  const t0 = AC.currentTime + Math.max(0, (1 - close) * 1.3 - .2);
   if (close > .6) {
     const s = noiseSrc(), hp = AC.createBiquadFilter(), g = AC.createGain();
     hp.type = 'highpass'; hp.frequency.value = 1500;
