@@ -8,7 +8,6 @@ import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
-import { Place } from "@/deck/parts/place"
 import { AddProperty, DeletedBlock } from "@/deck/parts/site-examples"
 import { Takeover } from "@/deck/parts/takeover"
 import { Trex } from "@/deck/parts/trex"
@@ -148,39 +147,10 @@ export const slides: SlideDefinition[] = [
     body: <DeletedBlock />,
   },
   {
-    slug: "used-to-be",
-    title: "The tree",
-    notes:
-      "23:15, 15 seconds. Slow. Let the words land one by one.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Statement text="The interface used to be the tree." />,
-  },
-  {
-    slug: "folders",
-    title: "Folders",
-    notes:
-      "23:30, 15 seconds. Three beats, one per word.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Statement text="Folders. Lists. Checkboxes." />,
-  },
-  {
-    slug: "a-place-now",
-    title: "Now it's a place",
-    notes:
-      "23:45, 15 seconds. Pause before it. This is the line people take home.",
-    header: "hidden",
-    footer: "hidden",
-    layout: "fullscreen",
-    background: "none",
-    body: <Place text="Now it's a place." />,
-  },
-  {
     slug: "close",
     title: "Thank you",
     notes:
-      "24:00. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "23:15. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",
