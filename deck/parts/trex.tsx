@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import { useStep } from "@/deck/city/use-step"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useStill } from "@/deck/parts/beats"
 
 /*
@@ -10,43 +9,43 @@ import { useStill } from "@/deck/parts/beats"
  * bleed, so the deck only tells it when to roar. It takes no pointer events,
  * which keeps the keyboard with the deck rather than with the frame.
  *
- * Step 0 is the storm. On step 1 the line fades in after a beat, and the roar
- * follows it, so the room reads the line and the T-rex answers.
+ * The slide needs no click. The storm is up as it arrives, the line fades in
+ * after a beat, and the roar follows it, so the room reads the line and the
+ * T-rex answers.
  *
  * The storm plays with its rain and thunder, and the roar is a recording. The
  * deck asks for the sound once the frame has loaded, and the frame's audio is
- * allowed to start because the presenter has already pressed a key in the
- * deck. A screenshot stays silent.
+ * allowed to start because the presenter pressed a key to reach the slide. A
+ * screenshot stays silent.
  */
-export const TREX_STEPS = 2
-
 const LINE = "UI was perfected in 1993."
 
-// Milliseconds after the click.
+// Milliseconds after the slide arrives.
 const LINE_AT = 1000
 const ROAR_AT = 1400
 
 export function Trex() {
-  const step = useStep()
   const frame = useRef<HTMLIFrameElement>(null)
-  const said = step >= 1
   const still = useStill()
+  const [said, setSaid] = useState(still)
 
-  useEffect(() => {
-    if (!said) {
+  useLayoutEffect(() => {
+    if (still) {
+      setSaid(true)
       return
     }
-    const post = (message: string) =>
-      frame.current?.contentWindow?.postMessage(message, window.location.origin)
-    // Asking again covers a deck opened straight on this slide, where the
-    // first key press is the one that brings the roar. The ask has to happen
-    // inside the key press, while the browser still counts it as one.
-    if (!still) {
-      post("sound")
-    }
-    const timer = window.setTimeout(() => post("roar"), still ? 0 : ROAR_AT)
+    // One frame at zero opacity first, so the fade has somewhere to start.
+    const frameId = requestAnimationFrame(() => setSaid(true))
+    return () => cancelAnimationFrame(frameId)
+  }, [still])
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => frame.current?.contentWindow?.postMessage("roar", window.location.origin),
+      still ? 0 : ROAR_AT,
+    )
     return () => window.clearTimeout(timer)
-  }, [said, still])
+  }, [still])
 
   return (
     <section className="relative h-full w-full overflow-hidden bg-black">
@@ -68,7 +67,7 @@ export function Trex() {
         style={{
           opacity: said ? 1 : 0,
           textShadow: "0 0 0.4em #000, var(--slide-halo)",
-          transition: still || !said ? "none" : `opacity 700ms ease-out ${LINE_AT}ms`,
+          transition: still ? "none" : `opacity 700ms ease-out ${LINE_AT}ms`,
         }}
       >
         {LINE}

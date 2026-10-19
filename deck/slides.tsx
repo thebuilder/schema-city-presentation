@@ -55,7 +55,7 @@ export const slides: SlideDefinition[] = [
     slug: "backoffice",
     title: "How we see it",
     notes:
-      "1:45, 3 minutes. The screen builds itself: Home page, Metadata tab, one property at a time, each inherited from Page Meta. They know it. The line lands once it is full, read it once. Click: the Compositions dialog, Hero, Header, Footer and Page Meta ticked. Home page is four other types underneath, and the tabs blend them together. Click: the Modules property and its ten blocks. You can see what Home page allows, not that three other page types allow the same ten. Click: Structure, six page types allowed under it. Every screen tells you what goes into Home page. None of them tells you where anything goes. Click: back on Metadata, everything dims but Page Meta in the tree, a Document Type, and wires run from it to every property it gave Home page. Read the line: none of it says where Page Meta goes. Don't ask the question yet, let the T-rex answer.",
+      "1:45, 3 minutes. The screen builds itself: Home page, Metadata tab, one property at a time, each inherited from Page Meta. They know it. The line lands once it is full, read it once. Click: the Compositions dialog, Hero, Header, Footer and Page Meta ticked. Home page is four other types underneath, and the tabs blend them together. Click: the Modules property and its ten blocks. You can see what Home page allows, not that three other page types allow the same ten. Click: Structure, six page types allowed under it. Every screen tells you what goes into Home page. None of them tells you where anything goes. Click: back on Metadata, everything dims but Page Meta in the tree, a Document Type, and wires run from it to every property it gave Home page. Read the line: none of it shows what a change would reach. Don't ask the question yet, let the T-rex answer.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -67,21 +67,20 @@ export const slides: SlideDefinition[] = [
     slug: "trex",
     title: "Perfected",
     notes:
-      "3:45, 15 seconds. The storm is up over the gap you just named. Click: the line fades in after a beat, then the T-rex roars. Deadpan. Then straight on to fsn.",
+      "3:45, 15 seconds. The storm is up over the gap you just named. No click: the line fades in after a second, then the T-rex roars. Deadpan. Then straight on to fsn.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     background: "none",
-    stepCount: 2,
     body: <Trex />,
   },
   {
     slug: "unix-system",
     title: "I know this",
     notes:
-      "4:00, 2 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. Let the line land. Click, fly into security and open velociraptor.webp: it's inside. Click, the doors, and she locks them. Wait for the green light.",
+      "4:00, 2 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. The line lands on its own once the camera settles, let it sit. Click, fly into security and open velociraptor.webp: it's inside. Click, the doors, and she locks them. Wait for the green light.",
     layout: "fullscreen",
-    stepCount: 4,
+    stepCount: 3,
     body: <UnixSystem />,
   },
   {

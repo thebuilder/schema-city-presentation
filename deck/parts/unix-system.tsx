@@ -14,14 +14,17 @@ import { Terminal } from "@/deck/parts/terminal"
  * as a subtitle, and then the film plays out in fsn's own windows. The world
  * is fsn's own renderer, so it looks the way fsn does.
  *
- * Beat 0 launches fsn and beat 1 is the line. Beat 2 flies into security,
- * activates velociraptor.webp and opens it: the raptor is inside. Beat 3
- * closes it, activates the doors and locks them, the panels sliding shut and
- * the light going green. Each window
+ * Beat 0 launches fsn, and the line lands on its own once the camera has
+ * settled. Beat 1 flies into security, activates velociraptor.webp and opens
+ * it: the raptor is inside. Beat 2 closes it, activates the doors and locks
+ * them, the panels sliding shut and the light going green. Each window
  * waits for its pillar to land and blink twice as picked, so it reads as
  * opened from the block the beam points at.
  */
-const delays = [3800, 8500, 13000]
+const delays = [8500, 13000]
+
+// The line waits for the camera to settle over the park, without a click.
+const LINE_MS = 3800
 
 // Long enough for the command to finish typing before the tree appears.
 const bootDelay = 1500
@@ -60,14 +63,15 @@ export function UnixSystem() {
     return () => window.clearTimeout(timer)
   }, [still])
 
-  const focus = beat >= 2
-  const picked = beat >= 3 ? parkDoors : parkRaptor
+  const said = useAfter(true, LINE_MS, still)
+  const focus = beat >= 1
+  const picked = beat >= 2 ? parkDoors : parkRaptor
   // A window opens once its pillar has blinked as picked, so it reads as
   // opened from that block. The raptor's closes as the doors are picked, so
   // one window is open at a time, the way a person would work it.
   const [pickedId, setPickedId] = useState<string | null>(null)
-  const raptorOpen = beat === 2 && pickedId === parkRaptor
-  const doorsOpen = beat >= 3 && pickedId === parkDoors
+  const raptorOpen = beat === 1 && pickedId === parkRaptor
+  const doorsOpen = beat >= 2 && pickedId === parkDoors
   const locked = useAfter(doorsOpen, DOOR_LOCK_MS, still)
 
   return (
@@ -109,7 +113,7 @@ export function UnixSystem() {
       <p
         className="absolute inset-x-0 bottom-[calc(var(--slide-footer-space)+3rem)] text-center font-bold text-[length:var(--slide-subheading-size)] text-foreground transition-opacity duration-300"
         style={{
-          opacity: beat >= 1 && !doorsOpen ? 1 : 0,
+          opacity: said && !doorsOpen ? 1 : 0,
           textShadow: "0 0 0.4em var(--background), var(--slide-halo)",
         }}
       >

@@ -87,7 +87,7 @@ const CAPTIONS = [
   "Home page is built from four other types.",
   "Ten kinds of block can go on it.",
   "Six page types can live under it.",
-  "None of it says where Page Meta goes.",
+  "None of it shows what a change would reach.",
 ]
 
 // Milliseconds between items as a panel fills, after it has slid in.
@@ -238,6 +238,29 @@ function useArrived(still: boolean) {
     return () => cancelAnimationFrame(frame)
   }, [still])
   return arrived
+}
+
+// The box arrives with its first word, so it never sits on screen empty while
+// the line waits for the panel or the wires.
+function Caption({ delay, still, text }: { delay: number; still: boolean; text: string }) {
+  const arrived = useArrived(still)
+  return (
+    <div
+      className="absolute bottom-[var(--slide-padding-block)] left-[var(--slide-padding-inline)] border border-[var(--slide-surface-border)] bg-card px-10 py-7"
+      data-slide-surface=""
+      style={{
+        opacity: arrived ? 1 : 0,
+        transition: still ? "none" : `opacity 200ms ease-out ${delay}ms`,
+      }}
+    >
+      <p
+        className="font-semibold text-[length:var(--slide-heading-size)] text-primary leading-[1.1]"
+        data-slide-statement-text=""
+      >
+        <Words delay={delay} text={text} />
+      </p>
+    </div>
+  )
 }
 
 // A part that slides into place `at` milliseconds after the slide arrives.
@@ -536,27 +559,14 @@ export function Backoffice() {
         </Sidebar>
       </div>
 
-      <div
-        className="absolute bottom-[var(--slide-padding-block)] left-[var(--slide-padding-inline)] border border-[var(--slide-surface-border)] bg-card px-10 py-7 transition-opacity duration-500"
-        data-slide-surface=""
-        style={{
-          opacity: arrived ? 1 : 0,
-          transitionDelay: still || step > 0 ? "0ms" : `${LINE_AT}ms`,
-        }}
-      >
-        <p
-          className="font-semibold text-[length:var(--slide-heading-size)] text-primary leading-[1.1]"
-          data-slide-statement-text=""
-          // A new key per screen, so each caption switches on afresh.
-          key={step}
-        >
-          <Words
-            // The last line waits for the wires to reach their marks.
-            delay={step === 0 ? LINE_AT : asked ? 1400 : PANEL_AT}
-            text={CAPTIONS[Math.min(step, CAPTIONS.length - 1)]}
-          />
-        </p>
-      </div>
+      {/* A new key per screen, so each caption switches on afresh. */}
+      <Caption
+        // The last line waits for the wires to reach their marks.
+        delay={step === 0 ? LINE_AT : asked ? 1400 : PANEL_AT}
+        key={step}
+        still={still}
+        text={CAPTIONS[Math.min(step, CAPTIONS.length - 1)]}
+      />
 
     </section>
   )
