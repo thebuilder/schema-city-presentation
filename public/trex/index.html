@@ -792,7 +792,7 @@ function drawRain(li, F) {
 }
 
 // ---------- sound ----------
-let AC = null, master = null, noiseBuf = null, soundOn = false, roarBuf = null;
+let AC = null, master = null, noiseBuf = null, soundOn = false, roarBuf = null, rainBus = null;
 function initAudio() {
   AC = new (window.AudioContext || window.webkitAudioContext)();
   // A recorded roar, when it has loaded; the synthesised one stands in until then.
@@ -800,22 +800,52 @@ function initAudio() {
   const comp = AC.createDynamicsCompressor(); master = AC.createGain(); master.gain.value = .9; master.connect(comp); comp.connect(AC.destination);
   noiseBuf = AC.createBuffer(1, AC.sampleRate * 3, AC.sampleRate);
   const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  // Rain as drops rather than hiss: a bed of soft, darkened noise under a layer
-  // of sparse ticks, each a short decaying burst, so it patters instead of
-  // sounding like an untuned radio.
-  const bed = noiseSrc(), hp = AC.createBiquadFilter(), lp = AC.createBiquadFilter(), g1 = AC.createGain();
-  hp.type = 'highpass'; hp.frequency.value = 350; lp.type = 'lowpass'; lp.frequency.value = 2200; g1.gain.value = .035;
-  bed.connect(hp).connect(lp).connect(g1).connect(master); bed.start();
-  const patter = AC.createBuffer(1, AC.sampleRate * 4, AC.sampleRate), pd = patter.getChannelData(0);
-  for (let i = 0; i < pd.length; i++) {
-    if (Math.random() < 700 / AC.sampleRate) {
-      const a = .2 + Math.random() * .8, decay = AC.sampleRate * (.001 + Math.random() * .004);
-      for (let j = 0; j < decay * 5 && i + j < pd.length; j++) pd[i + j] += (Math.random() * 2 - 1) * a * Math.exp(-j / decay);
+  // Rain as water rather than hiss. Noise bursts read as crackle however they
+  // are filtered, so each drop is a tiny resonating bubble instead: a sine a
+  // few milliseconds long whose pitch rises as it dies, which is the sound a
+  // drop makes hitting water or a wet leaf. Thousands of them, mostly faint,
+  // spread across the stereo field, over a dark pink-noise wash that swells
+  // with the gusts. A recorded loop in rain.mp3 replaces all of it once it
+  // has decoded.
+  rainBus = AC.createGain(); rainBus.connect(master);
+  const sr = AC.sampleRate, len = sr * 4, patter = AC.createBuffer(2, len, sr);
+  const L = patter.getChannelData(0), Rt = patter.getChannelData(1);
+  const drop = (at, f, tau, a, pan) => {
+    const n = Math.min(len - at, Math.floor(tau * 6 * sr)), gl = a * Math.cos(pan * Math.PI / 2), gr = a * Math.sin(pan * Math.PI / 2);
+    let ph = 0;
+    for (let j = 0; j < n; j++) {
+      const t = j / sr, env = Math.min(1, t / .0004) * Math.exp(-t / tau);
+      ph += 2 * Math.PI * f * (1 + 2.2 * t / (tau * 6)) / sr;
+      const v = Math.sin(ph) * env, k = (at + j) % len;
+      L[k] += v * gl; Rt[k] += v * gr;
+    }
+  };
+  for (let i = 0; i < len * 650 / sr; i++) {
+    const at = Math.floor(Math.random() * len), big = Math.pow(Math.random(), 3);
+    drop(at, 900 + Math.random() * 3200 * (1 - big * .6), .002 + big * .009 + Math.random() * .003, .015 + big * .25, Math.random());
+  }
+  const drops = AC.createBufferSource(), dlp = AC.createBiquadFilter(), g3 = AC.createGain();
+  drops.buffer = patter; drops.loop = true; dlp.type = 'lowpass'; dlp.frequency.value = 6000; g3.gain.value = .5;
+  drops.connect(dlp).connect(g3).connect(rainBus); drops.start();
+  const pink = AC.createBuffer(2, sr * 5, sr);
+  for (let c = 0; c < 2; c++) {
+    const pd = pink.getChannelData(c); let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < pd.length; i++) {
+      const w = Math.random() * 2 - 1;
+      b0 = .99765 * b0 + w * .099046; b1 = .963 * b1 + w * .2965164; b2 = .57 * b2 + w * 1.0526913;
+      pd[i] = (b0 + b1 + b2 + w * .1848) * .2;
     }
   }
-  const drops = AC.createBufferSource(), bp = AC.createBiquadFilter(), g3 = AC.createGain();
-  drops.buffer = patter; drops.loop = true; bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = .6; g3.gain.value = .22;
-  drops.connect(bp).connect(g3).connect(master); drops.start();
+  const wash = AC.createBufferSource(), wlp = AC.createBiquadFilter(), whp = AC.createBiquadFilter(), g1 = AC.createGain();
+  wash.buffer = pink; wash.loop = true; whp.type = 'highpass'; whp.frequency.value = 180; wlp.type = 'lowpass'; wlp.frequency.value = 1400; g1.gain.value = .12;
+  const gust = AC.createOscillator(), gustDepth = AC.createGain();
+  gust.frequency.value = .09; gustDepth.gain.value = .05; gust.connect(gustDepth).connect(g1.gain); gust.start();
+  wash.connect(whp).connect(wlp).connect(g1).connect(rainBus); wash.start();
+  fetch('rain.mp3').then(r => (r.ok ? r.arrayBuffer() : Promise.reject())).then(b => AC.decodeAudioData(b)).then(b => {
+    const rec = AC.createBufferSource(), rg = AC.createGain(), now = AC.currentTime;
+    rec.buffer = b; rec.loop = true; rg.gain.value = 0; rec.connect(rg).connect(master); rec.start();
+    rg.gain.linearRampToValueAtTime(.8, now + 1.5); rainBus.gain.setValueAtTime(1, now); rainBus.gain.linearRampToValueAtTime(0, now + 1.5);
+  }).catch(() => {});
   const drum = noiseSrc(), lp2 = AC.createBiquadFilter(), g2 = AC.createGain();
   drum.playbackRate.value = .7; lp2.type = 'lowpass'; lp2.frequency.value = 480; g2.gain.value = .14;
   drum.connect(lp2).connect(g2).connect(master); drum.start(0, 1.3);
