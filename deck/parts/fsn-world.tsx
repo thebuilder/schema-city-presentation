@@ -114,11 +114,24 @@ interface Rig {
   hoverTarget: Pick | null
   pickMeshes: Map<unknown, Pick[]>
   selectionBox: { visible: boolean }
+  tintedColor: (pick: Pick, strength: number) => Colour
   updateHoverHighlight: (delta: number) => void
   writeHover: (pick: Pick, strength: number) => void
 }
 
+interface Colour {
+  clone: () => Colour
+  lerp: (other: Colour, alpha: number) => Colour
+  multiplyScalar: (scale: number) => Colour
+  setHex: (hex: number) => Colour
+}
+
 interface Pick {
+  mesh?: {
+    instanceColor: { needsUpdate: boolean } | null
+    setColorAt: (index: number, colour: Colour) => void
+  }
+  instanceIndex?: number
   node: { id: string }
 }
 
@@ -126,7 +139,7 @@ interface Pick {
  * fsn lifts and brightens the object under the pointer, which is how a person
  * using it sees which pillar is live. No pointer moves on a slide, so the deck
  * hands fsn the pillar it picked as the hovered one, and fsn's own cross-fade
- * moves the lift from one pillar to the next.
+ * moves the highlight from one pillar to the next.
  */
 function activate(scene: WorldScene, id: string) {
   const rig = scene as unknown as Rig
@@ -138,15 +151,47 @@ function activate(scene: WorldScene, id: string) {
 }
 
 /*
- * A hover lift on its own is too quiet to read from the back of a room, so a
+ * A lift reads as the pillar jumping when it is seen on a projector rather
+ * than under your own pointer, so on a slide the hover glows in place
+ * instead: the pillar stays put and its colour runs toward fsn's own
+ * selection white and brightens past it, which the bloom then carries.
+ */
+const glowHex = 0xf4ffd9
+const glowMix = 0.55
+const glowGain = 0.9
+
+function glowInstead(scene: WorldScene) {
+  const rig = scene as unknown as Rig
+  const writeHover = rig.writeHover.bind(scene)
+  const tintedColor = rig.tintedColor.bind(scene)
+  rig.writeHover = (pick, strength) => {
+    // Written at no strength first, so the pillar sits at its own height.
+    writeHover(pick, 0)
+    if (!pick.mesh || pick.instanceIndex === undefined || strength <= 0) {
+      return
+    }
+    pick.mesh.setColorAt(pick.instanceIndex, glowing(tintedColor(pick, 0), strength))
+    if (pick.mesh.instanceColor) {
+      pick.mesh.instanceColor.needsUpdate = true
+    }
+  }
+}
+
+function glowing(base: Colour, strength: number) {
+  const glow = base.clone().setHex(glowHex)
+  return base.lerp(glow, glowMix * Math.min(strength, 1)).multiplyScalar(1 + glowGain * strength)
+}
+
+/*
+ * A steady glow on its own is too quiet to read from the back of a room, so a
  * pick blinks twice once the camera has settled, the pillar flaring well past
- * fsn's own highlight with the selection box going with it, and then rests in
- * the ordinary hover. fsn's hover update is set aside for the blink so its
+ * its steady glow with the selection box going with it, and then rests in
+ * the glow. fsn's hover update is set aside for the blink so its
  * easing does not smooth the flashes away, and handed back after.
  */
 const blinkFlashes = 2
 const blinkPeriod = 300
-const blinkStrength = 2.6
+const blinkStrength = 1.6
 // Long enough for the refocus flight that follows a pick, should it run on.
 const blinkWaitLimit = 2500
 
@@ -210,11 +255,11 @@ const approachAngle = 0.62
 const circleSpeed = -0.35
 // How close the camera ends up, as a share of fsn's framing distance, and the
 // share of the remaining gap it closes each second.
-const closest = 0.5
+const closest = 0.45
 const closeRate = 0.04
 // Where the closing in starts, so the first pose is already near enough to
 // read the directory names.
-const startScale = 0.7
+const startScale = 0.6
 
 // Turns `point` about `pivot` around the vertical axis and pulls it in.
 function orbit(point: Vec3, pivot: Vec3, angle: number, scale: number) {
@@ -340,6 +385,7 @@ export function FsnWorld({
           })
       )
       const stopDrift = drift(scene, still)
+      glowInstead(scene)
       scene.setGlow(
         glowByDefault({
           coarsePointer: false,
