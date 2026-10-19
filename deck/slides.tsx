@@ -37,7 +37,7 @@ export const slides: SlideDefinition[] = [
     slug: "takeover",
     title: "Schema City",
     notes:
-      "0:00, 45 seconds. The takeover runs about 15 seconds, so let it play without talking. The screen tears open at the U and the camera dives into the rain. When the title has settled, around 14 seconds in: sorry, wrong deck. Going back to the fake-out and forward again replays it. Stepping back here from whoami shows the settled title.",
+      "0:00, 45 seconds. The takeover runs about 15 seconds with its own sound cue, so let it play without talking and check the room volume beforehand. The screen tears open at the U and the camera dives into the rain. When the title has settled, around 14 seconds in: sorry, wrong deck. Going back to the fake-out and forward again replays it. Stepping back here from whoami shows the settled title.",
     header: "hidden",
     footer: "hidden",
     layout: "fullscreen",

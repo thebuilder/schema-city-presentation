@@ -26,6 +26,20 @@ declare global {
 
 export const fallbackVideo = "/takeover/takeover.webm"
 
+// Seven ElevenLabs clips mixed onto the timeline above, 15 s from the click:
+// the glitch on the click, the tube going off at crtStart, the drone under
+// the second line, the riser peaking at the tear, the hit on titleStart.
+const cueSound = "/takeover/cue.mp3"
+
+// The click that advanced the deck is the user activation that lets this
+// play without a prompt. Only a sequence that runs from the top gets it, so
+// stepping back to the settled title stays quiet.
+function playCue() {
+  const cue = new Audio(cueSound)
+  cue.play().catch(() => undefined)
+  return () => cue.pause()
+}
+
 const scrambleSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+<>"
 
 function seeded(index: number) {
@@ -138,6 +152,7 @@ export function MatrixTakeover({
 
     let disposed = false
     let takeover: Takeover | undefined
+    let stopCue: (() => void) | undefined
     let shown = false
 
     const onFrame = (time: number) => {
@@ -223,6 +238,9 @@ export function MatrixTakeover({
           return
         }
         created.play(mode === "idle" ? timeline.settle : 0)
+        if (mode === "live") {
+          stopCue = playCue()
+        }
       })
       .catch((error: unknown) => {
         if (disposed) {
@@ -235,9 +253,14 @@ export function MatrixTakeover({
     return () => {
       disposed = true
       takeover?.dispose()
+      stopCue?.()
       window.takeoverRecorder = undefined
     }
   }, [credits, mode, title])
+
+  // The fallback is only ever reached from a live run, and the recording
+  // starts at the click like the cue does.
+  useEffect(() => (mode === "fallback" ? playCue() : undefined), [mode])
 
   const settled = mode === "still" || mode === "fallback"
 
