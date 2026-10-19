@@ -27,7 +27,6 @@ import {
   type SchemaGraph,
   type SchemaNode,
 } from "@/deck/city/schema-city"
-import { SchemaTable, tableRows } from "@/deck/city/schema-table"
 import {
   Boards,
   Buildings,
@@ -37,10 +36,10 @@ import {
 import { useStep } from "@/deck/city/use-step"
 
 /*
- * The reveal, built up from one row of the wall. The row becomes a building, the
- * building gets its floors and windows, the composition it uses stands beside
+ * The reveal, built up from one Document Type. Content page rises as a
+ * building, gets its floors and windows, the composition it uses stands beside
  * it, a second page type turns out to share that composition, and then the
- * camera pulls up and the rest of the wall rises as the city around them.
+ * camera pulls up and every other type rises as the city around them.
  *
  * The three buildings are cut from the full city's own cells, so they are the
  * buildings the city draws. They stand close together while they are being
@@ -50,9 +49,8 @@ import { useStep } from "@/deck/city/use-step"
 
 type Beat = { term: string; name?: "focus" | "composition" | "sharer" }
 
-/** One label per step, the term and the type it is about. Step 0 is the wall. */
+/** One label per step, the term and the type it is about. */
 const BEATS: (Beat | null)[] = [
-  null,
   { term: "Document Type", name: "focus" },
   { term: "Property groups", name: "focus" },
   { term: "Properties", name: "focus" },
@@ -79,7 +77,7 @@ const LATE: FloorCellKind[] = ["pin", "marker"]
 type Cast = { focus: SchemaNode; composition: SchemaNode; sharer: SchemaNode }
 
 /**
- * The page the wall row belongs to, the composition it shares, and one more page
+ * The page the build-up starts from, the composition it shares, and one more page
  * that uses it. `alias` wins when the graph has it, so another export still gets
  * a build-up from the first page that composes something another page also uses.
  */
@@ -246,14 +244,14 @@ function Actor({
 }) {
   const group = useRef<THREE.Group>(null)
   const id = role.node.id
-  const from = role.role === "focus" ? 1 : role.role === "composition" ? 4 : 5
+  const from = role.role === "focus" ? 0 : role.role === "composition" ? 3 : 4
   // The focus is built a mapping a step. The other two arrive whole.
   const layers =
     role.role === "focus"
       ? [
-          { key: "base", step: 1, cells: stage.cellsOf(id, BASE), windows: [] },
-          { key: "floors", step: 2, cells: stage.cellsOf(id, FLOORS), windows: [] },
-          { key: "windows", step: 3, cells: [], windows: stage.windowsOf(id) },
+          { key: "base", step: 0, cells: stage.cellsOf(id, BASE), windows: [] },
+          { key: "floors", step: 1, cells: stage.cellsOf(id, FLOORS), windows: [] },
+          { key: "windows", step: 2, cells: [], windows: stage.windowsOf(id) },
         ]
       : [
           {
@@ -298,7 +296,7 @@ function Actor({
   )
 }
 
-/** The rest of the wall, rising as the city around the three. */
+/** Every other type, rising as the city around the three. */
 function Rest({
   stage,
   city: graphCity,
@@ -375,7 +373,7 @@ function Scene({
   const colours = useMemo(() => buildingPalette(palette), [palette])
   const pulled = step >= PULL_UP
   const settle = useRamp(pulled, SETTLE, 0.3)
-  const stagedArcs = useRamp(step >= 4 && !pulled)
+  const stagedArcs = useRamp(step >= 3 && !pulled)
   const realArcs = useRamp(pulled, GROW, SETTLE)
   const look = useRef(new THREE.Vector3())
   const placed = useRef(false)
@@ -418,7 +416,7 @@ function Scene({
     }
     const framing = pulled
       ? framings.overview
-      : step >= 4
+      : step >= 3
         ? framings.trio
         : framings.close
     if (!placed.current) {
@@ -453,7 +451,7 @@ function Scene({
         anchors={stage.stagedAnchors}
         colour={palette.azure}
         edges={stage.arcs.filter(
-          (edge) => step >= 5 || edge.from === stage.cast.focus.id
+          (edge) => step >= 4 || edge.from === stage.cast.focus.id
         )}
         layer="compositions"
         opacity={stagedArcs}
@@ -478,36 +476,19 @@ export function BuildupWidget({
   step,
 }: {
   graph?: SchemaGraph
-  /** The Document Type whose row the build-up starts from. */
+  /** The Document Type the build-up starts from. */
   alias?: string
   step?: number
 }) {
   const current = Math.min(useStep(step), BUILDUP_STEPS - 1)
   const host = useRef<HTMLDivElement>(null)
   const palette = useCityPalette(host)
-  const rows = useMemo(() => tableRows(graph), [graph])
   const cast = useMemo(() => castOf(graph, alias), [graph, alias])
-  const rowElements = useRef(new Map<string, HTMLElement>())
   const beat = BEATS[current]
-  const walled = current === 0
-
-  // On the wall, every row but the focus's falls back, so the room knows which
-  // row the building is about to be.
-  useEffect(() => {
-    for (const [id, element] of rowElements.current) {
-      const focused = id === cast?.focus.id
-      element.style.transition = "opacity 500ms, color 500ms"
-      element.style.opacity = focused ? "1" : "0.18"
-      element.style.color = focused ? "var(--slide-signal)" : ""
-    }
-  }, [cast])
 
   return (
     <div className="relative h-full w-full bg-background" ref={host}>
-      <div
-        className="absolute inset-0 transition-opacity duration-700"
-        style={{ opacity: walled ? 0 : 1 }}
-      >
+      <div className="absolute inset-0">
         {palette ? (
           <Canvas
             camera={{ fov: CAMERA_FOV, near: 0.5, far: 4000 }}
@@ -518,22 +499,6 @@ export function BuildupWidget({
             <Scene alias={alias} graph={graph} palette={palette} step={current} />
           </Canvas>
         ) : null}
-      </div>
-      <div
-        className="absolute inset-0 transition-opacity duration-700"
-        style={{ opacity: walled ? 1 : 0 }}
-      >
-        <SchemaTable
-          graph={graph}
-          rowRef={(id, element) => {
-            if (element) {
-              rowElements.current.set(id, element)
-            } else {
-              rowElements.current.delete(id)
-            }
-          }}
-          rows={rows}
-        />
       </div>
       <div
         className="absolute top-10 left-16 transition-opacity duration-500"

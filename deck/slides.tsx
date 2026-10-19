@@ -2,17 +2,15 @@ import "server-only"
 
 import type { SlideDefinition } from "@thebuilder/deckard-core"
 import { ADD_PROPERTY_STEPS, DELETED_BLOCK_STEPS } from "@/deck/examples/site-results"
-import { BackofficeGrid } from "@/deck/parts/backoffice-grid"
+import { Backoffice } from "@/deck/parts/backoffice"
 import { Buildup } from "@/deck/parts/buildup"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
-import { Ladder } from "@/deck/parts/ladder"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
 import { Place } from "@/deck/parts/place"
 import { AddProperty, DeletedBlock, SiteIntro } from "@/deck/parts/site-examples"
 import { Takeover } from "@/deck/parts/takeover"
-import { TheWall } from "@/deck/parts/the-wall"
 import { Trex } from "@/deck/parts/trex"
 import { UnixSystem } from "@/deck/parts/unix-system"
 import { Whoami } from "@/deck/parts/whoami"
@@ -58,38 +56,18 @@ export const slides: SlideDefinition[] = [
     slug: "backoffice",
     title: "How we see it",
     notes:
-      "1:45, 1 minute. Let the screens sit. They will recognise every one. The line lands on its own a beat later, read it once.",
+      "1:45, 2 minutes. Let the screen sit. They know it: Home page, every property inherited from Page Meta. The line lands on its own a beat later, read it once. Click: the question the whole talk answers. What does a change to Page Meta reach? Ask the room. This screen tells you where the properties come from, not where they go. Leave it open.",
+    layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
-    body: <BackofficeGrid />,
-  },
-  {
-    slug: "the-wall",
-    title: "The wall",
-    notes:
-      "2:45, 1.5 minutes. The question the whole talk answers: what does a change to Page Meta reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
-    layout: "fullscreen",
     stepCount: 2,
-    header: "hidden",
-    footer: "hidden",
-    body: <TheWall />,
-  },
-  {
-    slug: "ladder",
-    title: "The ladder",
-    notes:
-      "4:15, 30 seconds. One word per rung. Tree, list, graph: the same content model each time, each shows a bit more, and the graph ends as a hairball. None of them answers the question. Do not mention the city yet.",
-    layout: "fullscreen",
-    header: "hidden",
-    footer: "hidden",
-    stepCount: 3,
-    body: <Ladder />,
+    body: <Backoffice />,
   },
   {
     slug: "trex",
     title: "Perfected",
     notes:
-      "4:45, 15 seconds. The storm is up as the ladder leaves. Click: the T-rex roars and the line lands. Deadpan. Then straight on to fsn.",
+      "3:45, 15 seconds. The storm is up while the question still hangs. Click: the T-rex roars and the line lands. Deadpan. Then straight on to fsn.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -101,27 +79,27 @@ export const slides: SlideDefinition[] = [
     slug: "unix-system",
     title: "I know this",
     notes:
-      "5:00, 1.5 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. Let the line land, then: so what would our content model look like as a place?",
+      "4:00, 2 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. Let the line land. Last click opens the paddock camera, rex_cam.jpg, out of the security plot. Our friend is still out there. Then: so what would our content model look like as a place?",
     layout: "fullscreen",
-    stepCount: 3,
+    stepCount: 4,
     body: <UnixSystem />,
   },
   {
     slug: "buildup",
     title: "Same data",
     notes:
-      "6:30, 2.5 minutes. The only reveal. Click through slowly, one sentence a click. One row from the wall, Content Page. Click, it becomes a building. Click, its floors are its property groups. Click, the windows are its properties. Click, Page Meta, the composition it uses, and the arc between them. Click, Article Page uses it too. Click, and pull up: same data, the whole wall. The data did not change, the interface did. Then, plainly: so I built something.",
+      "6:00, 2.5 minutes. The only reveal. Click through slowly, one sentence a click. Content page, the one you just saw in the backoffice, rises as a building. Click, its floors are its property groups. Click, the windows are its properties. Click, Page Meta, the composition it uses, and the arc between them. Click, Article page uses it too. Click, and pull up: same data, every Document Type. The data did not change, the interface did. Then, plainly: so I built something.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
-    stepCount: 7,
+    stepCount: 6,
     body: <Buildup />,
   },
   {
     slug: "live",
     title: "Let's see it",
     notes:
-      "9:00, 10 minutes, wrap up by 18:55. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
+      "8:30, about 10 minutes, wrap up by 18:55. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",

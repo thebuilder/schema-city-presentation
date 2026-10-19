@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react"
 import { useBeat, useStill } from "@/deck/parts/beats"
 import { FsnWorld } from "@/deck/parts/fsn-world"
-import { park, parkDoors, parkHome, parkSecurity } from "@/deck/parts/park"
+import { park, parkDoors, parkHome, parkRexCam, parkSecurity } from "@/deck/parts/park"
 import { Terminal } from "@/deck/parts/terminal"
+import { ImageWindow } from "@/deck/parts/image-window"
 
 /*
  * The control room, recreated rather than played. fsn is launched from a
@@ -12,9 +13,11 @@ import { Terminal } from "@/deck/parts/terminal"
  * as a subtitle, and then the camera walks into security and picks the door
  * locks. The world is fsn's own renderer, so it looks the way fsn does.
  *
- * Beat 0 launches fsn, beat 1 is the line, beat 2 is the flight.
+ * Beat 0 launches fsn, beat 1 is the line, beat 2 is the flight, and beat 3
+ * opens the paddock camera: a picture file opened from the plot, in a window
+ * the way IRIX opened one, with the T-rex from the slide before inside it.
  */
-const delays = [3800, 8500]
+const delays = [3800, 8500, 13000]
 
 // Long enough for the command to finish typing before the tree appears.
 const bootDelay = 1500
@@ -36,13 +39,15 @@ export function UnixSystem() {
   }, [still])
 
   const focus = beat >= 2
+  const camera = beat >= 3
+  const picked = camera ? parkRexCam : parkDoors
 
   return (
     <section className="relative h-full w-full overflow-hidden">
       {booted ? (
         <FsnWorld
           className="absolute inset-0"
-          focus={focus ? parkDoors : undefined}
+          focus={focus ? picked : undefined}
           open={focus ? parkSecurity : parkHome}
           load={loadPark}
           still={still}
@@ -67,7 +72,7 @@ export function UnixSystem() {
               focus ? "text-[color:var(--slide-signal)]" : "text-foreground"
             }
           >
-            {focus ? parkDoors : parkHome}
+            {focus ? picked : parkHome}
           </span>
         </p>
       </div>
@@ -81,6 +86,8 @@ export function UnixSystem() {
       >
         {"It's a UNIX system! I know this!"}
       </p>
+
+      <ImageWindow open={camera} file={parkRexCam} src="/trex/index.html" />
     </section>
   )
 }

@@ -80,6 +80,7 @@ const tree: Entry[] = [
               ["motion.log", 64 * kb],
               ["lobby.jpg", 48 * kb],
               ["visitor.jpg", 40 * kb],
+              ["rex_cam.jpg", 56 * kb],
             ],
           ],
           [
@@ -118,3 +119,4 @@ export const park = build("/", "/", null, tree)
 export const parkHome = "/usr/park"
 export const parkSecurity = "/usr/park/security"
 export const parkDoors = "/usr/park/security/doors"
+export const parkRexCam = "/usr/park/security/rex_cam.jpg"
