@@ -1,34 +1,17 @@
 "use client"
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { useEffect, useMemo, useRef, useState } from "react"
-import * as THREE from "three"
-import {
-  boardPalette,
-  buildingPalette,
-  CityRoads,
-  CityWorld,
-  useCity,
-  VIEW_DISTANCE,
-} from "@/deck/city/city-world"
-import { type CityPalette, useCityPalette } from "@/deck/city/palette"
+import { useEffect, useMemo, useRef } from "react"
 import { demoGraph, type SchemaGraph } from "@/deck/city/schema-city"
-import {
-  Boards,
-  Buildings,
-  CAMERA_FOV,
-  revealAt,
-} from "@/deck/city/schema-city-scene"
 import { useStep } from "@/deck/city/use-step"
 
 /*
- * One content model, four interfaces, a click each: the Settings tree, a flat
- * list, a node-link graph and the city. Every rung draws the same graph, so the
- * room sees the data stay put while the view gets more absurd, and only the
- * last view says which types share what.
+ * One content model, three interfaces, a click each: the Settings tree, a flat
+ * list and a node-link graph. Every rung draws the same graph and each shows a
+ * little more, but the graph ends as a hairball and none of them answers the
+ * wall's question. The city is held back for the morph, so it is revealed once.
  */
 
-const RUNGS = ["Tree", "List", "Graph", "City"] as const
+const RUNGS = ["Tree", "List", "Graph"] as const
 
 export const LADDER_STEPS = RUNGS.length
 
@@ -50,9 +33,6 @@ export function LadderWidget({
       </Rung>
       <Rung active={current === 2}>
         <GraphRung active={current === 2} graph={graph} />
-      </Rung>
-      <Rung active={current === 3}>
-        {current === 3 ? <CityRung graph={graph} /> : null}
       </Rung>
       <p className="absolute top-10 left-16 font-bold text-[length:var(--slide-label-size)] text-primary uppercase tracking-[var(--slide-label-tracking)] [text-shadow:var(--slide-halo)]">
         {RUNGS[current]}
@@ -431,107 +411,5 @@ function GraphRung({
         ))}
       </svg>
     </div>
-  )
-}
-
-function CityRung({ graph }: { graph: SchemaGraph }) {
-  const host = useRef<HTMLDivElement>(null)
-  const palette = useCityPalette(host)
-  return (
-    <div className="h-full w-full" ref={host}>
-      {palette ? (
-        <Canvas
-          camera={{ fov: CAMERA_FOV, near: 0.5, far: 4000 }}
-          dpr={[1, 2]}
-          resize={{ offsetSize: true }}
-          shadows="percentage"
-        >
-          <City graph={graph} palette={palette} />
-        </Canvas>
-      ) : null}
-    </div>
-  )
-}
-
-/** How far the camera sways either side of its three-quarter view, in radians. */
-const SWAY = 0.25
-const SWAY_RATE = 0.15
-const UP = new THREE.Vector3(0, 1, 0)
-
-/**
- * The package's own boot, played from the moment the rung mounts: boards trace
- * in, buildings rise, roads arrive last.
- */
-function City({
-  graph,
-  palette,
-}: {
-  graph: SchemaGraph
-  palette: CityPalette
-}) {
-  const city = useCity(graph)
-  const camera = useThree((state) => state.camera)
-  const clock = useThree((state) => state.clock)
-  const [roads, setRoads] = useState(0)
-  const centre = city.ground.centre
-  const target = useMemo(
-    () => new THREE.Vector3(centre.x, 0, centre.z),
-    [centre]
-  )
-  const view = useMemo(
-    () =>
-      new THREE.Vector3(0.2, 0.62, 1)
-        .normalize()
-        .multiplyScalar(city.ground.span * VIEW_DISTANCE),
-    [city.ground.span]
-  )
-
-  useFrame(() => {
-    const elapsed = clock.getElapsedTime()
-    const offset = view
-      .clone()
-      .applyAxisAngle(UP, Math.sin(elapsed * SWAY_RATE) * SWAY)
-    camera.position.copy(target).add(offset)
-    camera.lookAt(target)
-    const next = revealAt(elapsed).links
-    if (Math.abs(next - roads) > 0.02 || (next === 1 && roads !== 1)) {
-      setRoads(next)
-    }
-  })
-
-  return (
-    <>
-      <CityWorld centre={centre} palette={palette} span={city.ground.span} />
-      <Boards
-        districts={city.districts}
-        fingers={[]}
-        folders={[]}
-        palette={boardPalette(palette)}
-        reducedMotion={false}
-        vias={[]}
-      />
-      <Buildings
-        cells={city.cells}
-        heights={city.heights}
-        hovered={null}
-        neighbours={null}
-        onFocus={() => undefined}
-        onHover={() => undefined}
-        onSelect={() => undefined}
-        palette={buildingPalette(palette)}
-        placements={city.placements}
-        plazas={city.plazas}
-        reducedMotion={false}
-        scale={null}
-        selected={null}
-        windows={city.windows}
-      />
-      <CityRoads
-        colour={palette.phosphor}
-        edges={city.edges}
-        opacity={roads}
-        placementsById={city.placementsById}
-      />
-    </>
   )
 }

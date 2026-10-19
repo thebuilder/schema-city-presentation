@@ -68,28 +68,10 @@ export const slides: SlideDefinition[] = [
     body: <BackofficeGrid />,
   },
   {
-    slug: "unix-system",
-    title: "I know this",
-    notes:
-      "2:45, 1.5 minutes. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. The line is on screen, so let it land before you say anything.",
-    layout: "fullscreen",
-    stepCount: 3,
-    body: <UnixSystem />,
-  },
-  {
-    slug: "a-place",
-    title: "A place",
-    notes:
-      "4:15, 20 seconds. Calm, after the laugh. This is the idea the rest of the talk borrows.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Statement text="A filesystem you could read as a place." />,
-  },
-  {
     slug: "the-wall",
     title: "The wall",
     notes:
-      "4:35, 1.5 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
+      "2:45, 1.5 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
     layout: "fullscreen",
     stepCount: 2,
     header: "hidden",
@@ -100,18 +82,27 @@ export const slides: SlideDefinition[] = [
     slug: "ladder",
     title: "The ladder",
     notes:
-      "6:05, 1 minute. One word per rung and let the room laugh at the city. Same content model each time, only the interface changes.",
+      "4:15, 45 seconds. One word per rung. Tree, list, graph: the same content model each time, each shows a bit more, and the graph ends as a hairball. None of them answers the question. Do not mention the city yet.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
-    stepCount: 4,
+    stepCount: 3,
     body: <Ladder />,
+  },
+  {
+    slug: "unix-system",
+    title: "I know this",
+    notes:
+      "5:00, 1.5 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. Let the line land, then: so what would our content model look like as a place?",
+    layout: "fullscreen",
+    stepCount: 3,
+    body: <UnixSystem />,
   },
   {
     slug: "morph",
     title: "Same data",
     notes:
-      "7:05, 1.5 minutes. The wall from before, same rows, becomes a city. Say only: same data. The data did not change, the interface did.",
+      "6:30, 1.5 minutes. The only reveal. The wall from before, same rows, lifts into a city. Say only: same data. The data did not change, the interface did. Then, plainly: so I built something.",
     layout: "fullscreen",
     background: "statement",
     stepCount: 2,
@@ -120,19 +111,10 @@ export const slides: SlideDefinition[] = [
     body: <Morph />,
   },
   {
-    slug: "built-something",
-    title: "So I built something",
-    notes:
-      "8:35, 20 seconds. The bridge. Say it plainly, like it was the obvious thing to do.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Statement text="So I built something." />,
-  },
-  {
     slug: "legend",
     title: "How to read it",
     notes:
-      "8:55, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces. Cut it if the room already reads the city.",
+      "8:00, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces. Cut it if the room already reads the city.",
     stepCount: 6,
     body: <Legend />,
   },
@@ -140,7 +122,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "9:55, 9 minutes. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
+      "9:00, 10 minutes, wrap up by 18:55. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
