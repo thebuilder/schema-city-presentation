@@ -32,6 +32,8 @@ export {
   connectionsOf,
   type FloorCell,
   type FloorCellKind,
+  WINDOW_HEIGHT,
+  WINDOW_WIDTH,
   type WindowCell,
 } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/app/scene/buildings"
 export type { BuildingPalette } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/app/scene/building-paint"

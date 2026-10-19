@@ -14,9 +14,10 @@ import { Terminal } from "@/deck/parts/terminal"
  * as a subtitle, and then the film plays out in fsn's own windows. The world
  * is fsn's own renderer, so it looks the way fsn does.
  *
- * Beat 0 launches fsn and beat 1 is the line. Beat 2 flies into security and
- * opens velociraptor.webp: the raptor is inside. Beat 3 picks the doors and
- * locks them, the panels sliding shut and the light going green. Each window
+ * Beat 0 launches fsn and beat 1 is the line. Beat 2 flies into security,
+ * activates velociraptor.webp and opens it: the raptor is inside. Beat 3
+ * closes it, activates the doors and locks them, the panels sliding shut and
+ * the light going green. Each window
  * waits for its flight to land, so it reads as opened from the block the beam
  * points at.
  */
@@ -64,7 +65,9 @@ export function UnixSystem() {
 
   const focus = beat >= 2
   const picked = beat >= 3 ? parkDoors : parkRaptor
-  const raptorOpen = useAfter(beat >= 2, landDelay, still)
+  // The raptor's window closes as the doors are picked, so one window is open
+  // at a time, the way a person would work it.
+  const raptorOpen = useAfter(beat === 2, landDelay, still)
   const doorsOpen = useAfter(beat >= 3, landDelay, still)
   const locked = useAfter(doorsOpen, DOOR_LOCK_MS, still)
 

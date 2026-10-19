@@ -109,6 +109,26 @@ interface Rig {
   controls: { autoRotate: boolean; autoRotateSpeed: number; target: Vec3 }
   flight: { toPosition: Vec3; toTarget: Vec3 } | null
   flyToArea: (area: unknown, arrival: string) => void
+  hoverTarget: Pick | null
+  pickMeshes: Map<unknown, Pick[]>
+}
+
+interface Pick {
+  node: { id: string }
+}
+
+/*
+ * fsn lifts and brightens the object under the pointer, which is how a person
+ * using it sees which pillar is live. No pointer moves on a slide, so the deck
+ * hands fsn the pillar it picked as the hovered one, and fsn's own cross-fade
+ * moves the lift from one pillar to the next.
+ */
+function activate(scene: WorldScene, id: string) {
+  const rig = scene as unknown as Rig
+  const pick = [...rig.pickMeshes.values()]
+    .flat()
+    .find((candidate) => candidate.node.id === id)
+  rig.hoverTarget = pick ?? null
 }
 
 interface Vec3 {
@@ -303,6 +323,7 @@ export function FsnWorld({
     const pick = () => {
       scene.focusNode(target)
       scene.refocus()
+      activate(scene, target.id)
     }
     if (still || previous?.id === directory.id) {
       pick()

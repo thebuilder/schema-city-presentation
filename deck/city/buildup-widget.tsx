@@ -28,6 +28,8 @@ import {
   type Placement,
   type SchemaGraph,
   type SchemaNode,
+  WINDOW_HEIGHT,
+  WINDOW_WIDTH,
   type WindowCell,
 } from "@/deck/city/schema-city"
 import {
@@ -74,6 +76,15 @@ const DROP_HEIGHT = 3
 const DROP = 0.45
 /** Seconds between one floor landing, or one storey lighting, and the next. */
 const STAGGER = 0.12
+/**
+ * A window is a few pixels across at this distance, so lighting one is easy to
+ * miss. Each one flashes on, a bright pane several times its size shrinking
+ * into it, and the storeys light slower than floors land so the eye can
+ * follow them up the building.
+ */
+const LIGHT_STAGGER = 0.3
+const FLASH = 0.9
+const FLASH_GROWTH = 4.5
 /** Screen pixels for the arcs, which are hairlines at a single pixel this close. */
 const ARC_WIDTH = 4
 /** Seconds the three buildings take to slide to their plots on the pull-up. */
@@ -296,6 +307,62 @@ function Light({
   return <group ref={group}>{children}</group>
 }
 
+/** The flash that marks a window coming on, drawn just proud of its wall. */
+function Flash({
+  windows,
+  shown,
+  delay,
+  colour,
+}: {
+  windows: WindowCell[]
+  shown: boolean
+  delay: number
+  colour: string
+}) {
+  const group = useRef<THREE.Group>(null)
+  const time = useShownFor(shown)
+  useFrame(() => {
+    const g = group.current
+    if (!g) {
+      return
+    }
+    const p = THREE.MathUtils.clamp((time.current - delay) / FLASH, 0, 1)
+    g.visible = shown && p > 0 && p < 1
+    const grow = 1 + (FLASH_GROWTH - 1) * (1 - p) ** 2
+    for (const pane of g.children as THREE.Mesh<
+      THREE.BufferGeometry,
+      THREE.MeshBasicMaterial
+    >[]) {
+      pane.scale.set(WINDOW_WIDTH * grow, WINDOW_HEIGHT * grow, 1)
+      pane.material.opacity = (1 - p) ** 1.5
+    }
+  })
+  return (
+    <group ref={group} visible={false}>
+      {windows.map((cell) => (
+        <mesh
+          key={`${cell.cx}:${cell.cy}:${cell.cz}`}
+          position={[
+            cell.cx + Math.sin(cell.rotY) * 0.03,
+            cell.cy,
+            cell.cz + Math.cos(cell.rotY) * 0.03,
+          ]}
+          rotation={[0, cell.rotY, 0]}
+        >
+          <planeGeometry />
+          <meshBasicMaterial
+            blending={THREE.AdditiveBlending}
+            color={colour}
+            depthWrite={false}
+            toneMapped={false}
+            transparent
+          />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 /** Groups items by storey, lowest first, so they can be built one at a time. */
 function byStorey<T extends { cy: number }>(items: T[]): T[][] {
   const storeys = new Map<number, T[]>()
@@ -376,22 +443,29 @@ function Actor({
         </Drop>
       ))}
       {lit.map((windows, index) => (
-        <Light
-          delay={windowsAt + STAGGER * index}
-          key={`light-${windows[0].cy}`}
-          shown={step >= steps.windows}
-        >
-          {draw([], windows)}
-        </Light>
+        <group key={`light-${windows[0].cy}`}>
+          <Light delay={windowsAt + LIGHT_STAGGER * index} shown={step >= steps.windows}>
+            {draw([], windows)}
+          </Light>
+          <Flash
+            colour={palette.bright}
+            delay={windowsAt + LIGHT_STAGGER * index}
+            shown={step >= steps.windows}
+            windows={windows}
+          />
+        </group>
       ))}
       {late.length > 0 ? <Rise shown={step >= PULL_UP}>{draw(late, [])}</Rise> : null}
       <RoofIcon
         background={palette.background}
         colour={palette.phosphor}
-        delay={GROW}
+        // The icon sits on the finished roof, so it waits for the last
+        // storey to land and light rather than hanging in the air above a
+        // building still going up.
+        delay={windowsAt + LIGHT_STAGGER * lit.length + FLASH}
         footprint={placement.footprint}
         icon={role.node.icon}
-        shown={step >= steps.base}
+        shown={step >= steps.windows}
         x={placement.position.x}
         y={roof}
         z={placement.position.z}
