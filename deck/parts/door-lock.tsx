@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react"
 
 /*
  * The doors from the control room, in pixel art: two panels slide shut over a
- * dark corridor with a pair of eyes in it, a bolt drops across the seam, and
+ * dark corridor with a pair of eyes in it, a bolt slides out of one
+ * door into a keeper on the other, and
  * the light over the frame stops blinking red and holds green. It is drawn on
  * a small canvas and scaled up with smoothing off, so every pixel is placed by
  * the code below rather than by an image.
@@ -105,12 +106,19 @@ function draw(g: CanvasRenderingContext2D, t: number) {
   rect(38, 12, 6, 76, colours.frame)
   rect(116, 12, 6, 76, colours.frame)
 
-  // The bolt drops across the seam once the doors meet.
-  const bolt = ease(clamp01((t - closeTo) / (boltTo - closeTo)))
-  if (bolt > 0) {
-    const y = Math.round(40 + 14 * bolt)
-    rect(74, y, 12, 3, colours.bolt)
-    rect(74, y + 3, 12, 1, colours.doorLo)
+  // The bolt rides on the left door and the keeper on the right, so both
+  // arrive with the doors. Once the doors meet, the bolt slides across the
+  // seam into the keeper.
+  const leftEdge = 44 + width
+  const rightEdge = 116 - width
+  if (width > 16) {
+    rect(leftEdge - 14, 58, 12, 7, colours.doorLo)
+    rect(rightEdge + 3, 58, 8, 7, colours.doorLo)
+    rect(rightEdge + 4, 60, 6, 3, colours.slit)
+    const bolt = ease(clamp01((t - closeTo) / (boltTo - closeTo)))
+    const reach = 10 + Math.round(10 * bolt)
+    rect(leftEdge - 12, 60, reach, 3, colours.bolt)
+    rect(leftEdge - 12, 63, reach, 1, colours.doorLo)
   }
 
   // The light over the door: blinking red while the doors move, then green.
