@@ -8,7 +8,7 @@ import { useStep } from "@/deck/city/use-step"
  * One content model, three interfaces, a click each: the Settings tree, a flat
  * list and a node-link graph. Every rung draws the same graph and each shows a
  * little more, but the graph ends as a hairball and none of them answers the
- * wall's question. The city is held back for the morph, so it is revealed once.
+ * wall's question. The city is held back for the build-up, so it is revealed once.
  */
 
 const RUNGS = ["Tree", "List", "Graph"] as const

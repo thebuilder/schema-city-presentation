@@ -20,7 +20,7 @@ import {
 } from "@/deck/city/schema-city-scene"
 import { useStill } from "@/deck/parts/beats"
 
-// The three-quarter view the morph slide settles on, as a height over a reach.
+// The three-quarter view the build-up slide settles on, as a height over a reach.
 const ELEVATION = Math.atan2(0.62, Math.hypot(0.2, 1))
 const START = Math.atan2(0.2, 1)
 /** Radians per second, slow enough that the city reads as standing still. */

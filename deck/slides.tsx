@@ -3,14 +3,13 @@ import "server-only"
 import type { SlideDefinition } from "@thebuilder/deckard-core"
 import { ADD_PROPERTY_STEPS, DELETED_BLOCK_STEPS } from "@/deck/examples/site-results"
 import { BackofficeGrid } from "@/deck/parts/backoffice-grid"
+import { Buildup } from "@/deck/parts/buildup"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
 import { Ladder } from "@/deck/parts/ladder"
 import { Layout } from "@/deck/parts/layout"
-import { Legend } from "@/deck/parts/legend"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
-import { Morph } from "@/deck/parts/morph"
 import { Pipeline } from "@/deck/parts/pipeline"
 import { Place } from "@/deck/parts/place"
 import { Placeholder } from "@/deck/parts/placeholder"
@@ -99,24 +98,15 @@ export const slides: SlideDefinition[] = [
     body: <UnixSystem />,
   },
   {
-    slug: "morph",
+    slug: "buildup",
     title: "Same data",
     notes:
-      "6:30, 1.5 minutes. The only reveal. The wall from before, same rows, lifts into a city. Say only: same data. The data did not change, the interface did. Then, plainly: so I built something.",
+      "6:30, 2.5 minutes. The only reveal. Click through slowly, one sentence a click. One row from the wall, Content Page. Click, it becomes a building. Click, its floors are its property groups. Click, the windows are its properties. Click, Page Meta, the composition it uses, and the arc between them. Click, Article Page uses it too. Click, and pull up: same data, the whole wall. The data did not change, the interface did. Then, plainly: so I built something.",
     layout: "fullscreen",
-    background: "statement",
-    stepCount: 2,
     header: "hidden",
     footer: "hidden",
-    body: <Morph />,
-  },
-  {
-    slug: "legend",
-    title: "How to read it",
-    notes:
-      "8:00, 1 minute. Say each mapping once as it appears: doc type, property groups, properties, element types, traces. Cut it if the room already reads the city.",
-    stepCount: 6,
-    body: <Legend />,
+    stepCount: 7,
+    body: <Buildup />,
   },
   {
     slug: "live",

@@ -69,7 +69,7 @@ export const CLIENT_DIR = "vendor/umbraco-schema-city/src/SchemaCity/Client"
 
 /**
  * The ct-baseline site the live demo opens, 32 Document Types as Schema City
- * exported them on 17 Oct 2026. The wall, the ladder, the morph and the legend
+ * exported them on 17 Oct 2026. The wall, the ladder and the build-up
  * all default to it, so the city on the slides is the city the room sees in the
  * backoffice a few minutes later. Re-export into ct-baseline.json if the site
  * changes before the talk.

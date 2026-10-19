@@ -5,8 +5,8 @@ import type { SchemaGraph, SchemaNode } from "@/deck/city/schema-city"
  * The content model as the wall of rows a backoffice grid would give you. Every
  * Document Type with its counts, its compositions, its allowed children, its
  * blocks and its pickers, in alias order. Dense on purpose. The same component
- * draws the wall and the first frame of the morph, so the rows that lift off
- * are the rows the room was staring at.
+ * draws the wall and the first frame of the build-up, so the row that becomes
+ * a building is a row the room was staring at.
  */
 
 type Column = {
@@ -133,7 +133,7 @@ export function SchemaTable({
 }: {
   rows: TableRow[]
   graph: SchemaGraph
-  /** Called with each row's element, for the morph to measure where rows sit. */
+  /** Called with each row's element, for the build-up to pick out its row. */
   rowRef?: (id: string, element: HTMLElement | null) => void
   style?: CSSProperties
 }) {
