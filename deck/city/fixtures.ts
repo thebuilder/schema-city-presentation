@@ -6,8 +6,8 @@ import { CLIENT_DIR, type SchemaGraph } from "@/deck/city/schema-city"
 
 /*
  * The schemas Schema City is developed against, from its dev fixtures. `medium` is the
- * demo site the live part of the talk opens, SEO Composition and Dup Alias Page
- * included; `pathological` is 300 types built to break the layout.
+ * seeded demo site with SEO Composition and Dup Alias Page; `pathological`
+ * is 300 types built to break the layout.
  *
  * Read off disk on the server, so a slide hands its client part only what it
  * computed rather than shipping a megabyte of JSON per slide.

@@ -70,7 +70,7 @@ export const slides: SlideDefinition[] = [
     slug: "the-wall",
     title: "The wall",
     notes:
-      "2:45, 1.5 minutes. The question the whole talk answers: what does a change to SEO Composition reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
+      "2:45, 1.5 minutes. The question the whole talk answers: what does a change to Page Meta reach? Ask the room. Nobody can answer from this view, and that is the point. Leave it open.",
     layout: "fullscreen",
     stepCount: 2,
     header: "hidden",
@@ -112,7 +112,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "9:00, 10 minutes, wrap up by 18:55. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open SEO Composition, 37 types and 188 content items. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
+      "9:00, 10 minutes, wrap up by 18:55. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
@@ -198,11 +198,11 @@ export const slides: SlideDefinition[] = [
     counted: false,
     title: "Backup: impact",
     notes:
-      "Backup. A change to SEO Composition reaches 37 types and 188 content items. Adding seoTitle collides on Dup Alias Page.",
+      "Backup. A change to Page Meta reaches six page types: Home, Content, Articles, Article, Not found and Search results, plus the content items behind them.",
     body: (
       <Placeholder
         label="backup"
-        shows="Impact of changing SEO Composition, captured from the demo."
+        shows="Impact of changing Page Meta, captured from the demo."
       />
     ),
   },
