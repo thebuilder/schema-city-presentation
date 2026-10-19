@@ -64,9 +64,6 @@ export {
   groupChanges,
 } from "@/vendor/umbraco-schema-city/src/SchemaCity/Client/src/model/changes"
 
-/** Where the client lives inside the submodule, for code read off disk. */
-export const CLIENT_DIR = "vendor/umbraco-schema-city/src/SchemaCity/Client"
-
 /**
  * The ct-baseline site the live demo opens, 32 Document Types as Schema City
  * exported them on 17 Oct 2026. The wall, the ladder and the build-up

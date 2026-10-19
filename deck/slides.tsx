@@ -7,18 +7,14 @@ import { Buildup } from "@/deck/parts/buildup"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
 import { Ladder } from "@/deck/parts/ladder"
-import { Layout } from "@/deck/parts/layout"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
-import { Pipeline } from "@/deck/parts/pipeline"
 import { Place } from "@/deck/parts/place"
-import { Placeholder } from "@/deck/parts/placeholder"
 import { AddProperty, DeletedBlock, SiteIntro } from "@/deck/parts/site-examples"
 import { Takeover } from "@/deck/parts/takeover"
 import { TheWall } from "@/deck/parts/the-wall"
 import { UnixSystem } from "@/deck/parts/unix-system"
 import { Whoami } from "@/deck/parts/whoami"
-import { Wireframe } from "@/deck/parts/wireframe"
 
 /*
  * The order and the speaker notes live here. Each visual lives in its own file
@@ -186,76 +182,11 @@ export const slides: SlideDefinition[] = [
     slug: "close",
     title: "Thank you",
     notes:
-      "24:00. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package, and the pipeline is in backup. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "24:00. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",
     footer: "hidden",
     body: <Close />,
-  },
-  {
-    slug: "backup-impact",
-    counted: false,
-    title: "Backup: impact",
-    notes:
-      "Backup. A change to Page Meta reaches six page types: Home, Content, Articles, Article, Not found and Search results, plus the content items behind them.",
-    body: (
-      <Placeholder
-        label="backup"
-        shows="Impact of changing Page Meta, captured from the demo."
-      />
-    ),
-  },
-  {
-    slug: "backup-findings",
-    counted: false,
-    title: "Backup: findings",
-    notes:
-      "Backup. Findings, grouped by kind, breakages first. Each row says what it is about and what to do next.",
-    body: (
-      <Placeholder
-        label="backup"
-        shows="Findings, grouped by kind, captured from the demo."
-      />
-    ),
-  },
-  {
-    slug: "backup-snapshot",
-    counted: false,
-    title: "Backup: snapshot",
-    notes:
-      "Backup. Compare against a snapshot from before four planned edits: 4 causes, 48 side effects, 1 unplanned.",
-    body: (
-      <Placeholder
-        label="backup"
-        shows="Snapshot comparison, captured from the demo."
-      />
-    ),
-  },
-  {
-    slug: "pipeline",
-    counted: false,
-    title: "Backup: pipeline",
-    notes:
-      "Backup, if someone asks how it is built. Walk the blocks left to right: Umbraco, the graph API, the layout, the scene. Layout and wireframe are in backup if someone asks.",
-    body: <Pipeline />,
-  },
-  {
-    slug: "layout",
-    counted: false,
-    title: "Backup: layout",
-    notes:
-      "Backup. Layout is the hard part. Show one decision it makes.",
-    stepCount: 4,
-    body: <Layout />,
-  },
-  {
-    slug: "wireframe",
-    counted: false,
-    title: "Backup: wireframe",
-    notes:
-      "Backup. Why it stays fast with 200 document types. Every building is one instanced mesh, and the glow is patched into that mesh's fragment shader, so there is no post-processing pass.",
-    stepCount: 3,
-    body: <Wireframe />,
   },
 ]
