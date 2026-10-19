@@ -87,7 +87,7 @@ const CAPTIONS = [
   "Home page is built from four other types.",
   "Ten kinds of block can go on it.",
   "Six page types can live under it.",
-  "None of it shows what a change would reach.",
+  "This is one page. Page Meta is on more.",
 ]
 
 // Milliseconds between items as a panel fills, after it has slid in.
