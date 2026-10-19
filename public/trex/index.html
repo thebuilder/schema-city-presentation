@@ -792,9 +792,11 @@ function drawRain(li, F) {
 }
 
 // ---------- sound ----------
-let AC = null, master = null, noiseBuf = null, soundOn = false;
+let AC = null, master = null, noiseBuf = null, soundOn = false, roarBuf = null;
 function initAudio() {
   AC = new (window.AudioContext || window.webkitAudioContext)();
+  // A recorded roar, when it has loaded; the synthesised one stands in until then.
+  fetch('roar.mp3').then(r => r.arrayBuffer()).then(b => AC.decodeAudioData(b)).then(b => { roarBuf = b; }).catch(() => {});
   const comp = AC.createDynamicsCompressor(); master = AC.createGain(); master.gain.value = .9; master.connect(comp); comp.connect(AC.destination);
   noiseBuf = AC.createBuffer(1, AC.sampleRate * 3, AC.sampleRate);
   const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -824,6 +826,12 @@ function thunderSound(close) {
 }
 function roarSound() {
   if (!soundOn || !AC) return;
+  if (roarBuf) {
+    const src = AC.createBufferSource(), g = AC.createGain();
+    src.buffer = roarBuf; g.gain.value = .9;
+    src.connect(g).connect(master); src.start();
+    return;
+  }
   const t0 = AC.currentTime + .02, T = 1.9;
   const out = AC.createGain();
   out.gain.setValueAtTime(0, t0); out.gain.linearRampToValueAtTime(.5, t0 + .3); out.gain.setValueAtTime(.5, t0 + 1.4); out.gain.exponentialRampToValueAtTime(.001, t0 + T);
@@ -863,6 +871,7 @@ cv.addEventListener('click', e => { const r = cv.getBoundingClientRect(); strike
 addEventListener('message', e => {
   if (e.origin !== location.origin) return;
   if (e.data === 'roar') roar(); else if (e.data === 'strike') strike();
+  else if (e.data === 'sound') { if (!soundOn) toggleSound(); else if (AC.state === 'suspended') AC.resume(); }
 });
 addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;

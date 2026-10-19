@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { useStep } from "@/deck/city/use-step"
+import { useStill } from "@/deck/parts/beats"
 import { Words } from "@/deck/parts/line"
 
 /*
@@ -11,6 +12,11 @@ import { Words } from "@/deck/parts/line"
  * which keeps the keyboard with the deck rather than with the frame.
  *
  * Step 0 is the storm. Step 1 is the roar and the line.
+ *
+ * The storm plays with its rain and thunder, and the roar is a recording. The
+ * deck asks for the sound once the frame has loaded, and the frame's audio is
+ * allowed to start because the presenter has already pressed a key in the
+ * deck. A screenshot stays silent.
  */
 export const TREX_STEPS = 2
 
@@ -20,17 +26,29 @@ export function Trex() {
   const step = useStep()
   const frame = useRef<HTMLIFrameElement>(null)
   const said = step >= 1
+  const still = useStill()
 
   useEffect(() => {
     if (said) {
+      // Asking again covers a deck opened straight on this slide, where the
+      // first key press is the one that brings the roar.
+      if (!still) {
+        frame.current?.contentWindow?.postMessage("sound", window.location.origin)
+      }
       frame.current?.contentWindow?.postMessage("roar", window.location.origin)
     }
-  }, [said])
+  }, [said, still])
 
   return (
     <section className="relative h-full w-full overflow-hidden bg-black">
       <iframe
+        allow="autoplay"
         className="pointer-events-none absolute inset-0 h-full w-full border-0"
+        onLoad={() => {
+          if (!still) {
+            frame.current?.contentWindow?.postMessage("sound", window.location.origin)
+          }
+        }}
         ref={frame}
         src="/trex/index.html"
         tabIndex={-1}
