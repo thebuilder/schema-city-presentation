@@ -1,0 +1,889 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tyrant's Storm</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #05070d;
+    --line: #1b2638;
+    --rain: #8fa6c6;
+    --bolt: #eaf1ff;
+    --ember: #ffb347;
+    --text: #c3cee0;
+    --dim: #6b7a94;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: "Martian Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .wrap {
+    min-height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 16px;
+    padding-block: 16px;
+  }
+  .stage {
+    width: min(100%, calc((100dvh - 170px) * 16 / 9));
+    min-width: min(100%, 300px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #05070d;
+    outline: 1px solid var(--line);
+    cursor: crosshair;
+  }
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px 24px;
+  }
+  .era {
+    margin: 0;
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  h1 {
+    margin: 0;
+    font-family: "Pixelify Sans", "Martian Mono", ui-monospace, monospace;
+    font-weight: 700;
+    font-size: clamp(24px, 3.2vw, 34px);
+    line-height: 1.1;
+    color: var(--bolt);
+    text-wrap: balance;
+  }
+  h1 span { color: var(--ember); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  button {
+    font: inherit;
+    font-size: 11px;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--line);
+    padding: 8px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+  }
+  button:hover { border-color: var(--rain); color: var(--bolt); }
+  button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  button[aria-pressed="true"] { border-color: var(--ember); color: var(--ember); }
+  kbd {
+    font: inherit;
+    font-size: 10px;
+    color: var(--dim);
+    border: 1px solid var(--line);
+    padding: 0 5px;
+  }
+  .note { margin: 0; color: var(--dim); font-size: 11px; max-width: 70ch; }
+
+  /* In the deck: the scene fills the slide, and the title bar and controls give
+     way to the slide's own line. */
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  .wrap, .stage { display: block; width: 100%; height: 100%; padding: 0; min-width: 0; }
+  canvas { width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; outline: none; cursor: default; }
+  .bar, .note { display: none; }
+</style>
+
+<div class="wrap">
+  <main class="stage">
+    <canvas id="scene" width="320" height="180" aria-label="Pixel art: a Tyrannosaurus rex roaring in a rain-soaked night jungle as lightning strikes behind the palms"></canvas>
+    <div class="bar">
+      <div>
+        <p class="era">Hell Creek floodplain · Late Cretaceous · ~66 Ma</p>
+        <h1>Tyrant<span>'</span>s Storm</h1>
+      </div>
+      <div class="controls">
+        <button id="btn-bolt" type="button">Call lightning <kbd>L</kbd></button>
+        <button id="btn-roar" type="button">Roar <kbd>R</kbd></button>
+        <button id="btn-sound" type="button" aria-pressed="false">Sound off <kbd>S</kbd></button>
+      </div>
+    </div>
+    <p class="note">Click the sky to strike anywhere. Everything is drawn live in code, the T-rex included.</p>
+  </main>
+</div>
+
+<script>
+// Tyrant rig: a procedurally drawn pixel-art T-rex.
+// The body is modelled as signed-distance shapes on a small skeleton, then
+// rasterised with hard edges, lit per part, dithered and outlined, so every
+// frame reads as hand-placed pixels.
+const TrexRig = (() => {
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const mix = (a, b, t) => a + (b - a) * t;
+  const sst = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+
+  const DW = 150, DH = 92, GY = 88;          // design canvas and ground line
+  const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const PAL = {
+    outline: '#07100b',
+    green: ['#10231a', '#1d3b27', '#2c5634', '#3f7444', '#5a9559'],
+    far: ['#0a1811', '#132a1c', '#1d3d26', '#2a5231', '#3a6b40'],
+    belly: ['#4f402b', '#8f7952', '#bba273', '#d8c595'],
+    tongue: '#9a3a45', tongueHi: '#c66470',
+    teeth: '#ece4cf', eye: '#ffc85a', pupil: '#140c05', claw: '#d9ccb0'
+  };
+  const C = {};
+  for (const k in PAL) C[k] = Array.isArray(PAL[k]) ? PAL[k].map(hex) : hex(PAL[k]);
+  const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16);
+  const bay = (x, y) => BAY[(y & 3) * 4 + (x & 3)];
+
+  // ---------- geometry helpers ----------
+  const rot = (x, y, a) => { const c = Math.cos(a), s = Math.sin(a); return [x * c - y * s, x * s + y * c]; };
+  const xf = (o, a, x, y) => { const r = rot(x, y, a); return [o[0] + r[0], o[1] + r[1]]; };
+  const inv = (o, a, px, py) => rot(px - o[0], py - o[1], -a);
+  function smin(a, b, k) { const h = clamp(.5 + .5 * (b - a) / k, 0, 1); return mix(b, a, h) - k * h * (1 - h); }
+  // tapered capsule: [distance, position along 0..1, signed side (+ = right of travel, normalised by radius)]
+  function seg(px, py, A, B, ra, rb) {
+    const bx = B[0] - A[0], by = B[1] - A[1], ax = px - A[0], ay = py - A[1];
+    const L2 = bx * bx + by * by || 1e-6, h = clamp((ax * bx + ay * by) / L2, 0, 1);
+    const r = mix(ra, rb, h);
+    return [Math.hypot(ax - bx * h, ay - by * h) - r, h, (bx * ay - by * ax) / Math.sqrt(L2) / r];
+  }
+  function ell(lx, ly, cx, cy, rx, ry) { const x = (lx - cx) / rx, y = (ly - cy) / ry; return [(Math.hypot(x, y) - 1) * Math.min(rx, ry), (ly - cy) / ry]; }
+  function sdPoly(px, py, V) {
+    let d = (px - V[0][0]) ** 2 + (py - V[0][1]) ** 2, s = 1;
+    for (let i = 0, j = V.length - 1; i < V.length; j = i, i++) {
+      const ex = V[j][0] - V[i][0], ey = V[j][1] - V[i][1], wx = px - V[i][0], wy = py - V[i][1];
+      const h = clamp((wx * ex + wy * ey) / (ex * ex + ey * ey), 0, 1), bx = wx - ex * h, by = wy - ey * h;
+      d = Math.min(d, bx * bx + by * by);
+      const c1 = py >= V[i][1], c2 = py < V[j][1], c3 = ex * wy > ey * wx;
+      if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+    }
+    return s * Math.sqrt(d);
+  }
+
+  const HS = 1.12; // head scale: a big skull leaves room for a readable open mouth
+  // head-local: x toward the snout, y down; origin where the neck meets the skull
+  const SKULL = [[-5, -3], [-2, -6.5], [4, -8.2], [7.5, -8.8], [11, -7.8], [17, -6.4], [22, -4.8], [25.5, -2.4], [25.8, 1.2], [23.5, 3.4], [12, 3.7], [3, 3.9], [-2, 4.3], [-6, 1.5]];
+  // jaw-local: origin at the hinge
+  const JAW = [[-4, -.4], [23.5, -.3], [24.6, .9], [22, 2.6], [12, 3.8], [2, 5.4], [-4, 4]];
+
+  // ---------- skeleton ----------
+  function build(p) {
+    const hip = [67, 46 + p.hipY], pitch = p.pitch;
+    const T = (x, y) => xf(hip, pitch, x, y);
+    const chest = { cx: 19, cy: 3 - .35 * p.breath, rx: 17 + .3 * p.breath, ry: 13.5 + .75 * p.breath };
+    const N0 = T(27, -3), N1 = [N0[0] + 14 * Math.cos(p.neckA), N0[1] + 14 * Math.sin(p.neckA)];
+    const headO = N1, headA = p.headA;
+    const Hd = (x, y) => xf(headO, headA, x * HS, y * HS);
+    const hinge = Hd(-1, 3.6), jawA = headA + p.jawA;
+    const Jw = (x, y) => xf(hinge, jawA, x * HS, y * HS);
+
+    const T0 = T(-9, -3), tail = [], TL = 55, slope = .04 - (pitch + .1) * .9;
+    for (let i = 0; i <= 10; i++) {
+      const s = i / 10;
+      tail.push([T0[0] - s * TL, T0[1] + s * TL * slope + 1.8 * Math.sin(s * Math.PI) - 7 * s * s * s + 2.4 * s * s * p.sway, 11.2 * Math.pow(1 - s, .95) + .7]);
+    }
+
+    const legs = [['far', -2, 4, -9], ['near', 3, 5, 6]].map(([side, hx, hy, fx]) => {
+      const HJ = T(hx, hy), F = [67 + fx, GY - 2.3];
+      const A = [F[0] - 4.1, F[1] - 10.2], l1 = 17, l2 = 18;
+      let dx = A[0] - HJ[0], dy = A[1] - HJ[1], d = clamp(Math.hypot(dx, dy), Math.abs(l1 - l2) + .01, l1 + l2 - .01);
+      const base = Math.atan2(dy, dx), ang = Math.acos(clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1));
+      const k1 = [HJ[0] + l1 * Math.cos(base + ang), HJ[1] + l1 * Math.sin(base + ang)];
+      const k2 = [HJ[0] + l1 * Math.cos(base - ang), HJ[1] + l1 * Math.sin(base - ang)];
+      const K = k1[0] > k2[0] ? k1 : k2;
+      return { HJ, K, A, F, toe: [F[0] + 7.5, F[1] + .4], heel: [F[0] - 2.6, F[1] + .6] };
+    });
+
+    const arms = [['far', 25.5, 7, -.15], ['near', 28, 8.5, 0]].map(([side, sx, sy, off]) => {
+      const S = T(sx, sy), ua = 1.2 + p.armA + off, fa = ua - 1.2 - p.armA * .6;
+      const E = [S[0] + 8 * Math.cos(ua), S[1] + 8 * Math.sin(ua)];
+      const Hd = [E[0] + 6.5 * Math.cos(fa), E[1] + 6.5 * Math.sin(fa)];
+      const F1 = [Hd[0] + 3 * Math.cos(fa + .35), Hd[1] + 3 * Math.sin(fa + .35)];
+      const F2 = [Hd[0] + 2.6 * Math.cos(fa + 1.05), Hd[1] + 2.6 * Math.sin(fa + 1.05)];
+      const at = (P, t) => [Hd[0] + (P[0] - Hd[0]) * t, Hd[1] + (P[1] - Hd[1]) * t];
+      return { S, E, Hd, F1, F2, Cl: at(F1, .85), Cl2: at(F2, .85) };
+    });
+
+    const mouth = [Hd(1, 2.6), Hd(24, 3.3), Jw(23.5, .6), Jw(3, 1.2)];
+    return { p, hip, pitch, chest, N0, N1, headO, headA, hinge, jawA, tail, legs, arms, mouth, Hd, Jw };
+  }
+
+  // ---------- part groups: each returns [d, side, spine, kind] ----------
+  function gBody(r, px, py) {
+    const [lx, ly] = inv(r.hip, r.pitch, px, py);
+    const [d1, v1] = ell(lx, ly, 0, 0, 13, 12);
+    let best = d1, bv = v1, bs = 58 + lx, kind = 0;
+    const c = r.chest, [d2, v2] = ell(lx, ly, c.cx, c.cy, c.rx, c.ry);
+    let d = smin(d1, d2, 6);
+    if (d2 < best) { best = d2; bv = v2; bs = 58 + lx; kind = 1; }
+    for (let i = 0; i < 10; i++) {
+      const a = r.tail[i], b = r.tail[i + 1], [dt, h, vv] = seg(px, py, a, b, a[2], b[2]);
+      d = smin(d, dt, 3);
+      if (dt < best) { best = dt; bv = -vv; bs = (10 - i - h) * 6; kind = 2; }
+    }
+    const [dn, hn, vn] = seg(px, py, r.N0, r.N1, 8.5, 6.5);
+    d = smin(d, dn, 4);
+    if (dn < best) { bv = vn; bs = 88 + hn * 14; kind = 3; }
+    return [d, bv, bs, kind];
+  }
+  function gHead(r, px, py) { let [lx, ly] = inv(r.headO, r.headA, px, py); lx /= HS; ly /= HS; return [(sdPoly(lx, ly, SKULL) - .6) * HS, (ly + 2) / 7, lx, 4]; }
+  function gJaw(r, px, py) { let [jx, jy] = inv(r.hinge, r.jawA, px, py); jx /= HS; jy /= HS; return [(sdPoly(jx, jy, JAW) - .5) * HS, (jy - 2.4) / 3, jx, 5]; }
+  function gMouth(r, px, py) {
+    const jx = inv(r.hinge, r.jawA, px, py)[0] / HS, [A, B, Cc, D] = r.mouth;
+    const line = (P, Q) => Math.abs((Q[0] - P[0]) * (py - P[1]) - (Q[1] - P[1]) * (px - P[0])) / Math.hypot(Q[0] - P[0], Q[1] - P[1]);
+    const du = line(A, B), dl = line(D, Cc), f = du / (du + dl + 1e-6);
+    const top = .6 + .9 * ((jx - 12) / 12) ** 2;   // a rounded mound that stops short of the tip
+    return [Math.max(sdPoly(px, py, r.mouth) + .2, (top - f) * 4), f, jx, 6];
+  }
+  function limb(parts, px, py, k) {
+    let d = 1e9, bv = 0;
+    for (const [A, B, ra, rb] of parts) { const s = seg(px, py, A, B, ra, rb); if (s[0] < d) bv = s[2]; d = d === 1e9 ? s[0] : smin(d, s[0], k); }
+    return [d, bv, 0, 7];
+  }
+  const legParts = L => [[L.HJ, L.K, 9.5, 5.5], [L.K, L.A, 4.6, 3], [L.A, L.F, 3, 2.5], [L.F, L.toe, 2.5, 1.3], [L.F, L.heel, 1.8, 1.1]];
+  const armParts = a => [[a.S, a.E, 3.2, 2.4], [a.E, a.Hd, 2.4, 1.8], [a.Hd, a.F1, 1.2, .7], [a.Hd, a.F2, 1.1, .6]];
+  const gFarLeg = (r, px, py) => limb(legParts(r.legs[0]), px, py, 1.6);
+  const gNearLeg = (r, px, py) => limb(legParts(r.legs[1]), px, py, 1.6);
+  const gFarArm = (r, px, py) => limb(armParts(r.arms[0]), px, py, .8);
+  const gNearArm = (r, px, py) => limb(armParts(r.arms[1]), px, py, .8);
+  // back to front
+  const GROUPS = [gFarLeg, gFarArm, gBody, gMouth, gJaw, gHead, gNearLeg, gNearArm];
+  const FAR = new Set([0, 1]), BODY = 2, MOUTH = 3, JAWG = 4, HEAD = 5;
+
+  // ---------- rasteriser ----------
+  const LX = -.45, LY = -.89;
+  function render(p, K = 1) {
+    const r = build(p), w = Math.ceil(DW * K), h = Math.ceil(DH * K), N = w * h;
+    const win = new Int8Array(N).fill(-1), dd = new Float32Array(N), va = new Float32Array(N), sa = new Float32Array(N), ka = new Int8Array(N), nx = new Float32Array(N), ny = new Float32Array(N);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const px = (x + .5) / K, py = (y + .5) / K;
+      for (let g = GROUPS.length - 1; g >= 0; g--) {
+        const res = GROUPS[g](r, px, py);
+        if (res[0] >= 0) continue;
+        const i = y * w + x, e = .45;
+        win[i] = g; dd[i] = res[0] * K; va[i] = res[1]; sa[i] = res[2]; ka[i] = res[3];
+        const gx = GROUPS[g](r, px + e, py)[0] - GROUPS[g](r, px - e, py)[0], gy = GROUPS[g](r, px, py + e)[0] - GROUPS[g](r, px, py - e)[0], gl = Math.hypot(gx, gy) || 1;
+        nx[i] = gx / gl; ny[i] = gy / gl;
+        break;
+      }
+    }
+    const img = new ImageData(w, h), D = img.data;
+    const put = (x, y, c) => { if (x < 0 || y < 0 || x >= w || y >= h) return; const i = (y * w + x) * 4; D[i] = c[0]; D[i + 1] = c[1]; D[i + 2] = c[2]; D[i + 3] = 255; };
+    const at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? -1 : win[y * w + x];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x, g = win[i]; if (g < 0) continue;
+      const ramp = FAR.has(g) ? C.far : C.green;
+      const nb = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)];
+      if (nb.includes(-1) && g !== MOUTH) { put(x, y, C.outline); continue; }
+      const behind = nb.filter(n => n < g && n !== MOUTH);
+      if (behind.length && dd[i] > (g === 7 || g === 1 ? -.7 : -1.2) && g !== MOUTH) { put(x, y, (g === HEAD && behind.every(n => n === BODY)) ? ramp[1] : ramp[0]); continue; }
+      if (g === MOUTH) {
+        // the tongue, with a lighter upper surface
+        const f = va[i], top = .6 + .9 * ((sa[i] - 12) / 12) ** 2;
+        put(x, y, f < top + .12 ? C.tongueHi : C.tongue); continue;
+      }
+      const lit = nx[i] * LX + ny[i] * LY, e = clamp(1 + dd[i] / 3.2, 0, 1), v = va[i], b = bay(x, y);
+      let lum = .5 + .58 * lit * e - .15 * v;
+      let belly = false;
+      const px = (x + .5) / K, py = (y + .5) / K;
+      if (g === BODY) {
+        // probe down and forward: pixels that exit the body quickly sit on the throat, chest front or belly
+        const k = ka[i], depth = [6.5, 6.5, 2.8, 5][k] + (b - .5) * 1.4;
+        belly = k === 2 ? gBody(r, px, py + depth)[0] > 0 : gBody(r, px + depth * .5, py + depth * .87)[0] > 0;
+        if (!belly && k !== 0 && v < -.3 && ((sa[i] / 6) % 1 + 1) % 1 < .2 + (v + 1) * .12) lum -= .2;
+      } else if (g === JAWG) belly = gJaw(r, px, py + 1.8 + (b - .5) * .8)[0] > 0;
+      if (belly) put(x, y, C.belly[clamp(Math.floor(lum * 3 + .9 + (b - .5) * .5), 1, 3)]);
+      else put(x, y, ramp[clamp(Math.floor(lum * 3.6 + .2 + (b - .5) * .5), 1, 4)]);
+    }
+    // ---- details ----
+    const pix = pt => [Math.floor(pt[0] * K), Math.floor(pt[1] * K)];
+    const eye = pix(r.Hd(7.4, -4.6));
+    put(eye[0] - 1, eye[1] - 1, C.green[0]); put(eye[0], eye[1] - 1, C.green[0]); put(eye[0] + 1, eye[1] - 1, C.green[0]);
+    put(eye[0], eye[1], C.eye); put(eye[0] + 1, eye[1], C.pupil);
+    const nos = pix(r.Hd(23, -2.4)); put(nos[0], nos[1], C.green[0]);
+    const open = p.jawA > .15;
+    // teeth: walk each lip, step into the mouth to the first open pixel, then grow the tooth inward
+    const gap = (x, y) => { const g = at(x, y); return g !== HEAD && g !== JAWG && g !== MOUTH && sdPoly((x + .5) / K, (y + .5) / K, r.mouth) < .3; };
+    const fang = (lip, dir, len) => {
+      let [x, y] = pix(lip);
+      for (let k = 0; k < 3 && !gap(x, y); k++) y += dir;
+      if (!gap(x, y)) return;
+      for (let k = 0; k < len && gap(x, y); k++, y += dir) put(x, y, C.teeth);
+    };
+    const step = 2 / K / HS;
+    if (open) {
+      let n = 0;
+      for (let tx = 7; tx <= 23.5; tx += step, n++) fang(r.Hd(tx, 3.4), 1, tx > 15 ? (n % 2 ? 2 : 3) : 2);
+      n = 0;
+      for (let tx = 8; tx <= 22.5; tx += step, n++) fang(r.Jw(tx, 0), -1, n % 2 ? 1 : 2);
+    } else for (const tx of [10, 15.5, 21]) { const [x, y] = pix(r.Hd(tx, 4.3)); if (at(x, y) === JAWG || at(x, y) === HEAD) put(x, y, C.teeth); }
+    for (const c of [r.arms[1].Cl, r.arms[1].Cl2]) { const q = pix(c); put(q[0], q[1], C.claw); }
+    const toe = pix([r.legs[1].toe[0] + .4, r.legs[1].toe[1] + .3]); put(toe[0], toe[1], C.claw);
+    const mouthPt = pix(r.Hd(22, 4 + p.jawA * 6));
+    return { img, w, h, eye, mouth: mouthPt, ground: Math.floor(GY * K) };
+  }
+
+  // ---------- animation ----------
+  const IDLE = { frames: 24, period: 2.8 };
+  const ROAR = { fps: 12, dur: 2.8 };
+  ROAR.frames = Math.round(ROAR.fps * ROAR.dur);
+  function idle(ph) {
+    const b = Math.sin(ph * Math.PI * 2);
+    return { hipY: -.25 * b, pitch: -.1 - .012 * b, neckA: -.72 + .035 * b, headA: .18 - .02 * b, jawA: .02, breath: b, sway: b, armA: .08 * b };
+  }
+  const KT = [0, .45, .85, 1.5, 2.2, 2.8];
+  const KV = {
+    neckA: [-.72, -.56, -1.12, -1.04, -.98, -.72],
+    headA: [.18, .36, -.4, -.32, -.28, .18],
+    jawA: [.02, .02, .9, .84, .8, .02],
+    pitch: [-.1, -.05, -.2, -.18, -.17, -.1],
+    hipY: [0, .8, -1.3, -1.1, -1, 0],
+    breath: [0, 1, .4, -.2, -.5, 0],
+    armA: [0, .25, -.5, -.45, -.4, 0],
+    sway: [0, -.5, 1.2, 1, .8, 0],
+    tremble: [0, 0, .5, 1, .7, 0]
+  };
+  function roar(t) {
+    let i = 0; while (i < KT.length - 2 && t > KT[i + 1]) i++;
+    const u = sst((t - KT[i]) / (KT[i + 1] - KT[i])), p = {};
+    for (const k in KV) p[k] = mix(KV[k][i], KV[k][i + 1], u);
+    const tr = p.tremble;
+    p.headA += .03 * Math.sin(t * 55) * tr; p.jawA += .06 * Math.sin(t * 41) * tr; p.neckA += .012 * Math.sin(t * 33) * tr;
+    return p;
+  }
+  function toCanvas(f) { const c = document.createElement('canvas'); c.width = f.w; c.height = f.h; c.getContext('2d').putImageData(f.img, 0, 0); return c; }
+  function sheet(K = 1) {
+    const idleF = [], roarF = [];
+    for (let i = 0; i < IDLE.frames; i++) idleF.push(render(idle(i / IDLE.frames), K));
+    for (let i = 0; i < ROAR.frames; i++) roarF.push(render(roar(i / ROAR.fps), K));
+    return { idle: idleF, roar: roarF };
+  }
+  // skeleton lines for the artboard overlay
+  function bones(p) {
+    const r = build(p), lines = [], add = (a, b) => lines.push([a, b]);
+    add(xf(r.hip, r.pitch, -9, -3), r.hip); add(r.hip, r.N0); add(r.N0, r.N1);
+    add(r.N1, r.Hd(25, -1)); add(r.hinge, r.Jw(23, .5));
+    for (let i = 0; i < 10; i++) add(r.tail[i], r.tail[i + 1]);
+    for (const l of r.legs) { add(l.HJ, l.K); add(l.K, l.A); add(l.A, l.F); add(l.F, l.toe); }
+    for (const a of r.arms) { add(a.S, a.E); add(a.E, a.Hd); add(a.Hd, a.F1); }
+    const joints = [r.hip, r.N0, r.N1, r.hinge, ...r.legs.flatMap(l => [l.HJ, l.K, l.A, l.F]), ...r.arms.flatMap(a => [a.S, a.E])];
+    return { lines, joints };
+  }
+  // colour grades: 'day' as drawn, 'night' for the storm, 'lit' for a lightning flash
+  const key = c => (c[0] << 16) | (c[1] << 8) | c[2];
+  const EYE = key(C.eye), REDS = new Set([C.tongue, C.tongueHi].map(key));
+  function grade(f, mode) {
+    const c = document.createElement('canvas'); c.width = f.w; c.height = f.h;
+    const im = new ImageData(new Uint8ClampedArray(f.img.data), f.w, f.h), d = im.data;
+    if (mode !== 'day') for (let i = 0; i < d.length; i += 4) {
+      if (!d[i + 3]) continue;
+      const r = d[i], g = d[i + 1], b = d[i + 2], k = (r << 16) | (g << 8) | b;
+      if (k === EYE) { d[i] = 255; d[i + 1] = 196; d[i + 2] = 96; continue; }
+      if (mode === 'night') {
+        if (REDS.has(k)) { d[i] = r * .55 + 10; d[i + 1] = g * .3 + 4; d[i + 2] = b * .4 + 10; }
+        else { d[i] = r * .3 + 4; d[i + 1] = g * .4 + 8; d[i + 2] = b * .55 + 24; }
+      } else { d[i] = r * 1.05 + 40; d[i + 1] = g * 1.05 + 46; d[i + 2] = b * 1.1 + 64; }
+    }
+    c.getContext('2d').putImageData(im, 0, 0); return c;
+  }
+  return { render, idle, roar, sheet, toCanvas, bones, grade, IDLE, ROAR, PAL, DW, DH, GY };
+})();
+
+</script>
+<script>
+(() => {
+
+const W = 320, H = 180, GROUND = 156, FEET = 163;
+const cv = document.getElementById('scene');
+const ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; return [c, g]; }
+let SEED = 20260924;
+const rnd = () => ((SEED = (Math.imul(SEED, 1664525) + 1013904223) >>> 0) / 4294967296);
+const R = Math.random;
+const lerp = (a, b, t) => a + (b - a) * t;
+const hx = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mixc = (a, b, t) => a.map((v, i) => Math.round(lerp(v, b[i], t)));
+const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16);
+const bay = (x, y) => BAYER[(y & 3) * 4 + (x & 3)];
+const ease = t => t * t * (3 - 2 * t);
+
+// ---------- sky ----------
+function stopAt(stops, t) {
+  for (let i = 1; i < stops.length; i++) if (t <= stops[i][0]) { const a = stops[i - 1], b = stops[i]; return mixc(a[1], b[1], (t - a[0]) / (b[0] - a[0])); }
+  return stops[stops.length - 1][1];
+}
+function paintSky(stops) {
+  const h = GROUND + 4, [c, g] = mk(W, h), im = g.createImageData(W, h), L = 10;
+  for (let y = 0; y < h; y++) for (let x = 0; x < W; x++) {
+    const t = Math.min(1, y / (GROUND - 24));
+    const col = stopAt(stops, Math.min(1, Math.floor(t * L + bay(x, y)) / L));
+    const i = (y * W + x) * 4; im.data[i] = col[0]; im.data[i + 1] = col[1]; im.data[i + 2] = col[2]; im.data[i + 3] = 255;
+  }
+  g.putImageData(im, 0, 0); return c;
+}
+const sky = paintSky([[0, hx('#04060c')], [.55, hx('#0a1124')], [1, hx('#1b2744')]]);
+const skyLit = paintSky([[0, hx('#2a3663')], [.55, hx('#6577ad')], [1, hx('#b4c3ea')]]);
+
+// ---------- clouds (tileable value noise) ----------
+function hash(i, j) { let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+function vn(x, y, p) {
+  const xi = Math.floor(x), yi = Math.floor(y), u = ease(x - xi), v = ease(y - yi), m = i => ((i % p) + p) % p;
+  const a = hash(m(xi), yi), b = hash(m(xi + 1), yi), c = hash(m(xi), yi + 1), d = hash(m(xi + 1), yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, y, p) { let s = 0, amp = .5, f = 1; for (let o = 0; o < 4; o++) { s += amp * vn(x * f, y * f, p * f); amp *= .5; f *= 2; } return s; }
+const CW = 640, CH = 88;
+const dens = (x, y) => fbm(x / 40, y / 14, 16) - (.26 + (y / CH) * .44);
+function paintClouds(cols) {
+  const [c, g] = mk(CW, CH), im = g.createImageData(CW, CH);
+  const C = cols.map(hx);
+  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
+    const d = dens(x, y); if (d <= 0) continue;
+    if (d < .025 && bay(x, y) > d / .025) continue;
+    const below = dens(x, y + 3);
+    const col = (d < .04 || below < .015) ? C[2] : d > .15 ? C[0] : C[1];
+    const i = (y * CW + x) * 4; im.data[i] = col[0]; im.data[i + 1] = col[1]; im.data[i + 2] = col[2]; im.data[i + 3] = 255;
+  }
+  g.putImageData(im, 0, 0); return c;
+}
+const clouds = paintClouds(['#070a14', '#0d1325', '#151d35']);
+const cloudsLit = paintClouds(['#3a4876', '#6a7cb0', '#b8c6ec']);
+
+// ---------- foliage primitives ----------
+function frond(g, x, y, a, len, droop, col, hi, leaf, thick = 1) {
+  const ca = Math.cos(a), sa = Math.sin(a);
+  for (let s = 0; s <= len; s++) {
+    const t = s / len, X = x + ca * s, Y = y + sa * s + droop * t * t;
+    let tx = ca, ty = sa + 2 * droop * t / len; const tl = Math.hypot(tx, ty); tx /= tl; ty /= tl;
+    if (s % 2 === 0 && s > 1) {
+      const L = Math.max(1, Math.round(leaf * Math.sin(Math.min(1, t * 1.15) * Math.PI) * .9 + 1));
+      g.fillStyle = col;
+      for (const side of [1, -1]) {
+        let dx = -ty * side * .75 - tx * .35, dy = tx * side * .75 + .55 - ty * .35; const dl = Math.hypot(dx, dy); dx /= dl; dy /= dl;
+        for (let k = 1; k <= L; k++) g.fillRect(Math.round(X + dx * k), Math.round(Y + dy * k), thick, 1);
+      }
+    }
+    g.fillStyle = hi; g.fillRect(Math.round(X), Math.round(Y), thick, thick);
+  }
+}
+const crowns = [];
+function palm(g, bx, by, h, lean, L, pal, keep) {
+  let tx = bx, ty = by;
+  for (let s = 0; s < h; s++) {
+    const X = Math.round(bx + lean * (s / h) ** 2), Y = by - s, w = s < h * .3 ? 3 : 2;
+    g.fillStyle = s % 4 === 0 ? pal.trunkHi : pal.trunk; g.fillRect(X - 1, Y, w, 1); tx = X; ty = Y;
+  }
+  [-3.0, -2.6, -2.15, -1.6, -1.05, -.55, -.12].forEach(a =>
+    frond(g, tx, ty, a + (rnd() - .5) * .15, L * (.8 + rnd() * .35), L * .45, pal.leaf, pal.leafHi, Math.max(1, Math.round(L / 5))));
+  g.fillStyle = pal.trunk; g.fillRect(tx - 1, ty + 1, 2, 2); g.fillRect(tx + 1, ty + 2, 2, 2);
+  if (keep) crowns.push([tx, ty]);
+}
+function blob(g, cx, cy, r, col, hi) {
+  for (let y = -r; y <= r; y++) {
+    const hw = Math.floor(Math.sqrt(r * r - y * y));
+    for (let x = -hw; x <= hw; x++) {
+      g.fillStyle = (y < -r * .3 && bay(cx + x, cy + y) < .45 + (-y / r) * .35) ? hi : col;
+      g.fillRect(cx + x, cy + y, 1, 1);
+    }
+  }
+}
+
+// ---------- back: ridges ----------
+const [back, bg] = mk(W, H);
+const FAR = '#0a1020', NEAR = '#081013';
+const ridge1 = x => 102 + 5 * Math.sin(x * .021 + 1) + 3 * Math.sin(x * .067);
+const ridge2 = x => 124 + 4 * Math.sin(x * .03 + 2) + 2 * Math.sin(x * .11);
+bg.fillStyle = FAR;
+for (let x = 0; x < W; x++) { const y = Math.round(ridge1(x)); bg.fillRect(x, y, 1, GROUND - y + 4); }
+for (let x = -4; x < W + 4; x += 4 + rnd() * 5) { const r = 3 + rnd() * 4; blob(bg, x | 0, Math.round(ridge1(x)) + 1, r | 0, FAR, FAR); }
+bg.fillStyle = NEAR;
+for (let x = 0; x < W; x++) { const y = Math.round(ridge2(x)); bg.fillRect(x, y, 1, GROUND - y + 4); }
+for (let x = -4; x < W + 4; x += 3 + rnd() * 4) { const r = 2 + rnd() * 3; blob(bg, x | 0, Math.round(ridge2(x)) + 1, r | 0, NEAR, NEAR); }
+const silPal = { trunk: NEAR, trunkHi: NEAR, leaf: NEAR, leafHi: NEAR };
+[[30, 22], [96, 16], [214, 20], [236, 14], [292, 24]].forEach(([x, h]) => palm(bg, x, Math.round(ridge2(x)) + 2, h, (rnd() - .5) * 6, 9, silPal, false));
+
+// ---------- ground ----------
+const [groundC, gg] = mk(W, H);
+for (let y = GROUND; y < H; y++) for (let x = 0; x < W; x++) {
+  const n = fbm(x / 9, y / 3, 64);
+  gg.fillStyle = n + bay(x, y) * .25 > .62 ? '#0f1b16' : (y > 172 && bay(x, y) < .3 ? '#070d0b' : '#0a130f');
+  gg.fillRect(x, y, 1, 1);
+}
+gg.fillStyle = '#12241c';
+for (let i = 0; i < 70; i++) { const x = (rnd() * W) | 0, y = GROUND + ((rnd() * 20) | 0), h = 1 + ((rnd() * 3) | 0); gg.fillRect(x, y - h, 1, h); if (rnd() < .5) gg.fillRect(x + 1, y - h + 1, 1, h - 1); }
+
+// puddles
+const PUDDLES = [{ x: 168, y: 168, w: 70, h: 5 }, { x: 250, y: 173, w: 34, h: 3 }, { x: 56, y: 172, w: 30, h: 3 }, { x: 300, y: 165, w: 18, h: 2 }, { x: 96, y: 176, w: 22, h: 2 }];
+const puddlePath = new Path2D(), puddleRows = [];
+for (const p of PUDDLES) for (let dy = -p.h; dy <= p.h; dy++) {
+  const hw = Math.round(p.w / 2 * Math.sqrt(1 - (dy / (p.h + .5)) ** 2)); if (hw < 1) continue;
+  puddlePath.rect(p.x - hw, p.y + dy, hw * 2, 1); puddleRows.push([p.x - hw, p.y + dy, hw * 2]);
+}
+const inPuddle = (x, y) => { x = Math.round(x); y = Math.round(y); return puddleRows.some(r => r[1] === y && x >= r[0] && x < r[0] + r[2]); };
+
+// ---------- mid jungle ----------
+const [mid, mg] = mk(W, H);
+const junglePal = { trunk: '#0d1a17', trunkHi: '#172b25', leaf: '#0c1f19', leafHi: '#18342b' };
+[[104, 50, 4, 16], [62, 72, -7, 22], [14, 94, 10, 27], [262, 80, -12, 24], [304, 100, -4, 28], [226, 46, 3, 15]].forEach(([x, h, l, L]) => palm(mg, x, GROUND + 2, h, l, L, junglePal, true));
+for (let x = -8; x < W + 8; x += 5 + rnd() * 6) {
+  const clear = x > 120 && x < 214, r = clear ? 2 + rnd() * 2 : 5 + rnd() * 8;
+  blob(mg, x | 0, (GROUND + 2 - r * .4) | 0, r | 0, '#0a1814', '#132b23');
+}
+for (const x of [122, 131, 206, 214]) for (let i = 0; i < 4; i++) frond(mg, x, GROUND + 2, -1.57 + (i - 1.5) * .45, 9 + rnd() * 4, 5, '#0b1c16', '#15302a', 2);
+// rim-light mask for lightning
+const [midRim, mrg] = mk(W, H);
+{
+  const src = mg.getImageData(0, 0, W, H).data, im = mrg.createImageData(W, H);
+  for (let y = 1; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
+    if (src[i + 3] && !src[i + 3 - W * 4]) { im.data[i] = 150; im.data[i + 1] = 176; im.data[i + 2] = 214; im.data[i + 3] = 255; }
+  }
+  mrg.putImageData(im, 0, 0);
+}
+
+// vignette
+const [vig, vg] = mk(W, H);
+{ const gr = vg.createRadialGradient(W / 2, H * .55, 60, W / 2, H * .55, 210); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.6)'); vg.fillStyle = gr; vg.fillRect(0, 0, W, H); }
+
+// ---------- the tyrant (frames drawn by TrexRig) ----------
+const K = .8;
+const frameCache = { idle: [], roar: [] };
+function frameOf(clip, i) {
+  let f = frameCache[clip][i];
+  if (!f) {
+    const raw = TrexRig.render(clip === 'idle' ? TrexRig.idle(i / TrexRig.IDLE.frames) : TrexRig.roar(i / TrexRig.ROAR.fps), K);
+    f = frameCache[clip][i] = { night: TrexRig.grade(raw, 'night'), lit: TrexRig.grade(raw, 'lit'), eye: raw.eye, mouth: raw.mouth };
+  }
+  return f;
+}
+const heroX = 106, heroY = FEET - Math.floor(TrexRig.GY * K);
+const LID = 'rgb(13,32,45)';
+(function stampRival() {
+  // a second tyrant on the far ridge, facing ours, pure silhouette
+  const raw = TrexRig.render(TrexRig.idle(0), .4), d = raw.img.data, w = raw.w;
+  const bx = 26, by = Math.round(ridge2(bx + w / 2)) + 2 - raw.ground;
+  bg.fillStyle = NEAR;
+  for (let y = 0; y < raw.h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3]) bg.fillRect(bx + (w - 1 - x), by + y, 1, 1);
+})();
+
+// ---------- world state ----------
+let t = 0, last = 0;
+const strikes = [], mist = [], birds = [], splashes = [], ripples = [];
+let idlePh = 0, blinkT = 2.5, fired = {};
+let roarT = null, roarCooldown = 0, pendingRoar = null, nextAuto = 1.1, doubleAt = null, shake = 0, firstStrike = true;
+
+const LAYERS = [
+  { n: 110, sp: [150, 190], len: 3, col: '90,108,140', a: .5, land: [GROUND - 2, GROUND + 6] },
+  { n: 80, sp: [230, 280], len: 5, col: '118,138,172', a: .6, land: [GROUND + 3, H - 6] },
+  { n: 38, sp: [320, 380], len: 8, col: '165,184,214', a: .7, land: [H - 12, H + 2] }
+];
+const WIND = -.22;
+const drops = LAYERS.map((L, li) => Array.from({ length: L.n }, () => newDrop(li, true)));
+function newDrop(li, init) {
+  const L = LAYERS[li];
+  return { x: R() * (W + 50), y: init ? R() * H : -L.len - R() * 30, sp: lerp(L.sp[0], L.sp[1], R()), land: lerp(L.land[0], L.land[1], R()) };
+}
+
+function bolt(x0, y0, x1, y1, j) {
+  const p = [[x0, y0]]; let x = x0, y = y0;
+  while (y < y1 - 1) { const st = 3 + R() * 7; y = Math.min(y1, y + st); x += (R() - .5) * st * 1.6 * j + (x1 - x) * .15; p.push([x, y]); }
+  return p;
+}
+function strike(x) {
+  x = x ?? 20 + R() * 280;
+  const y1 = 104 + R() * 22, pts = bolt(x + (R() - .5) * 40, 40, x, y1, 1), br = [];
+  for (let i = 2; i < pts.length - 2; i++) if (R() < .3) { const [bx, by] = pts[i], dir = R() < .5 ? -1 : 1; br.push(bolt(bx, by, bx + dir * (12 + R() * 30), by + 10 + R() * 26, .8)); }
+  const close = R();
+  strikes.push({ pts, br, age: 0, x });
+  if (!reduce) shake = Math.max(shake, .8 + close * 1.4);
+  thunderSound(close);
+  if (roarT === null && pendingRoar === null && t > roarCooldown && (firstStrike || R() < .75)) pendingRoar = t + .45 + R() * .35;
+  firstStrike = false;
+}
+function roar() {
+  // the roar starts on the next breath boundary so the idle loop hands over cleanly
+  if (roarT === null && pendingRoar === null) pendingRoar = t;
+}
+function scatterBirds() {
+  for (let i = 0; i < 9; i++) {
+    const [cx, cy] = crowns[(R() * crowns.length) | 0];
+    birds.push({ x: cx + (R() - .5) * 8, y: cy + R() * 4, vx: (cx < 170 ? -1 : 1) * (26 + R() * 30), vy: -(14 + R() * 20), ph: R() * 6, delay: .1 + R() * .4 });
+  }
+}
+function flick(a) {
+  if (reduce) return a < .6 ? .45 * (1 - a / .6) : 0;
+  if (a < .05) return 1; if (a < .09) return .15; if (a < .15) return .85; if (a < .2) return .2; if (a < .24) return .6;
+  return .6 * Math.exp(-(a - .24) * 5);
+}
+const roaring = () => roarT !== null && roarT > .85 && roarT < 2.2;
+function currentFrame() {
+  return roarT !== null
+    ? frameOf('roar', Math.min(TrexRig.ROAR.frames - 1, Math.floor(roarT * TrexRig.ROAR.fps)))
+    : frameOf('idle', Math.floor(idlePh * TrexRig.IDLE.frames) % TrexRig.IDLE.frames);
+}
+
+// ---------- update ----------
+function update(dt) {
+  t += dt;
+  if (t >= nextAuto) { strike(); if (R() < .4) doubleAt = t + .35 + R() * .45; nextAuto = t + 6 + R() * 6; }
+  if (doubleAt !== null && t >= doubleAt) { doubleAt = null; strike(); }
+  if (pendingRoar !== null && t >= pendingRoar) roar();
+
+  for (const s of strikes) s.age += dt;
+  while (strikes.length && strikes[0].age > 1.6) strikes.shift();
+
+  if (roarT === null) {
+    const prev = idlePh;
+    idlePh = (idlePh + dt / TrexRig.IDLE.period) % 1;
+    const crossed = (prev < .5 && idlePh >= .5) || idlePh < prev;
+    if (pendingRoar !== null && t >= pendingRoar && crossed) { roarT = 0; pendingRoar = null; fired = {}; idlePh = 0; }
+    blinkT -= dt; if (blinkT < -.14) blinkT = 2.5 + R() * 4;
+  } else {
+    roarT += dt;
+    if (roarT > .5 && !fired.sound) { fired.sound = true; roarSound(); }
+    if (roarT > .7 && !fired.birds) { fired.birds = true; scatterBirds(); }
+    if (roaring() && !reduce) shake = Math.max(shake, .9);
+    if (roarT > .75 && roarT < 2.2 && R() < dt * 22) {
+      const m = currentFrame().mouth;
+      mist.push({ x: heroX + m[0], y: heroY + m[1] + (R() - .5) * 3, vx: 18 + R() * 30, vy: (R() - .7) * 10, age: 0, life: .6 + R() * .5, s: 1 });
+    }
+    if (roarT >= TrexRig.ROAR.dur) { roarT = null; roarCooldown = t + 3; idlePh = 0; }
+  }
+  shake = Math.max(0, shake - dt * 3);
+
+  for (let i = mist.length - 1; i >= 0; i--) { const m = mist[i]; m.age += dt; m.x += m.vx * dt; m.y += m.vy * dt; m.vx *= .98; if (m.age > m.life) mist.splice(i, 1); }
+  for (let i = birds.length - 1; i >= 0; i--) {
+    const b = birds[i]; if (b.delay > 0) { b.delay -= dt; continue; }
+    b.x += b.vx * dt; b.y += b.vy * dt; b.vy -= 6 * dt; b.ph += dt * 18;
+    if (b.y < -10 || b.x < -10 || b.x > W + 10) birds.splice(i, 1);
+  }
+
+  drops.forEach((layer, li) => layer.forEach((d, k) => {
+    d.y += d.sp * dt; d.x += WIND * d.sp * dt;
+    if (d.y >= d.land) {
+      if (li > 0 && d.x > 0 && d.x < W) {
+        if (inPuddle(d.x, d.land)) ripples.push({ x: d.x, y: Math.round(d.land), r: 1, age: 0 });
+        else for (const dir of [-1, 1]) splashes.push({ x: d.x, y: d.land, vx: dir * (12 + R() * 22), vy: -(22 + R() * 26), age: 0 });
+      }
+      layer[k] = newDrop(li, false);
+    }
+  }));
+  if (R() < dt * 30) { const p = PUDDLES[(R() * PUDDLES.length) | 0]; const x = p.x + (R() - .5) * p.w * .8, y = p.y + Math.round((R() - .5) * p.h); if (inPuddle(x, y)) ripples.push({ x, y, r: 1, age: 0 }); }
+  for (let i = splashes.length - 1; i >= 0; i--) { const s = splashes[i]; s.age += dt; s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 320 * dt; if (s.age > .2) splashes.splice(i, 1); }
+  for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.age += dt; r.r += 14 * dt; if (r.age > .5) ripples.splice(i, 1); }
+}
+
+// ---------- render helpers ----------
+function pline(g, x0, y0, x1, y1, w) {
+  x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+  const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1, dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1; let err = dx + dy;
+  const o = w >> 1;
+  for (;;) { g.fillRect(x0 - o, y0 - o, w, w); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 >= dy) { err += dy; x0 += sx; } if (e2 <= dx) { err += dx; y0 += sy; } }
+}
+function drawPath(g, pts, w) { for (let i = 1; i < pts.length; i++) pline(g, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], w); }
+// ---------- render ----------
+function render() {
+  let F = 0; for (const s of strikes) F = Math.max(F, flick(s.age));
+  const fr = currentFrame();
+  ctx.save();
+  if (shake > 0) ctx.translate(Math.round((R() - .5) * 2 * shake), Math.round((R() - .5) * 2 * shake));
+  ctx.fillStyle = '#04060c'; ctx.fillRect(-4, -4, W + 8, H + 8);
+
+  // sky + lightning glow
+  ctx.drawImage(sky, 0, 0);
+  if (F > 0) {
+    ctx.globalAlpha = F * .85; ctx.drawImage(skyLit, 0, 0); ctx.globalAlpha = 1;
+    for (const s of strikes) {
+      const f = flick(s.age); if (f <= 0) continue;
+      const gr = ctx.createRadialGradient(s.x, 100, 0, s.x, 100, 150);
+      gr.addColorStop(0, `rgba(190,205,255,${.55 * f})`); gr.addColorStop(1, 'rgba(190,205,255,0)');
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, GROUND);
+    }
+  }
+  // bolts (behind clouds so they pour out of the cloud base)
+  for (const s of strikes) {
+    const f = flick(s.age); if (s.age > .3 || f < .5) continue;
+    ctx.fillStyle = 'rgba(120,150,255,.35)'; drawPath(ctx, s.pts, 3); s.br.forEach(b => drawPath(ctx, b, 2));
+    ctx.fillStyle = 'rgba(232,240,255,.85)'; s.br.forEach(b => drawPath(ctx, b, 1));
+    ctx.fillStyle = '#f4f8ff'; drawPath(ctx, s.pts, 1);
+  }
+  // clouds
+  const off = Math.floor((t * 4) % CW);
+  ctx.drawImage(clouds, -off, 0); ctx.drawImage(clouds, CW - off, 0);
+  if (F > 0) { ctx.globalAlpha = F; ctx.drawImage(cloudsLit, -off, 0); ctx.drawImage(cloudsLit, CW - off, 0); ctx.globalAlpha = 1; }
+
+  // ridges, ground, jungle
+  ctx.drawImage(back, 0, 0);
+  ctx.drawImage(groundC, 0, 0);
+  ctx.drawImage(mid, 0, 0);
+  if (F > 0) { ctx.globalAlpha = F * .8; ctx.drawImage(midRim, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = `rgba(120,140,190,${F * .16})`; ctx.fillRect(0, GROUND, W, H - GROUND); }
+
+  // birds
+  ctx.fillStyle = F > .3 ? '#020406' : '#1a2438';
+  for (const b of birds) {
+    if (b.delay > 0) continue;
+    const x = Math.round(b.x), y = Math.round(b.y);
+    ctx.fillRect(x, y, 1, 1);
+    if (Math.sin(b.ph) > 0) { ctx.fillRect(x - 1, y - 1, 1, 1); ctx.fillRect(x + 1, y - 1, 1, 1); ctx.fillRect(x - 2, y - 1, 1, 1); ctx.fillRect(x + 2, y - 1, 1, 1); }
+    else { ctx.fillRect(x - 1, y, 1, 1); ctx.fillRect(x + 1, y, 1, 1); ctx.fillRect(x - 2, y + 1, 1, 1); ctx.fillRect(x + 2, y + 1, 1, 1); }
+  }
+
+  // puddles with reflections and ripples
+  ctx.save();
+  ctx.clip(puddlePath);
+  ctx.fillStyle = rgb(mixc(hx('#111a2e'), hx('#9fb2e0'), F * .8)); ctx.fillRect(0, GROUND, W, H - GROUND);
+  ctx.globalAlpha = .28;
+  ctx.save(); ctx.translate(0, 2 * FEET - 1); ctx.scale(1, -1); ctx.drawImage(fr.night, heroX, heroY); ctx.restore();
+  ctx.globalAlpha = 1;
+  for (const r of ripples) {
+    ctx.fillStyle = `rgba(160,180,220,${.55 * (1 - r.age / .5)})`;
+    const n = Math.max(6, Math.round(r.r * 5));
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; ctx.fillRect(Math.round(r.x + Math.cos(a) * r.r), Math.round(r.y + Math.sin(a) * r.r * .35), 1, 1); }
+  }
+  ctx.restore();
+
+  // far rain (behind the tyrant)
+  drawRain(0, F);
+
+  // the tyrant
+  ctx.drawImage(fr.night, heroX, heroY);
+  if (F > 0) { ctx.globalAlpha = F * .85; ctx.drawImage(fr.lit, heroX, heroY); ctx.globalAlpha = 1; }
+  if (roarT === null && blinkT < 0) { ctx.fillStyle = LID; ctx.fillRect(heroX + fr.eye[0], heroY + fr.eye[1], 2, 1); }
+
+  // breath steaming in the cold rain
+  for (const m of mist) { ctx.fillStyle = `rgba(169,184,212,${.35 * (1 - m.age / m.life)})`; ctx.fillRect(Math.round(m.x), Math.round(m.y), m.s, m.s); }
+
+  drawRain(1, F); drawRain(2, F);
+  ctx.fillStyle = `rgba(170,190,220,${.6 + F * .4})`;
+  for (const s of splashes) ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1);
+
+  // foreground fronds
+  const sway = i => .035 * Math.sin(t * 1.1 + i * 1.7) + (roaring() ? .012 * Math.sin(t * 40 + i) : 0);
+  const hi = rgb(mixc(hx('#0a1712'), hx('#46685c'), F));
+  FG.forEach((f, i) => frond(ctx, f.x, f.y, f.a + sway(i), f.len, f.droop, '#020605', hi, f.leaf, 2));
+
+  ctx.restore();
+  if (F > 0) { ctx.fillStyle = `rgba(210,222,255,${F * .1})`; ctx.fillRect(0, 0, W, H); }
+  ctx.drawImage(vig, 0, 0);
+}
+const FG = [
+  { x: -4, y: 20, a: .35, len: 70, droop: 26, leaf: 9 }, { x: -6, y: 96, a: .1, len: 54, droop: 18, leaf: 8 }, { x: -2, y: 152, a: -.4, len: 44, droop: 14, leaf: 7 },
+  { x: W + 4, y: 28, a: Math.PI - .35, len: 74, droop: 28, leaf: 9 }, { x: W + 6, y: 118, a: Math.PI - .12, len: 50, droop: 16, leaf: 8 }, { x: W + 2, y: 176, a: Math.PI + .45, len: 40, droop: 10, leaf: 7 }
+];
+function drawRain(li, F) {
+  const L = LAYERS[li];
+  ctx.fillStyle = `rgba(${L.col},${Math.min(1, L.a + F * .35)})`;
+  for (const d of drops[li]) for (let k = 0; k < L.len; k++) ctx.fillRect(Math.round(d.x - WIND * k), Math.round(d.y - k), 1, 1);
+}
+
+// ---------- sound ----------
+let AC = null, master = null, noiseBuf = null, soundOn = false;
+function initAudio() {
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  const comp = AC.createDynamicsCompressor(); master = AC.createGain(); master.gain.value = .9; master.connect(comp); comp.connect(AC.destination);
+  noiseBuf = AC.createBuffer(1, AC.sampleRate * 3, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const hiss = noiseSrc(), hp = AC.createBiquadFilter(), lp = AC.createBiquadFilter(), g1 = AC.createGain();
+  hp.type = 'highpass'; hp.frequency.value = 900; lp.type = 'lowpass'; lp.frequency.value = 7000; g1.gain.value = .07;
+  hiss.connect(hp).connect(lp).connect(g1).connect(master); hiss.start();
+  const drum = noiseSrc(), lp2 = AC.createBiquadFilter(), g2 = AC.createGain();
+  drum.playbackRate.value = .7; lp2.type = 'lowpass'; lp2.frequency.value = 480; g2.gain.value = .14;
+  drum.connect(lp2).connect(g2).connect(master); drum.start(0, 1.3);
+}
+function noiseSrc() { const s = AC.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s; }
+function thunderSound(close) {
+  if (!soundOn || !AC) return;
+  const t0 = AC.currentTime + .1 + (1 - close) * 1.3;
+  if (close > .6) {
+    const s = noiseSrc(), hp = AC.createBiquadFilter(), g = AC.createGain();
+    hp.type = 'highpass'; hp.frequency.value = 1500;
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.8, t0 + .005); g.gain.exponentialRampToValueAtTime(.001, t0 + .35);
+    s.connect(hp).connect(g).connect(master); s.start(t0, R() * 2); s.stop(t0 + .4);
+  }
+  const s = noiseSrc(), lp = AC.createBiquadFilter(), g = AC.createGain(), dur = 4 + R() * 2;
+  lp.type = 'lowpass'; lp.Q.value = .7; lp.frequency.setValueAtTime(600 + close * 900, t0); lp.frequency.exponentialRampToValueAtTime(90, t0 + dur);
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1.3, t0 + .08);
+  for (let tt = t0 + .3; tt < t0 + dur - .5; tt += .2 + R() * .5) g.gain.linearRampToValueAtTime(.35 + R() * .9 * (1 - (tt - t0) / dur), tt);
+  g.gain.linearRampToValueAtTime(0, t0 + dur);
+  s.connect(lp).connect(g).connect(master); s.start(t0, R() * 2); s.stop(t0 + dur + .1);
+}
+function roarSound() {
+  if (!soundOn || !AC) return;
+  const t0 = AC.currentTime + .02, T = 1.9;
+  const out = AC.createGain();
+  out.gain.setValueAtTime(0, t0); out.gain.linearRampToValueAtTime(.5, t0 + .3); out.gain.setValueAtTime(.5, t0 + 1.4); out.gain.exponentialRampToValueAtTime(.001, t0 + T);
+  const pre = AC.createGain(); pre.gain.value = .6;
+  const shaper = AC.createWaveShaper(), curve = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++) curve[i] = Math.tanh((i / 511.5 - 1) * 4); shaper.curve = curve;
+  const f1 = AC.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 2.5;
+  f1.frequency.setValueAtTime(350, t0); f1.frequency.linearRampToValueAtTime(760, t0 + .4); f1.frequency.linearRampToValueAtTime(520, t0 + 1.8); f1.frequency.linearRampToValueAtTime(300, t0 + T);
+  const f0 = AC.createBiquadFilter(); f0.type = 'bandpass'; f0.Q.value = 1.2; f0.frequency.value = 170;
+  const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+  [55, 82.5, 41].forEach((f, i) => {
+    const o = AC.createOscillator(); o.type = 'sawtooth'; o.detune.value = (i - 1) * 14;
+    o.frequency.setValueAtTime(f * .8, t0); o.frequency.linearRampToValueAtTime(f * 1.15, t0 + .35); o.frequency.linearRampToValueAtTime(f * .95, t0 + 1.8); o.frequency.linearRampToValueAtTime(f * .7, t0 + T);
+    o.connect(pre); o.start(t0); o.stop(t0 + T + .1);
+  });
+  const n = noiseSrc(), ng = AC.createGain(); ng.gain.value = .5; n.connect(ng).connect(pre); n.start(t0, R() * 2); n.stop(t0 + T + .1);
+  const lfo = AC.createOscillator(), lg = AC.createGain(); lfo.frequency.value = 11; lg.gain.value = .2; lfo.connect(lg).connect(out.gain); lfo.start(t0); lfo.stop(t0 + T + .1);
+  pre.connect(shaper); shaper.connect(f1).connect(lp); shaper.connect(f0).connect(lp); lp.connect(out).connect(master);
+}
+
+// ---------- controls ----------
+const btnSound = document.getElementById('btn-sound');
+function toggleSound() {
+  try {
+    if (!AC) initAudio();
+    soundOn = !soundOn;
+    soundOn ? AC.resume() : AC.suspend();
+  } catch (e) { soundOn = false; }
+  btnSound.setAttribute('aria-pressed', String(soundOn));
+  btnSound.firstChild.textContent = soundOn ? 'Sound on ' : 'Sound off ';
+}
+btnSound.addEventListener('click', toggleSound);
+document.getElementById('btn-bolt').addEventListener('click', () => strike());
+document.getElementById('btn-roar').addEventListener('click', roar);
+cv.addEventListener('click', e => { const r = cv.getBoundingClientRect(); strike(Math.max(10, Math.min(W - 10, (e.clientX - r.left) / r.width * W))); });
+// The slide drives the scene from outside: a roar on its click, lightning on cue.
+addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
+  if (e.data === 'roar') roar(); else if (e.data === 'strike') strike();
+});
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'l') strike(); else if (k === 'r') roar(); else if (k === 's') toggleSound();
+});
+
+// ---------- go ----------
+// draw one not-yet-cached frame per tick, so the first roar never stalls
+let warmI = 0;
+function warm() {
+  const ni = TrexRig.IDLE.frames, nr = TrexRig.ROAR.frames;
+  if (warmI < ni) frameOf('idle', warmI++); else if (warmI < ni + nr) frameOf('roar', warmI++ - ni);
+}
+function frame(now) {
+  const dt = Math.min(.05, last ? (now - last) / 1000 : .016); last = now;
+  warm(); update(dt); render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>

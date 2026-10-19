@@ -13,6 +13,7 @@ import { Place } from "@/deck/parts/place"
 import { AddProperty, DeletedBlock, SiteIntro } from "@/deck/parts/site-examples"
 import { Takeover } from "@/deck/parts/takeover"
 import { TheWall } from "@/deck/parts/the-wall"
+import { Trex } from "@/deck/parts/trex"
 import { UnixSystem } from "@/deck/parts/unix-system"
 import { Whoami } from "@/deck/parts/whoami"
 
@@ -77,12 +78,24 @@ export const slides: SlideDefinition[] = [
     slug: "ladder",
     title: "The ladder",
     notes:
-      "4:15, 45 seconds. One word per rung. Tree, list, graph: the same content model each time, each shows a bit more, and the graph ends as a hairball. None of them answers the question. Do not mention the city yet.",
+      "4:15, 30 seconds. One word per rung. Tree, list, graph: the same content model each time, each shows a bit more, and the graph ends as a hairball. None of them answers the question. Do not mention the city yet.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     stepCount: 3,
     body: <Ladder />,
+  },
+  {
+    slug: "trex",
+    title: "Perfected",
+    notes:
+      "4:45, 15 seconds. The storm is up as the ladder leaves. Click: the T-rex roars and the line lands. Deadpan. Then straight on to fsn.",
+    layout: "fullscreen",
+    header: "hidden",
+    footer: "hidden",
+    background: "none",
+    stepCount: 2,
+    body: <Trex />,
   },
   {
     slug: "unix-system",

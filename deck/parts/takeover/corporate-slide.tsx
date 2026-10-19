@@ -27,7 +27,7 @@ const logoHeight = 108
 const logoWidth = (kmdLogo.width / kmdLogo.height) * logoHeight
 
 export const corporateSlideTitle =
-  "Schema City: A Structured Approach to Content Model Governance"
+  "Best Practices: A Structured Approach to Content Model Governance"
 
 export function CorporateSlide() {
   // Ids are scoped per instance so the two slides that draw this never share
@@ -115,8 +115,9 @@ export function CorporateSlide() {
       />
 
       <g fill="#ffffff" fontFamily={corporateFont}>
+        {/* The product is not named yet. The takeover is where it arrives. */}
         <text fontSize="96" fontWeight="700" x="116" y="398">
-          Schema City:
+          Best Practices:
         </text>
         <text fontSize="64" x="120" y="490">
           A Structured Approach to
