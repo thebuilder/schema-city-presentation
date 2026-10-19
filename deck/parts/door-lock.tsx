@@ -100,26 +100,30 @@ function draw(g: CanvasRenderingContext2D, t: number) {
     }
   }
 
+  // The bolt is part of the left door and the keeper part of the right, so
+  // they slide out from behind the frame with the doors. Clipping to the
+  // doorway keeps the part of a lock still inside the wall hidden. Once the
+  // doors meet, the bolt slides across the seam into the keeper.
+  const leftEdge = 44 + width
+  const rightEdge = 116 - width
+  g.save()
+  g.beginPath()
+  g.rect(44, 18, 72, 70)
+  g.clip()
+  rect(leftEdge - 14, 58, 12, 7, colours.doorLo)
+  rect(rightEdge + 3, 58, 8, 7, colours.doorLo)
+  rect(rightEdge + 4, 60, 6, 3, colours.slit)
+  const bolt = ease(clamp01((t - closeTo) / (boltTo - closeTo)))
+  const reach = 10 + Math.round(10 * bolt)
+  rect(leftEdge - 12, 60, reach, 3, colours.bolt)
+  rect(leftEdge - 12, 63, reach, 1, colours.doorLo)
+  g.restore()
+
   // The frame, drawn over the door edges so they slide out from behind it.
   rect(38, 12, 84, 6, colours.frame)
   rect(38, 12, 84, 1, colours.frameHi)
   rect(38, 12, 6, 76, colours.frame)
   rect(116, 12, 6, 76, colours.frame)
-
-  // The bolt rides on the left door and the keeper on the right, so both
-  // arrive with the doors. Once the doors meet, the bolt slides across the
-  // seam into the keeper.
-  const leftEdge = 44 + width
-  const rightEdge = 116 - width
-  if (width > 16) {
-    rect(leftEdge - 14, 58, 12, 7, colours.doorLo)
-    rect(rightEdge + 3, 58, 8, 7, colours.doorLo)
-    rect(rightEdge + 4, 60, 6, 3, colours.slit)
-    const bolt = ease(clamp01((t - closeTo) / (boltTo - closeTo)))
-    const reach = 10 + Math.round(10 * bolt)
-    rect(leftEdge - 12, 60, reach, 3, colours.bolt)
-    rect(leftEdge - 12, 63, reach, 1, colours.doorLo)
-  }
 
   // The light over the door: blinking red while the doors move, then green.
   const on = locked || Math.floor(t * 4) % 2 === 0
