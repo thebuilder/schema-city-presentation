@@ -55,7 +55,7 @@ export const slides: SlideDefinition[] = [
     slug: "backoffice",
     title: "How we see it",
     notes:
-      "1:45, 3 minutes. The screen builds itself: Home page, Metadata tab, one property at a time, each inherited from Page Meta. They know it. The line lands once it is full, read it once. Click: the Compositions dialog, Hero, Header, Footer and Page Meta ticked. Home page is four other types underneath, and the tabs blend them together. Click: the Modules property and its ten blocks. You can see what Home page allows, not that three other page types allow the same ten. Click: Structure, six page types allowed under it. Every screen tells you what goes into Home page. None of them tells you where anything goes. Click: everything dims but Page Meta in the tree, a Document Type, and wires run from it to every property it gave Home page. The question the whole talk answers: what does a change to Page Meta reach? Ask the room. Leave it open.",
+      "1:45, 3 minutes. The screen builds itself: Home page, Metadata tab, one property at a time, each inherited from Page Meta. They know it. The line lands once it is full, read it once. Click: the Compositions dialog, Hero, Header, Footer and Page Meta ticked. Home page is four other types underneath, and the tabs blend them together. Click: the Modules property and its ten blocks. You can see what Home page allows, not that three other page types allow the same ten. Click: Structure, six page types allowed under it. Every screen tells you what goes into Home page. None of them tells you where anything goes. Click: back on Metadata, everything dims but Page Meta in the tree, a Document Type, and wires run from it to every property it gave Home page. Read the line: none of it says where Page Meta goes. Don't ask the question yet, let the T-rex answer.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -67,7 +67,7 @@ export const slides: SlideDefinition[] = [
     slug: "trex",
     title: "Perfected",
     notes:
-      "3:45, 15 seconds. The storm is up while the question still hangs. Click: the T-rex roars and the line lands. Deadpan. Then straight on to fsn.",
+      "3:45, 15 seconds. The storm is up over the gap you just named. Click: the line fades in after a beat, then the T-rex roars. Deadpan. Then straight on to fsn.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
@@ -108,7 +108,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "8:30, about 10 minutes, wrap up by 18:55. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
+      "8:30, about 10 minutes, wrap up by 18:55. Now ask the question the opening left open: what does a change to Page Meta reach? Ask the room. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",

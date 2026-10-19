@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react"
 import { useStep } from "@/deck/city/use-step"
 import { useStill } from "@/deck/parts/beats"
-import { Words } from "@/deck/parts/line"
 
 /*
  * Daniel's pixel T-rex in the rain, the setup for the fsn slide after it. The
@@ -11,7 +10,8 @@ import { Words } from "@/deck/parts/line"
  * bleed, so the deck only tells it when to roar. It takes no pointer events,
  * which keeps the keyboard with the deck rather than with the frame.
  *
- * Step 0 is the storm. Step 1 is the roar and the line.
+ * Step 0 is the storm. On step 1 the line fades in after a beat, and the roar
+ * follows it, so the room reads the line and the T-rex answers.
  *
  * The storm plays with its rain and thunder, and the roar is a recording. The
  * deck asks for the sound once the frame has loaded, and the frame's audio is
@@ -22,6 +22,10 @@ export const TREX_STEPS = 2
 
 const LINE = "UI was perfected in 1993."
 
+// Milliseconds after the click.
+const LINE_AT = 1000
+const ROAR_AT = 1400
+
 export function Trex() {
   const step = useStep()
   const frame = useRef<HTMLIFrameElement>(null)
@@ -29,14 +33,19 @@ export function Trex() {
   const still = useStill()
 
   useEffect(() => {
-    if (said) {
-      // Asking again covers a deck opened straight on this slide, where the
-      // first key press is the one that brings the roar.
-      if (!still) {
-        frame.current?.contentWindow?.postMessage("sound", window.location.origin)
-      }
-      frame.current?.contentWindow?.postMessage("roar", window.location.origin)
+    if (!said) {
+      return
     }
+    const post = (message: string) =>
+      frame.current?.contentWindow?.postMessage(message, window.location.origin)
+    // Asking again covers a deck opened straight on this slide, where the
+    // first key press is the one that brings the roar. The ask has to happen
+    // inside the key press, while the browser still counts it as one.
+    if (!still) {
+      post("sound")
+    }
+    const timer = window.setTimeout(() => post("roar"), still ? 0 : ROAR_AT)
+    return () => window.clearTimeout(timer)
   }, [said, still])
 
   return (
@@ -54,14 +63,16 @@ export function Trex() {
         tabIndex={-1}
         title="A pixel T-rex roaring in a rainy night jungle"
       />
-      {said ? (
-        <p
-          className="absolute inset-x-0 bottom-[calc(var(--slide-footer-space)+3rem)] text-center font-bold text-[length:var(--slide-heading-size)] text-foreground uppercase"
-          style={{ textShadow: "0 0 0.4em #000, var(--slide-halo)" }}
-        >
-          <Words delay={600} text={LINE} />
-        </p>
-      ) : null}
+      <p
+        className="absolute inset-x-0 bottom-[calc(var(--slide-footer-space)+3rem)] text-center font-bold text-[length:var(--slide-heading-size)] text-foreground uppercase"
+        style={{
+          opacity: said ? 1 : 0,
+          textShadow: "0 0 0.4em #000, var(--slide-halo)",
+          transition: still || !said ? "none" : `opacity 700ms ease-out ${LINE_AT}ms`,
+        }}
+      >
+        {LINE}
+      </p>
     </section>
   )
 }

@@ -68,7 +68,9 @@ import { Words } from "@/deck/parts/line"
  * the page types allowed under it. Each one says what Home page takes in and
  * nothing about who else takes the same. The last step goes back to Metadata,
  * dims everything but Page Meta in the tree and the six marks that point at
- * it, draws a wire from one to each of the others, and asks the question.
+ * it, and draws a wire from one to each of the others. Its line names the gap
+ * without asking the question yet, so the T-rex after it lands as the answer
+ * the industry gave. The question itself waits for the demo handoff.
  */
 
 export const BACKOFFICE_STEPS = 5
@@ -85,6 +87,7 @@ const CAPTIONS = [
   "Home page is built from four other types.",
   "Ten kinds of block can go on it.",
   "Six page types can live under it.",
+  "None of it says where Page Meta goes.",
 ]
 
 // Milliseconds between items as a panel fills, after it has slid in.
@@ -537,8 +540,8 @@ export function Backoffice() {
         className="absolute bottom-[var(--slide-padding-block)] left-[var(--slide-padding-inline)] border border-[var(--slide-surface-border)] bg-card px-10 py-7 transition-opacity duration-500"
         data-slide-surface=""
         style={{
-          opacity: asked || !arrived ? 0 : 1,
-          transitionDelay: asked || still || step > 0 ? "0ms" : `${LINE_AT}ms`,
+          opacity: arrived ? 1 : 0,
+          transitionDelay: still || step > 0 ? "0ms" : `${LINE_AT}ms`,
         }}
       >
         <p
@@ -548,33 +551,13 @@ export function Backoffice() {
           key={step}
         >
           <Words
-            delay={step === 0 ? LINE_AT : PANEL_AT}
+            // The last line waits for the wires to reach their marks.
+            delay={step === 0 ? LINE_AT : asked ? 1400 : PANEL_AT}
             text={CAPTIONS[Math.min(step, CAPTIONS.length - 1)]}
           />
         </p>
       </div>
 
-      <div
-        className="absolute right-[var(--slide-padding-inline)] bottom-[var(--slide-padding-block)] left-[var(--slide-padding-inline)] border border-primary bg-card px-14 py-10 shadow-[var(--slide-halo)] transition-opacity duration-500"
-        data-slide-surface=""
-        style={{
-          opacity: asked ? 1 : 0,
-          transitionDelay: asked && !still ? "900ms" : "0ms",
-        }}
-      >
-        <p className="font-bold text-[length:var(--slide-heading-size)] text-foreground uppercase leading-[1.15] [text-shadow:var(--slide-halo)]">
-          {"What does a change to "}
-          <span className="inline-flex items-baseline gap-4 border-primary border-b-4 text-primary">
-            <Code
-              aria-hidden
-              className="size-[0.8em] self-center"
-              strokeWidth={2.5}
-            />
-            Page Meta
-          </span>
-          {" reach?"}
-        </p>
-      </div>
     </section>
   )
 }
