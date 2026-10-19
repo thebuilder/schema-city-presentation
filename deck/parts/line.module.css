@@ -1,19 +1,23 @@
-/* Each word comes up out of the dark the way a phosphor line does, quickly and
- * with no travel, so the sentence is read at the pace it was said. */
+/* Each word strikes on like a phosphor line: it flares past its own brightness,
+ * then settles. Fast enough to read as one line switching on. */
 
 .word {
   opacity: 0;
-  animation: land 420ms ease-out forwards;
+  animation: strike 360ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
 }
 
-@keyframes land {
-  from {
+@keyframes strike {
+  0% {
     opacity: 0;
-    filter: blur(6px);
+    filter: brightness(2.6) blur(3px);
   }
-  to {
+  35% {
     opacity: 1;
-    filter: blur(0);
+    filter: brightness(1.8) blur(0);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1) blur(0);
   }
 }
 

@@ -63,10 +63,10 @@ const WIDTH = 1920 / SCALE
 const HEIGHT = 1080 / SCALE
 
 // Milliseconds from the slide's arrival.
-const GROUP_AT = 500
-const FIRST_ROW_AT = 800
-const ROW_GAP = 420
-const LINE_AT = FIRST_ROW_AT + ROW_GAP * 6 + 500
+const GROUP_AT = 400
+const FIRST_ROW_AT = 600
+const ROW_GAP = 180
+const LINE_AT = FIRST_ROW_AT + ROW_GAP * 6 + 300
 
 interface Property {
   alias: string

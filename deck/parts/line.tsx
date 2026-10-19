@@ -5,13 +5,14 @@ import styles from "@/deck/parts/line.module.css"
 
 /*
  * The one-line slides: the statements that carry the talk between the scenes. A line is the whole slide, so it is set at
- * display size and revealed a word at a time from the moment the slide mounts.
- * That paces the room to the speaker, and a click never waits on the reveal.
+ * display size and switched on from the moment the slide mounts, the words
+ * flaring up in a quick ripple. A click never waits on the reveal.
  */
 
-// Long enough that each word is read on its own, short enough that a five
-// word line has landed before the speaker has finished saying it.
-const STAGGER = 220
+// A ripple across the line rather than a word at a time: a seven word line
+// is whole in under half a second, so the room reads it instead of waiting
+// for it.
+const STAGGER = 45
 
 function Words({ delay = 0, text }: { delay?: number; text: string }) {
   const still = useStill()
