@@ -68,9 +68,9 @@ import { Words } from "@/deck/parts/line"
  * the page types allowed under it. Each one says what Home page takes in and
  * nothing about who else takes the same. The last step goes back to Metadata,
  * dims everything but Page Meta in the tree and the six marks that point at
- * it, and draws a wire from one to each of the others. Its line names the gap
- * without asking the question yet, so the T-rex after it lands as the answer
- * the industry gave. The question itself waits for the demo handoff.
+ * it, and draws a wire from one to each of the others. It has no line, since
+ * the wires make the point and the T-rex after it lands as the answer the
+ * industry gave. The question itself waits for the demo handoff.
  */
 
 export const BACKOFFICE_STEPS = 5
@@ -87,7 +87,6 @@ const CAPTIONS = [
   "Home page is built from four other types.",
   "Ten kinds of block can go on it.",
   "Six page types can live under it.",
-  "Nothing here counts the content behind it.",
 ]
 
 // Milliseconds between items as a panel fills, after it has slid in.
@@ -559,14 +558,16 @@ export function Backoffice() {
         </Sidebar>
       </div>
 
-      {/* A new key per screen, so each caption switches on afresh. */}
-      <Caption
-        // The last line waits for the wires to reach their marks.
-        delay={step === 0 ? LINE_AT : asked ? 1400 : PANEL_AT}
-        key={step}
-        still={still}
-        text={CAPTIONS[Math.min(step, CAPTIONS.length - 1)]}
-      />
+      {/* A new key per screen, so each caption switches on afresh. The wires end
+          the slide without one. */}
+      {asked ? null : (
+        <Caption
+          delay={step === 0 ? LINE_AT : PANEL_AT}
+          key={step}
+          still={still}
+          text={CAPTIONS[step]}
+        />
+      )}
 
     </section>
   )
