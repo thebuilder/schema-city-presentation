@@ -79,16 +79,25 @@ export const slides: SlideDefinition[] = [
     slug: "unix-system",
     title: "I know this",
     notes:
-      "4:00, 2 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. Let the line land. Click, fly into security and open velociraptor.webp: it's inside. Click, the doors, and she locks them. Wait for the green light. Then: so what would our content model look like as a place?",
+      "4:00, 2 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. Let the line land. Click, fly into security and open velociraptor.webp: it's inside. Click, the doors, and she locks them. Wait for the green light.",
     layout: "fullscreen",
     stepCount: 4,
     body: <UnixSystem />,
   },
   {
+    slug: "apply-to-umbraco",
+    title: "Apply it to Umbraco",
+    notes:
+      "6:00, 15 seconds. The bridge. A filesystem read as a place in 1993. Ask it plainly, then click.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Statement text="What if we applied this to Umbraco?" />,
+  },
+  {
     slug: "buildup",
     title: "Same data",
     notes:
-      "6:00, 2.5 minutes. The only reveal. Click through slowly, one sentence a click. Content page, the one you just saw in the backoffice, rises as a building. Click, its floors are its property groups. Click, the windows are its properties. Click, Page Meta, the composition it uses, and the arc between them. Click, Article page uses it too. Click, and pull up: same data, every Document Type. The data did not change, the interface did. Then, plainly: so I built something.",
+      "6:15, 2.25 minutes. The only reveal. Click through slowly, one sentence a click. Content page, the one you just saw in the backoffice, rises as a building. Click, its floors are its property groups. Click, the windows are its properties. Click, Page Meta, the composition it uses, and the arc between them. Click, Article page uses it too. Click, and pull up: same data, every Document Type. The data did not change, the interface did. Then, plainly: so I built something.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",

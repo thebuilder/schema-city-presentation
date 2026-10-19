@@ -20,18 +20,22 @@ import {
   VIEW_DISTANCE,
 } from "@/deck/city/city-world"
 import { type CityPalette, useCityPalette } from "@/deck/city/palette"
+import { RoofIcon } from "@/deck/city/roof-icon"
 import {
   demoGraph,
+  type FloorCell,
   type FloorCellKind,
   type Placement,
   type SchemaGraph,
   type SchemaNode,
+  type WindowCell,
 } from "@/deck/city/schema-city"
 import {
   Boards,
   Buildings,
   CAMERA_FOV,
   revealAt,
+  tint,
 } from "@/deck/city/schema-city-scene"
 import { useStep } from "@/deck/city/use-step"
 
@@ -65,6 +69,13 @@ const PULL_UP = BEATS.length - 1
 
 /** Seconds a part takes to grow in or fade when its step arrives. */
 const GROW = 0.7
+/** How high a floor starts above its place, and how long it takes to land. */
+const DROP_HEIGHT = 3
+const DROP = 0.45
+/** Seconds between one floor landing, or one storey lighting, and the next. */
+const STAGGER = 0.12
+/** Screen pixels for the arcs, which are hairlines at a single pixel this close. */
+const ARC_WIDTH = 4
 /** Seconds the three buildings take to slide to their plots on the pull-up. */
 const SETTLE = 2.4
 /** How quickly the camera closes on its next framing, per second. */
@@ -206,7 +217,7 @@ function useRamp(shown: boolean, seconds = GROW, delay = 0) {
 }
 
 /** Grows its children up from the ground while `shown`, and back down when not. */
-function Grow({ shown, children }: { shown: boolean; children: ReactNode }) {
+function Rise({ shown, children }: { shown: boolean; children: ReactNode }) {
   const group = useRef<THREE.Group>(null)
   const progress = useRef(0)
   useFrame((_, delta) => {
@@ -224,6 +235,77 @@ function Grow({ shown, children }: { shown: boolean; children: ReactNode }) {
   return <group ref={group}>{children}</group>
 }
 
+/**
+ * Seconds since `shown` turned on, kept in a ref so a frame can read it without
+ * a render. Going back a step resets it, so the part is gone at once.
+ */
+function useShownFor(shown: boolean) {
+  const time = useRef(0)
+  useFrame((_, delta) => {
+    time.current = shown ? time.current + delta : 0
+  })
+  return time
+}
+
+/**
+ * Lowers its children onto their place from a little above, after `delay`. A
+ * floor set down on the one below reads as built; a floor stretched up out of
+ * the ground does not.
+ */
+function Drop({
+  shown,
+  delay,
+  children,
+}: {
+  shown: boolean
+  delay: number
+  children: ReactNode
+}) {
+  const group = useRef<THREE.Group>(null)
+  const time = useShownFor(shown)
+  useFrame(() => {
+    const g = group.current
+    if (!g) {
+      return
+    }
+    const t = time.current - delay
+    const p = THREE.MathUtils.clamp(t / DROP, 0, 1)
+    g.visible = shown && t > 0
+    g.position.y = DROP_HEIGHT * (1 - p) ** 3
+  })
+  return <group ref={group}>{children}</group>
+}
+
+/** Shows its children after `delay`, the way a storey's lights come on. */
+function Light({
+  shown,
+  delay,
+  children,
+}: {
+  shown: boolean
+  delay: number
+  children: ReactNode
+}) {
+  const group = useRef<THREE.Group>(null)
+  const time = useShownFor(shown)
+  useFrame(() => {
+    if (group.current) {
+      group.current.visible = shown && time.current > delay
+    }
+  })
+  return <group ref={group}>{children}</group>
+}
+
+/** Groups items by storey, lowest first, so they can be built one at a time. */
+function byStorey<T extends { cy: number }>(items: T[]): T[][] {
+  const storeys = new Map<number, T[]>()
+  for (const item of items) {
+    const key = Math.round(item.cy * 100)
+    storeys.set(key, [...(storeys.get(key) ?? []), item])
+  }
+  return [...storeys.entries()].sort(([a], [b]) => a - b).map(([, row]) => row)
+}
+
 type Stage = NonNullable<ReturnType<typeof useStage>>
 
 /** One of the three, carried from its plot to its spot by `offset`. */
@@ -234,6 +316,7 @@ function Actor({
   step,
   settle,
   colours,
+  palette,
 }: {
   stage: Stage
   heights: Map<string, number>
@@ -241,60 +324,83 @@ function Actor({
   step: number
   settle: number
   colours: ReturnType<typeof buildingPalette>
+  palette: CityPalette
 }) {
   const group = useRef<THREE.Group>(null)
   const id = role.node.id
   const from = role.role === "focus" ? 0 : role.role === "composition" ? 3 : 4
-  // The focus is built a mapping a step. The other two arrive whole.
-  const layers =
-    role.role === "focus"
-      ? [
-          { key: "base", step: 0, cells: stage.cellsOf(id, BASE), windows: [] },
-          { key: "floors", step: 1, cells: stage.cellsOf(id, FLOORS), windows: [] },
-          { key: "windows", step: 2, cells: [], windows: stage.windowsOf(id) },
-        ]
-      : [
-          {
-            key: "whole",
-            step: from,
-            cells: stage.cellsOf(id, [...BASE, ...FLOORS]),
-            windows: stage.windowsOf(id),
-          },
-        ]
+  // The focus is built a mapping a step. The other two arrive whole, run
+  // through the same three moves back to back.
+  const whole = role.role !== "focus"
+  const floors = byStorey(stage.cellsOf(id, FLOORS))
+  const lit = byStorey(stage.windowsOf(id))
+  const floorsAt = whole ? GROW : 0
+  const windowsAt = whole ? floorsAt + DROP + STAGGER * floors.length : 0
+  const steps = whole
+    ? { base: from, floors: from, windows: from }
+    : { base: 0, floors: 1, windows: 2 }
   const late = stage.cellsOf(id, LATE)
   useFrame(() => {
     group.current?.position.copy(role.offset).multiplyScalar(1 - ease(settle))
   })
-  const placements = [role.placement]
-  const none = () => undefined
+  const placement = role.placement
+  const roof = (placement.y ?? 0) + (heights.get(id) ?? placement.height)
+  const draw = (cells: FloorCell[], windows: WindowCell[]) => (
+    <Buildings
+      cells={cells}
+      heights={heights}
+      hovered={null}
+      neighbours={null}
+      onFocus={none}
+      onHover={none}
+      onSelect={none}
+      palette={colours}
+      placements={[placement]}
+      plazas={[]}
+      reducedMotion
+      scale={null}
+      selected={null}
+      windows={windows}
+    />
+  )
   return (
     <group ref={group}>
-      {[...layers, { key: "late", step: PULL_UP, cells: late, windows: [] }].map(
-        (layer) =>
-          layer.cells.length + layer.windows.length > 0 ? (
-            <Grow key={layer.key} shown={step >= layer.step}>
-              <Buildings
-                cells={layer.cells}
-                heights={heights}
-                hovered={null}
-                neighbours={null}
-                onFocus={none}
-                onHover={none}
-                onSelect={none}
-                palette={colours}
-                placements={placements}
-                plazas={[]}
-                reducedMotion
-                scale={null}
-                selected={null}
-                windows={layer.windows}
-              />
-            </Grow>
-          ) : null
-      )}
+      <Rise shown={step >= steps.base}>{draw(stage.cellsOf(id, BASE), [])}</Rise>
+      {floors.map((cells, index) => (
+        <Drop
+          delay={floorsAt + STAGGER * index}
+          key={`floor-${cells[0].cy}`}
+          shown={step >= steps.floors}
+        >
+          {draw(cells, [])}
+        </Drop>
+      ))}
+      {lit.map((windows, index) => (
+        <Light
+          delay={windowsAt + STAGGER * index}
+          key={`light-${windows[0].cy}`}
+          shown={step >= steps.windows}
+        >
+          {draw([], windows)}
+        </Light>
+      ))}
+      {late.length > 0 ? <Rise shown={step >= PULL_UP}>{draw(late, [])}</Rise> : null}
+      <RoofIcon
+        background={palette.background}
+        colour={palette.phosphor}
+        delay={GROW}
+        footprint={placement.footprint}
+        icon={role.node.icon}
+        shown={step >= steps.base}
+        x={placement.position.x}
+        y={roof}
+        z={placement.position.z}
+      />
     </group>
   )
 }
+
+const none = () => undefined
 
 /** Every other type, rising as the city around the three. */
 function Rest({
@@ -319,7 +425,6 @@ function Rest({
       setRoads(next)
     }
   })
-  const none = () => undefined
   return (
     <>
       <Boards
@@ -370,7 +475,16 @@ function Scene({
   const city = useCity(graph)
   const stage = useStage(graph, alias, city)
   const camera = useThree((state) => state.camera)
-  const colours = useMemo(() => buildingPalette(palette), [palette])
+  // The core is the column a page's floors stand around, near black because in
+  // the city it is only seen in the gaps. Here it stands alone on the first
+  // step, so the three are drawn with it lifted toward the phosphor.
+  const colours = useMemo(
+    () => ({
+      ...buildingPalette(palette),
+      separator: `#${tint(palette.separator, palette.phosphor, 0.6).getHexString()}`,
+    }),
+    [palette]
+  )
   const pulled = step >= PULL_UP
   const settle = useRamp(pulled, SETTLE, 0.3)
   const stagedArcs = useRamp(step >= 3 && !pulled)
@@ -441,6 +555,7 @@ function Scene({
           colours={colours}
           heights={city.heights}
           key={role.node.id}
+          palette={palette}
           role={role}
           settle={settle}
           stage={stage}
@@ -456,6 +571,7 @@ function Scene({
         layer="compositions"
         opacity={stagedArcs}
         placementsById={stage.stagedById}
+        width={ARC_WIDTH}
       />
       <CityLinks
         anchors={stage.realAnchors}
@@ -464,6 +580,7 @@ function Scene({
         layer="compositions"
         opacity={realArcs}
         placementsById={city.placementsById}
+        width={ARC_WIDTH}
       />
       {pulled ? <Rest city={city} palette={palette} stage={stage} /> : null}
     </>
@@ -501,13 +618,13 @@ export function BuildupWidget({
         ) : null}
       </div>
       <div
-        className="absolute top-10 left-16 transition-opacity duration-500"
+        className="absolute top-[var(--slide-padding-block)] left-[var(--slide-padding-inline)] transition-opacity duration-500"
         style={{ opacity: beat ? 1 : 0 }}
       >
-        <p className="font-bold text-[length:var(--slide-label-size)] text-primary uppercase tracking-[var(--slide-label-tracking)] [text-shadow:var(--slide-halo)]">
+        <p className="font-bold text-[length:var(--slide-support-size)] text-primary uppercase tracking-[var(--slide-label-tracking)] [text-shadow:var(--slide-halo)]">
           {beat?.term ?? ""}
         </p>
-        <p className="mt-2 text-[length:var(--slide-support-size)] text-foreground [text-shadow:var(--slide-halo)]">
+        <p className="mt-3 font-bold text-[length:var(--slide-heading-size)] text-foreground leading-tight [text-shadow:var(--slide-halo)]">
           {beat?.name && cast ? cast[beat.name].name : ""}
         </p>
       </div>

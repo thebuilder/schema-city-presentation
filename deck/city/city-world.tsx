@@ -1,8 +1,11 @@
 "use client"
 
 import { useFrame, useThree } from "@react-three/fiber"
-import { useLayoutEffect, useMemo, useRef } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js"
+import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js"
+import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js"
 import type { CityPalette } from "@/deck/city/palette"
 import {
   buildFloorCells,
@@ -320,6 +323,7 @@ export function CityLinks({
   edges,
   colour,
   opacity,
+  width,
 }: {
   layer: "compositions" | "blocks" | "references"
   placementsById: Map<string, Placement>
@@ -327,6 +331,8 @@ export function CityLinks({
   edges: SchemaEdge[]
   colour: string
   opacity: number
+  /** Screen pixels. A plain WebGL line is one pixel wide whatever it asks for. */
+  width?: number
 }) {
   const positions = useMemo(
     () => buildLinkGeometry(layer, edges, anchors, placementsById).positions,
@@ -334,6 +340,16 @@ export function CityLinks({
   )
   if (positions.length === 0) {
     return null
+  }
+  if (width) {
+    return (
+      <WideLinks
+        colour={colour}
+        opacity={opacity}
+        positions={positions}
+        width={width}
+      />
+    )
   }
   return (
     <lineSegments frustumCulled={false} visible={opacity > 0}>
@@ -349,4 +365,44 @@ export function CityLinks({
       />
     </lineSegments>
   )
+}
+
+/**
+ * The same segments as fat lines, for a scene close enough that a one-pixel arc
+ * reads as a hairline. LineMaterial measures width against the canvas, so it is
+ * told the canvas size whenever that changes.
+ */
+function WideLinks({
+  positions,
+  colour,
+  opacity,
+  width,
+}: {
+  positions: Float32Array
+  colour: string
+  opacity: number
+  width: number
+}) {
+  const size = useThree((state) => state.size)
+  const line = useMemo(() => {
+    const geometry = new LineSegmentsGeometry().setPositions(positions)
+    const material = new LineMaterial({
+      color: colour,
+      depthWrite: false,
+      linewidth: width,
+      toneMapped: false,
+      transparent: true,
+    })
+    const segments = new LineSegments2(geometry, material)
+    segments.frustumCulled = false
+    return segments
+  }, [positions, colour, width])
+  useEffect(() => () => {
+    line.geometry.dispose()
+    line.material.dispose()
+  }, [line])
+  line.material.resolution.set(size.width, size.height)
+  line.material.opacity = opacity * 0.9
+  line.visible = opacity > 0
+  return <primitive object={line} />
 }
