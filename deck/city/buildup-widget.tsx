@@ -44,8 +44,9 @@ import { useStep } from "@/deck/city/use-step"
 /*
  * The reveal, built up from one Document Type. Content page rises as a
  * building, gets its floors and windows, the composition it uses stands beside
- * it, a second page type turns out to share that composition, and then the
- * camera pulls up and every other type rises as the city around them.
+ * it, two more page types turn out to share that composition, and then the
+ * camera pulls up and every other type rises as the city around them. A link
+ * is drawn only once the building at its far end has finished going up.
  *
  * The three buildings are cut from the full city's own cells, so they are the
  * buildings the city draws. They stand close together while they are being
@@ -53,7 +54,7 @@ import { useStep } from "@/deck/city/use-step"
  * which is why the zoom-out lands on a city that already contains them.
  */
 
-type Beat = { term: string; name?: "focus" | "composition" | "sharer" }
+type Beat = { term: string; name?: "focus" | "composition" | "sharers" }
 
 /** One label per step, the term and the type it is about. */
 const BEATS: (Beat | null)[] = [
@@ -61,7 +62,7 @@ const BEATS: (Beat | null)[] = [
   { term: "Property groups", name: "focus" },
   { term: "Properties", name: "focus" },
   { term: "Composition", name: "composition" },
-  { term: "Also uses it", name: "sharer" },
+  { term: "Also uses it", name: "sharers" },
   null,
 ]
 
@@ -92,15 +93,21 @@ const SETTLE = 2.4
 /** How quickly the camera closes on its next framing, per second. */
 const CAMERA_RATE = 1.6
 
-const BASE: FloorCellKind[] = ["plinth", "core", "lid", "litLid", "element"]
+const BASE: FloorCellKind[] = ["plinth", "core", "element"]
 const FLOORS: FloorCellKind[] = ["own", "composed", "separator"]
+// The lid caps the top slab, so it is set down after the last floor rather
+// than hanging at roof height over a building that is not there yet.
+const LID: FloorCellKind[] = ["lid", "litLid"]
+/** Seconds between the two pages that also use the composition. */
+const SHARER_GAP = 1.2
 const LATE: FloorCellKind[] = ["pin", "marker"]
 
-type Cast = { focus: SchemaNode; composition: SchemaNode; sharer: SchemaNode }
+type Cast = { focus: SchemaNode; composition: SchemaNode; sharers: SchemaNode[] }
+type Role = "focus" | "composition" | "sharer" | "sharer2"
 
 /**
- * The page the build-up starts from, the composition it shares, and one more page
- * that uses it. `alias` wins when the graph has it, so another export still gets
+ * The page the build-up starts from, the composition it shares, and up to two
+ * more pages that use it. `alias` wins when the graph has it, so another export still gets
  * a build-up from the first page that composes something another page also uses.
  */
 function castOf(graph: SchemaGraph, alias: string): Cast | null {
@@ -124,14 +131,45 @@ function castOf(graph: SchemaGraph, alias: string): Cast | null {
       .map((e) => ({ composition: byId.get(e.to), sharers: users(e.to) }))
       .sort((a, b) => b.sharers.length - a.sharers.length)[0]
     if (shared?.composition && shared.sharers[0]) {
-      return { focus, composition: shared.composition, sharer: shared.sharers[0] }
+      return {
+        focus,
+        composition: shared.composition,
+        sharers: shared.sharers.slice(0, 2),
+      }
     }
   }
   return null
 }
 
 /** Where each of the three stands while it is introduced, from the focus out. */
-const SPOTS = { focus: [0, 0], composition: [9, -3], sharer: [18, 1] } as const
+const SPOTS = {
+  focus: [0, 0],
+  composition: [9, -3],
+  sharer: [18, 1],
+  sharer2: [2, -13],
+} as const
+
+/** The step a role arrives on, and how long after it its build starts. */
+const ARRIVAL: Record<Role, { step: number; after: number }> = {
+  focus: { step: 0, after: 0 },
+  composition: { step: 3, after: 0 },
+  sharer: { step: 4, after: 0 },
+  sharer2: { step: 4, after: SHARER_GAP },
+}
+
+/**
+ * When each part of an arriving building starts, in seconds from its step.
+ * The focus is built a step at a time, so its parts start at once on theirs.
+ */
+function buildTimes(role: Role, floors: number, storeys: number) {
+  const whole = role !== "focus"
+  const start = ARRIVAL[role].after
+  const floorsAt = start + (whole ? GROW : 0)
+  const lidAt = floorsAt + STAGGER * floors
+  const windowsAt = whole ? lidAt + STAGGER + DROP : 0
+  const builtAt = windowsAt + LIGHT_STAGGER * storeys + FLASH
+  return { start, floorsAt, lidAt, windowsAt, builtAt }
+}
 
 function useStage(
   graph: SchemaGraph,
@@ -144,13 +182,24 @@ function useStage(
       return null
     }
     const real = (node: SchemaNode) => city.placementsById.get(node.id)
+    const cellsOf = (id: string, kinds: FloorCellKind[]) =>
+      city.cells.filter((cell) => cell.buildingId === id && kinds.includes(cell.kind))
+    const windowsOf = (id: string) =>
+      city.windows.filter((cell) => cell.buildingId === id)
     const home = real(cast.focus)
     if (!home) {
       return null
     }
-    const roles = (["focus", "composition", "sharer"] as const).flatMap((role) => {
-      const placement = real(cast[role])
-      if (!placement) {
+    const nodeOf: Record<Role, SchemaNode | undefined> = {
+      focus: cast.focus,
+      composition: cast.composition,
+      sharer: cast.sharers[0],
+      sharer2: cast.sharers[1],
+    }
+    const roles = (["focus", "composition", "sharer", "sharer2"] as const).flatMap((role) => {
+      const node = nodeOf[role]
+      const placement = node && real(node)
+      if (!(node && placement)) {
         return []
       }
       const [dx, dz] = SPOTS[role]
@@ -160,13 +209,12 @@ function useStage(
         0,
         home.position.z + dz - placement.position.z
       )
-      return [{ role, node: cast[role], placement, offset }]
+      const floors = byStorey(cellsOf(node.id, FLOORS)).length
+      const storeys = byStorey(windowsOf(node.id)).length
+      const times = buildTimes(role, floors, storeys)
+      return [{ role, node, placement, offset, times }]
     })
     const ids = new Set(roles.map((r) => r.node.id))
-    const cellsOf = (id: string, kinds: FloorCellKind[]) =>
-      city.cells.filter((cell) => cell.buildingId === id && kinds.includes(cell.kind))
-    const windowsOf = (id: string) =>
-      city.windows.filter((cell) => cell.buildingId === id)
     // The arcs while the three stand together, drawn between the spots.
     const staged: Placement[] = roles.map(({ placement, offset }) => ({
       ...placement,
@@ -179,7 +227,7 @@ function useStage(
       (edge) =>
         edge.kind === "composition" &&
         edge.to === cast.composition.id &&
-        (edge.from === cast.focus.id || edge.from === cast.sharer.id)
+        ids.has(edge.from)
     )
     return {
       cast,
@@ -227,13 +275,26 @@ function useRamp(shown: boolean, seconds = GROW, delay = 0) {
   return value
 }
 
-/** Grows its children up from the ground while `shown`, and back down when not. */
-function Rise({ shown, children }: { shown: boolean; children: ReactNode }) {
+/**
+ * Grows its children up from the ground while `shown`, after `delay`, and back
+ * down when not.
+ */
+function Rise({
+  shown,
+  delay = 0,
+  children,
+}: {
+  shown: boolean
+  delay?: number
+  children: ReactNode
+}) {
   const group = useRef<THREE.Group>(null)
   const progress = useRef(0)
+  const time = useShownFor(shown)
   useFrame((_, delta) => {
+    const growing = shown && time.current >= delay
     const next = THREE.MathUtils.clamp(
-      progress.current + (shown ? delta : -delta) / GROW,
+      progress.current + (growing ? delta : -delta) / GROW,
       0,
       1
     )
@@ -395,18 +456,18 @@ function Actor({
 }) {
   const group = useRef<THREE.Group>(null)
   const id = role.node.id
-  const from = role.role === "focus" ? 0 : role.role === "composition" ? 3 : 4
-  // The focus is built a mapping a step. The other two arrive whole, run
-  // through the same three moves back to back.
+  const from = ARRIVAL[role.role].step
+  // The focus is built a mapping a step. The others arrive whole, run
+  // through the same moves back to back.
   const whole = role.role !== "focus"
   const floors = byStorey(stage.cellsOf(id, FLOORS))
   const lit = byStorey(stage.windowsOf(id))
-  const floorsAt = whole ? GROW : 0
-  const windowsAt = whole ? floorsAt + DROP + STAGGER * floors.length : 0
+  const { start, floorsAt, lidAt, windowsAt, builtAt } = role.times
   const steps = whole
     ? { base: from, floors: from, windows: from }
     : { base: 0, floors: 1, windows: 2 }
   const late = stage.cellsOf(id, LATE)
+  const lid = stage.cellsOf(id, LID)
   useFrame(() => {
     group.current?.position.copy(role.offset).multiplyScalar(1 - ease(settle))
   })
@@ -432,7 +493,9 @@ function Actor({
   )
   return (
     <group ref={group}>
-      <Rise shown={step >= steps.base}>{draw(stage.cellsOf(id, BASE), [])}</Rise>
+      <Rise delay={start} shown={step >= steps.base}>
+        {draw(stage.cellsOf(id, BASE), [])}
+      </Rise>
       {floors.map((cells, index) => (
         <Drop
           delay={floorsAt + STAGGER * index}
@@ -442,6 +505,11 @@ function Actor({
           {draw(cells, [])}
         </Drop>
       ))}
+      {lid.length > 0 ? (
+        <Drop delay={lidAt} shown={step >= steps.floors}>
+          {draw(lid, [])}
+        </Drop>
+      ) : null}
       {lit.map((windows, index) => (
         <group key={`light-${windows[0].cy}`}>
           <Light delay={windowsAt + LIGHT_STAGGER * index} shown={step >= steps.windows}>
@@ -462,7 +530,7 @@ function Actor({
         // The icon sits on the finished roof, so it waits for the last
         // storey to land and light rather than hanging in the air above a
         // building still going up.
-        delay={windowsAt + LIGHT_STAGGER * lit.length + FLASH}
+        delay={builtAt}
         footprint={placement.footprint}
         icon={role.node.icon}
         shown={step >= steps.windows}
@@ -535,6 +603,41 @@ function Rest({
   )
 }
 
+/**
+ * One composition link while the three stand together. It waits for the later
+ * of its two ends to finish building, so a line never reaches for a building
+ * that is still going up.
+ */
+function StagedArc({
+  stage,
+  edge,
+  step,
+  pulled,
+  colour,
+}: {
+  stage: Stage
+  edge: Stage["arcs"][number]
+  step: number
+  pulled: boolean
+  colour: string
+}) {
+  const ends = stage.roles.filter((r) => r.node.id === edge.from || r.node.id === edge.to)
+  const arrives = Math.max(...ends.map((r) => ARRIVAL[r.role].step))
+  const last = ends.find((r) => ARRIVAL[r.role].step === arrives && r.role !== "focus")
+  const opacity = useRamp(step >= arrives && !pulled, GROW, last?.times.builtAt ?? 0)
+  return (
+    <CityLinks
+      anchors={stage.stagedAnchors}
+      colour={colour}
+      edges={[edge]}
+      layer="compositions"
+      opacity={opacity}
+      placementsById={stage.stagedById}
+      width={ARC_WIDTH}
+    />
+  )
+}
+
 function Scene({
   palette,
   graph,
@@ -561,7 +664,6 @@ function Scene({
   )
   const pulled = step >= PULL_UP
   const settle = useRamp(pulled, SETTLE, 0.3)
-  const stagedArcs = useRamp(step >= 3 && !pulled)
   const realArcs = useRamp(pulled, GROW, SETTLE)
   const look = useRef(new THREE.Vector3())
   const placed = useRef(false)
@@ -636,17 +738,16 @@ function Scene({
           step={step}
         />
       ))}
-      <CityLinks
-        anchors={stage.stagedAnchors}
-        colour={palette.azure}
-        edges={stage.arcs.filter(
-          (edge) => step >= 4 || edge.from === stage.cast.focus.id
-        )}
-        layer="compositions"
-        opacity={stagedArcs}
-        placementsById={stage.stagedById}
-        width={ARC_WIDTH}
-      />
+      {stage.arcs.map((edge) => (
+        <StagedArc
+          colour={palette.azure}
+          edge={edge}
+          key={`${edge.from}-${edge.to}`}
+          pulled={pulled}
+          stage={stage}
+          step={step}
+        />
+      ))}
       <CityLinks
         anchors={stage.realAnchors}
         colour={palette.azure}
@@ -659,6 +760,12 @@ function Scene({
       {pulled ? <Rest city={city} palette={palette} stage={stage} /> : null}
     </>
   )
+}
+
+function castName(cast: Cast, name: NonNullable<Beat["name"]>) {
+  return name === "sharers"
+    ? cast.sharers.map((node) => node.name).join(" and ")
+    : cast[name].name
 }
 
 export function BuildupWidget({
@@ -699,7 +806,7 @@ export function BuildupWidget({
           {beat?.term ?? ""}
         </p>
         <p className="mt-3 font-bold text-[length:var(--slide-heading-size)] text-foreground leading-tight [text-shadow:var(--slide-halo)]">
-          {beat?.name && cast ? cast[beat.name].name : ""}
+          {beat?.name && cast ? castName(cast, beat.name) : ""}
         </p>
       </div>
     </div>
