@@ -91,9 +91,9 @@ const LIGHT_STAGGER = 0.3
 const FLASH = 0.9
 const FLASH_GROWTH = 4.5
 /** Screen pixels for the arcs, which are hairlines at a single pixel this close. */
-const ARC_WIDTH = 4
+const ARC_WIDTH = 2.5
 /** Seconds the three buildings take to slide to their plots on the pull-up. */
-const SETTLE = 2.4
+const SETTLE = 1.5
 /** How quickly the camera closes on its next framing, per second. */
 const CAMERA_RATE = 1.6
 
@@ -667,8 +667,12 @@ function Scene({
     [palette]
   )
   const pulled = step >= PULL_UP
-  const settle = useRamp(pulled, SETTLE, 0.3)
-  const realArcs = useRamp(pulled, GROW, SETTLE)
+  const settle = useRamp(pulled, SETTLE, 0.2)
+  // The rest of the city boots once the three have landed on their plots, so
+  // they move over open ground and the city then rises around them, instead
+  // of sliding across boards and buildings that are already there.
+  const cityUp = useRamp(pulled, 0.05, 0.2 + SETTLE) > 0
+  const realArcs = useRamp(pulled, GROW, 0.2 + SETTLE + 1)
   const look = useRef(new THREE.Vector3())
   const placed = useRef(false)
 
@@ -761,7 +765,7 @@ function Scene({
         placementsById={city.placementsById}
         width={ARC_WIDTH}
       />
-      {pulled ? <Rest city={city} palette={palette} stage={stage} /> : null}
+      {cityUp ? <Rest city={city} palette={palette} stage={stage} /> : null}
     </>
   )
 }
