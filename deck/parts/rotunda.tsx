@@ -14,7 +14,7 @@ import { useBeat, useStill } from "@/deck/parts/beats"
  * reads the banner and then the line. The second line is the presenter's click,
  * since the pause between the two is where the story gets told.
  */
-const LINES = ["UI wasn't perfected in 1993.", "It just took 33 years to try it again."]
+const LINES = ["UI wasn't perfected in 1993.", "It just took 33 years to try the idea again."]
 
 // Milliseconds after the frame loads before the roar is cued, so the hall is
 // seen standing still first.
