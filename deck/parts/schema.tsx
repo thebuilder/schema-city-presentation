@@ -86,7 +86,7 @@ function Lines({ count, last = "60%" }: { count: number; last?: string }) {
   )
 }
 
-function Page({ heading, image }: { heading: string; image?: boolean }) {
+function Page({ heading }: { heading: string }) {
   return (
     <div className="flex h-full flex-col border border-[var(--slide-surface-border)] bg-card">
       <div className="flex items-center gap-2 border-[var(--slide-surface-border)] border-b px-5 py-3">
@@ -102,17 +102,14 @@ function Page({ heading, image }: { heading: string; image?: boolean }) {
         <p className="font-mono text-[1.25rem] text-muted-foreground">
           20 Oct 2026 · Daniel Schmidt
         </p>
+        {/* A wireframe picture, so the article stays ordinary and nothing on
+            it gives away the T-rex that comes after. */}
         <div className="h-[260px] overflow-hidden border border-[var(--slide-surface-border)] bg-muted-foreground/15">
-          {image ? (
-            // biome-ignore lint/performance/noImgElement: a fixed picture inside a drawn page
-            <img
-              alt=""
-              className="block h-full w-full object-cover"
-              height={1024}
-              src="/fsn/velociraptor.webp"
-              width={1536}
-            />
-          ) : null}
+          <svg aria-hidden className="block h-full w-full" preserveAspectRatio="xMidYMax slice" viewBox="0 0 680 260">
+            <circle cx={520} cy={80} fill="currentColor" className="text-muted-foreground/40" r={34} />
+            <path className="text-muted-foreground/30" d="M0 260 L190 110 L320 210 L420 140 L680 260 Z" fill="currentColor" />
+            <path className="text-muted-foreground/45" d="M0 260 L120 180 L260 260 Z" fill="currentColor" />
+          </svg>
         </div>
         <Lines count={2} last="70%" />
         <div className="pt-2">
@@ -162,7 +159,7 @@ export function Schema() {
             filter: "brightness(0.55)",
           }}
         >
-          <Page heading={depth === 1 ? "Clever girl" : "Hold on"} />
+          <Page heading={depth === 1 ? "Spring product update" : "Meet the support team"} />
         </div>
       ))}
 
@@ -176,7 +173,7 @@ export function Schema() {
           ...fade(shown, PAGE_AT, still),
         }}
       >
-        <Page heading="Raptors can open doors" image />
+        <Page heading="New office in Aarhus" />
       </div>
 
       <div
