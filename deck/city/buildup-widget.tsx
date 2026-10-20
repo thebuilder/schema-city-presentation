@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import {
   type ReactNode,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -94,6 +94,11 @@ const FLASH_GROWTH = 4.5
 const ARC_WIDTH = 2.5
 /** Seconds the three buildings take to slide to their plots on the pull-up. */
 const SETTLE = 1.5
+/**
+ * The pull-up lands a little closer than the app's own overview, since the
+ * slide has no panels around it and the city can fill more of the frame.
+ */
+const PULL_UP_ZOOM = 0.85
 /** How quickly the camera closes on its next framing, per second. */
 const CAMERA_RATE = 1.6
 
@@ -562,7 +567,9 @@ function Rest({
   const [roads, setRoads] = useState(0)
   // The package's buildings, boards and roads time their boot from the
   // renderer's clock, so restarting it when the pull-up starts replays the boot.
-  useEffect(() => {
+  // It restarts before the first frame, or that frame draws the city as long
+  // since booted and the boards flash in full before they animate.
+  useLayoutEffect(() => {
     clock.start()
   }, [clock])
   useFrame(() => {
@@ -706,7 +713,7 @@ function Scene({
         .add(
           new THREE.Vector3(0.2, 0.62, 1)
             .normalize()
-            .multiplyScalar(city.ground.span * VIEW_DISTANCE)
+            .multiplyScalar(city.ground.span * VIEW_DISTANCE * PULL_UP_ZOOM)
         ),
     }
     return { close, trio, overview }
