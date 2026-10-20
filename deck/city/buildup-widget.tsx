@@ -675,13 +675,6 @@ function Scene({
   const realArcs = useRamp(pulled, GROW, 0.2 + SETTLE + 1)
   const look = useRef(new THREE.Vector3())
   const placed = useRef(false)
-  // The first arc, to the composition, draws once the composition is built.
-  // From then on the arcs reach above the buildings, so the camera lifts its
-  // aim, timed from the click that brings the composition.
-  const compositionBuilt =
-    stage?.roles.find((role) => role.role === "composition")?.times.builtAt ?? 0
-  const linked =
-    useRamp(step >= ARRIVAL.composition.step && !pulled, 0.05, compositionBuilt + GROW) > 0
 
   // Each step has a framing: close on the focus while it is built, wide enough
   // for the three while they meet, and the app's own overview on the pull-up.
@@ -695,7 +688,11 @@ function Scene({
       target: new THREE.Vector3(home.x, height * 0.45, home.z),
       position: new THREE.Vector3(home.x + 6, height * 0.9 + 4, home.z + 11),
     }
-    const middle = new THREE.Vector3(home.x + SPOTS.sharer[0] / 2, 1.5, home.z)
+    // The arcs that come with the composition and the sharers reach above the
+    // buildings, so the wide framing aims high and the three sit low, clear of
+    // the line at the top. It is set as the camera pulls back from the focus,
+    // so nothing moves the camera again while the others arrive.
+    const middle = new THREE.Vector3(home.x + SPOTS.sharer[0] / 2, 5.5, home.z)
     const trio = {
       target: middle,
       position: middle.clone().add(new THREE.Vector3(3, 13, 26)),
@@ -712,14 +709,7 @@ function Scene({
             .multiplyScalar(city.ground.span * VIEW_DISTANCE)
         ),
     }
-    // Once the arcs are drawn they reach above the buildings, so the camera
-    // lifts its aim and the three sit lower, clear of the line at the top.
-    const lift = new THREE.Vector3(0, 4, 0)
-    const linked = {
-      target: trio.target.clone().add(lift),
-      position: trio.position.clone().add(lift),
-    }
-    return { close, trio, linked, overview }
+    return { close, trio, overview }
   }, [stage, city])
 
   useFrame((_, delta) => {
@@ -728,11 +718,9 @@ function Scene({
     }
     const framing = pulled
       ? framings.overview
-      : linked
-        ? framings.linked
-        : step >= 3
-          ? framings.trio
-          : framings.close
+      : step >= 3
+        ? framings.trio
+        : framings.close
     if (!placed.current) {
       camera.position.copy(framing.position)
       look.current.copy(framing.target)
