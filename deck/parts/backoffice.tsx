@@ -41,14 +41,7 @@ import {
   Waypoints,
   X,
 } from "lucide-react"
-import {
-  type CSSProperties,
-  type ReactNode,
-  type Ref,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react"
+import { type CSSProperties, type ReactNode, useLayoutEffect, useState } from "react"
 import ctBaseline from "@/deck/city/ct-baseline.json"
 import { useStep } from "@/deck/city/use-step"
 import { useStill } from "@/deck/parts/beats"
@@ -61,25 +54,22 @@ import { Words } from "@/deck/parts/line"
  * the question. The names, aliases and editors are read from the same export
  * the city is built from, so the screen and the city agree.
  *
- * Step 0 builds the tab a property at a time, each one marked as inherited
- * from Page Meta, and the line lands once it is full. The next three steps
- * open the other places the backoffice explains Home page from: the
- * compositions it is made of, the blocks its Modules property allows, and
+ * There are four steps. Step 0 builds the tab a property at a time, each one
+ * marked as inherited from Page Meta, and the line lands once it is full. The
+ * other three open the other places the backoffice explains Home page from:
+ * the compositions it is made of, the blocks its Modules property allows, and
  * the page types allowed under it. Each one says what Home page takes in and
- * nothing about who else takes the same. The last step goes back to Metadata,
- * dims everything but Page Meta in the tree and the six marks that point at
- * it, and draws a wire from one to each of the others. It has no line, since
- * the wires make the point and the T-rex after it lands as the answer the
- * industry gave. The question itself waits for the demo handoff.
+ * nothing about who else takes the same. The slide ends on Structure, because
+ * the slide after it shows what that blindness costs once the model has grown
+ * into a tangle of types like this one.
  */
 
-export const BACKOFFICE_STEPS = 5
+export const BACKOFFICE_STEPS = 4
 
 // The step each screen belongs to, after the opening build.
 const COMPOSITIONS = 1
 const BLOCKS = 2
 const STRUCTURE = 3
-const ASKED = 4
 
 // The line under each screen, in the speaker's voice.
 const CAPTIONS = [
@@ -95,8 +85,7 @@ const ITEM_GAP = 90
 
 // The backoffice is drawn at a laptop's size and scaled up, so its text is the
 // size the room is used to seeing it, only larger. The scale leaves the lower
-// part of the slide clear for the line and the question, so neither covers a
-// property.
+// part of the slide clear for the line, so it never covers a property.
 const SCALE = 1.35
 const WIDTH = 1920 / SCALE
 const HEIGHT = 1080 / SCALE
@@ -240,7 +229,7 @@ function useArrived(still: boolean) {
 }
 
 // The box arrives with its first word, so it never sits on screen empty while
-// the line waits for the panel or the wires.
+// the line waits for the panel.
 function Caption({ delay, still, text }: { delay: number; still: boolean; text: string }) {
   const arrived = useArrived(still)
   return (
@@ -273,62 +262,12 @@ function enter(arrived: boolean, at: number, still: boolean): CSSProperties {
   }
 }
 
-// Everything but Page Meta and its marks steps back for the question.
-function dim(asked: boolean): CSSProperties {
-  return {
-    opacity: asked ? 0.28 : 1,
-    transition: "opacity 600ms ease-out",
-  }
-}
-
-interface Wire {
-  from: { x: number; y: number }
-  to: { x: number; y: number }
-}
-
 export function Backoffice() {
   const step = useStep()
-  const asked = step >= ASKED
   const view =
     step === BLOCKS ? "content" : step === STRUCTURE ? "structure" : "metadata"
   const still = useStill()
   const arrived = useArrived(still)
-  const root = useRef<HTMLDivElement>(null)
-  const source = useRef<HTMLDivElement>(null)
-  const marks = useRef<(HTMLSpanElement | null)[]>([])
-  const [wires, setWires] = useState<Wire[]>([])
-
-  // The wires join real boxes, so they are measured off the laid-out screen
-  // in its own unscaled coordinates.
-  useLayoutEffect(() => {
-    if (!asked) {
-      return
-    }
-    const frame = root.current?.getBoundingClientRect()
-    const from = source.current?.getBoundingClientRect()
-    if (!(frame && from)) {
-      return
-    }
-    const scale = frame.width / WIDTH
-    const at = (x: number, y: number) => ({
-      x: (x - frame.left) / scale,
-      y: (y - frame.top) / scale,
-    })
-    setWires(
-      marks.current.flatMap((mark) => {
-        const box = mark?.getBoundingClientRect()
-        return box
-          ? [
-              {
-                from: at(from.right, from.top + from.height / 2),
-                to: at(box.left, box.top + box.height / 2),
-              },
-            ]
-          : []
-      })
-    )
-  }, [asked])
-
   const properties = metadata?.properties ?? []
 
   return (
@@ -342,7 +281,6 @@ export function Backoffice() {
         // Clipped, so a panel parked off its right edge stays out of view.
         className="absolute top-0 left-0 flex flex-col overflow-hidden"
         data-slide-scroll-area=""
-        ref={root}
         style={{
           color: colours.text,
           fontFamily:
@@ -353,50 +291,41 @@ export function Backoffice() {
           width: WIDTH,
         }}
       >
-        <TopBar asked={asked} />
+        <TopBar />
         <div className="flex min-h-0 flex-1">
           <aside
             className="w-[200px] shrink-0 overflow-hidden border-r bg-white text-[13px]"
             style={{ borderColor: colours.border }}
           >
-            <p className="px-4 pt-4 pb-3 font-bold" style={dim(asked)}>
+            <p className="px-4 pt-4 pb-3 font-bold">
               Structure
             </p>
-            <TreeRow asked={asked} depth={0} label="Document Types" open />
-            <TreeRow asked={asked} depth={1} label="Elements" open />
+            <TreeRow depth={0} label="Document Types" open />
+            <TreeRow depth={1} label="Elements" open />
             {tree.map((folder) => (
               <div key={folder.name}>
                 <TreeRow
-                  asked={asked}
+                 
                   depth={2}
                   label={folder.name}
                   open={folder.open}
                 />
                 {folder.open
-                  ? folder.types.map((type) =>
-                      type.id === pageMeta?.id ? (
-                        <PageMetaRow asked={asked} key={type.id} ref={source} />
-                      ) : (
-                        <TypeRow
-                          asked={asked}
-                          icon={type.icon}
-                          key={type.id}
-                          label={type.name}
-                        />
-                      )
-                    )
+                  ? folder.types.map((type) => (
+                      <TypeRow icon={type.icon} key={type.id} label={type.name} />
+                    ))
                   : null}
               </div>
             ))}
           </aside>
 
           <main className="flex min-w-0 flex-1 flex-col">
-            <EditorHeader asked={asked} view={view} />
+            <EditorHeader view={view} />
             {view === "structure" ? (
               <StructurePanel still={still} />
             ) : (
               <Tabs
-                asked={asked}
+               
                 choosing={step === COMPOSITIONS}
                 view={view}
               />
@@ -408,7 +337,7 @@ export function Backoffice() {
             >
               <div
                 className="rounded-[3px] border border-dashed py-2.5 text-center text-[13px]"
-                style={{ ...dim(asked), borderColor: "#c7c8cf" }}
+                style={{ borderColor: "#c7c8cf" }}
               >
                 Add property
               </div>
@@ -421,7 +350,7 @@ export function Backoffice() {
               >
                 <div
                   className="border-b px-3 py-3"
-                  style={{ ...dim(asked), borderColor: colours.border }}
+                  style={{ borderColor: colours.border }}
                 >
                   <span
                     className="inline-block rounded-[3px] px-2 py-1 text-[12px]"
@@ -442,7 +371,7 @@ export function Backoffice() {
                   >
                     <div
                       className="flex w-[300px] shrink-0 justify-between gap-3 text-[13px]"
-                      style={dim(asked)}
+                     
                     >
                       <span>{property.name}</span>
                       <span
@@ -456,14 +385,8 @@ export function Backoffice() {
                       className="relative flex h-[34px] min-w-0 flex-1 items-center justify-between rounded-[3px] px-3 text-[11px]"
                       style={{ background: colours.editor }}
                     >
-                      <span style={dim(asked)}>{property.dataTypeName}</span>
-                      <InheritedMark
-                        asked={asked}
-                        name={pageMeta?.name ?? ""}
-                        ref={(element) => {
-                          marks.current[index] = element
-                        }}
-                      />
+                      <span>{property.dataTypeName}</span>
+                      <InheritedMark name={pageMeta?.name ?? ""} />
                     </div>
                   </div>
                 ))}
@@ -471,34 +394,6 @@ export function Backoffice() {
             </div>
           </main>
         </div>
-
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          height={HEIGHT}
-          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          width={WIDTH}
-        >
-          {wires.map((wire, index) => (
-            <path
-              d={`M ${wire.from.x} ${wire.from.y} C ${wire.from.x + 320} ${wire.from.y}, ${wire.to.x - 320} ${wire.to.y}, ${wire.to.x} ${wire.to.y}`}
-              fill="none"
-              key={`${wire.to.x}:${wire.to.y}`}
-              pathLength={1}
-              stroke={colours.accent}
-              strokeDasharray={1}
-              strokeDashoffset={asked ? 0 : 1}
-              strokeLinecap="round"
-              strokeWidth={2}
-              style={{
-                filter: `drop-shadow(0 0 3px ${colours.accent})`,
-                transition: still
-                  ? "none"
-                  : `stroke-dashoffset 900ms ease-in-out ${300 + index * 120}ms`,
-              }}
-            />
-          ))}
-        </svg>
 
         <Sidebar
           open={step === COMPOSITIONS}
@@ -558,22 +453,18 @@ export function Backoffice() {
         </Sidebar>
       </div>
 
-      {/* A new key per screen, so each caption switches on afresh. The wires end
-          the slide without one. */}
-      {asked ? null : (
-        <Caption
-          delay={step === 0 ? LINE_AT : PANEL_AT}
-          key={step}
-          still={still}
-          text={CAPTIONS[step]}
-        />
-      )}
-
+      {/* A new key per screen, so each caption switches on afresh. */}
+      <Caption
+        delay={step === 0 ? LINE_AT : PANEL_AT}
+        key={step}
+        still={still}
+        text={CAPTIONS[step]}
+      />
     </section>
   )
 }
 
-function TopBar({ asked }: { asked: boolean }) {
+function TopBar() {
   const sections = [
     "Content",
     "Media",
@@ -586,7 +477,7 @@ function TopBar({ asked }: { asked: boolean }) {
   return (
     <header
       className="flex h-[46px] shrink-0 items-center gap-6 px-4 text-[14px] text-white"
-      style={{ ...dim(asked), background: colours.header }}
+      style={{ background: colours.header }}
     >
       <span className="flex size-[26px] items-center justify-center rounded-full bg-white">
         <svg aria-hidden height="14" viewBox="0 0 14 14" width="14">
@@ -630,12 +521,10 @@ function TopBar({ asked }: { asked: boolean }) {
 }
 
 function TreeRow({
-  asked,
   depth,
   label,
   open,
 }: {
-  asked: boolean
   depth: number
   label: string
   open: boolean
@@ -644,7 +533,7 @@ function TreeRow({
   return (
     <div
       className="flex items-center gap-1.5 py-[5px]"
-      style={{ ...dim(asked), paddingLeft: 4 + depth * 12 }}
+      style={{ paddingLeft: 4 + depth * 12 }}
     >
       <Chevron className="size-3.5" />
       <Folder className="size-3.5" />
@@ -654,11 +543,9 @@ function TreeRow({
 }
 
 function TypeRow({
-  asked,
   icon,
   label,
 }: {
-  asked: boolean
   icon: string
   label: string
 }) {
@@ -666,7 +553,7 @@ function TypeRow({
   return (
     <div
       className="flex items-center gap-2 py-[5px] pl-[52px]"
-      style={dim(asked)}
+     
     >
       <Icon className="size-3.5" />
       <span className="truncate">{label}</span>
@@ -674,67 +561,11 @@ function TypeRow({
   )
 }
 
-function PageMetaRow({
-  asked,
-  ref,
-}: {
-  asked: boolean
-  ref: Ref<HTMLDivElement>
-}) {
-  return (
-    <div className="py-[2px] pr-2 pl-[44px]">
-      <div
-        className="rounded-[3px] border-2 px-[6px] py-[1px]"
-        ref={ref}
-        style={{
-          background: asked ? colours.accentWash : "transparent",
-          borderColor: asked ? colours.accent : "transparent",
-          boxShadow: asked ? `0 0 10px ${colours.accent}` : "none",
-          transition: "all 500ms ease-out",
-        }}
-      >
-        <div className="flex items-center gap-2 whitespace-nowrap">
-          <Code className="size-3.5" />
-          <span className={asked ? "font-bold" : undefined}>Page Meta</span>
-        </div>
-        {/* What Page Meta is, opened under its name, since the tree only says
-            so by which folder it sits in. */}
-        <p
-          className="overflow-hidden pl-[22px] font-bold text-[9px] uppercase tracking-wide"
-          style={{
-            color: colours.accent,
-            maxHeight: asked ? 14 : 0,
-            opacity: asked ? 1 : 0,
-            transition: "max-height 400ms ease-out, opacity 400ms ease-out 200ms",
-          }}
-        >
-          Document Type
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function InheritedMark({
-  asked,
-  name,
-  ref,
-}: {
-  asked: boolean
-  name: string
-  ref: Ref<HTMLSpanElement>
-}) {
+function InheritedMark({ name }: { name: string }) {
   return (
     <span
-      className="flex items-center gap-1 rounded-[3px] border px-2 py-[3px] font-bold text-[10px]"
-      ref={ref}
-      style={{
-        background: asked ? colours.accentWash : "white",
-        borderColor: asked ? colours.accent : colours.border,
-        boxShadow: asked ? `0 0 8px ${colours.accent}` : "none",
-        color: colours.header,
-        transition: "all 500ms ease-out",
-      }}
+      className="flex items-center gap-1 rounded-[3px] border bg-white px-2 py-[3px] font-bold text-[10px]"
+      style={{ borderColor: colours.border, color: colours.header }}
     >
       <Merge className="size-3" />
       {"Inherited from "}
@@ -743,7 +574,7 @@ function InheritedMark({
   )
 }
 
-function EditorHeader({ asked, view }: { asked: boolean; view: string }) {
+function EditorHeader({ view }: { view: string }) {
   const views: [string, LucideIcon][] = [
     ["Design", File],
     ["Structure", Network],
@@ -754,7 +585,7 @@ function EditorHeader({ asked, view }: { asked: boolean; view: string }) {
   return (
     <div
       className="flex h-[66px] shrink-0 items-stretch border-b bg-white"
-      style={{ ...dim(asked), borderColor: colours.border }}
+      style={{ borderColor: colours.border }}
     >
       <div className="flex items-center px-4">
         <span
@@ -802,11 +633,9 @@ function EditorHeader({ asked, view }: { asked: boolean; view: string }) {
 }
 
 function Tabs({
-  asked,
   choosing,
   view,
 }: {
-  asked: boolean
   choosing: boolean
   view: string
 }) {
@@ -816,7 +645,7 @@ function Tabs({
   return (
     <div
       className="flex h-[44px] shrink-0 items-stretch border-b bg-white text-[13px]"
-      style={{ ...dim(asked), borderColor: colours.border }}
+      style={{ borderColor: colours.border }}
     >
       {names.map((name) => {
         const inherited = tabs.some(
