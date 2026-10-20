@@ -11,13 +11,14 @@ import { Words } from "@/deck/parts/line"
  * is the question on its own. Step 1 draws an article as a reader sees it, and
  * beside it the Article page Document Type from ct-baseline, then wires each
  * part of the page to the property it comes from. Step 2 stacks more articles
- * behind the first and answers the question, so a schema reads as the shape
- * every page of one type shares before the backoffice shows the real thing.
+ * behind the first, so a Document Type reads as the shape every page of one
+ * type shares. Step 3 stacks more Document Types behind that one and answers
+ * the question: the schema is all of them, before the backoffice shows them.
  *
  * The slide is drawn on the 1920 by 1080 canvas in fixed positions, so the
  * wires can be plain coordinates instead of measurements.
  */
-export const SCHEMA_STEPS = 3
+export const SCHEMA_STEPS = 4
 
 interface Field {
   alias: string
@@ -53,6 +54,9 @@ const PAGE = { left: 120, top: 260, width: 760, height: 690 }
 const PANEL = { left: 1180, top: 300, width: 620 }
 const ROW_TOP = PANEL.top + 118
 const ROW_GAP = 86
+
+// A few of the other Document Types in ct-baseline, furthest back first.
+const OTHER_TYPES = ["Content page", "Home page", "Page Meta"]
 
 // Milliseconds after the click.
 const PAGE_AT = 200
@@ -94,7 +98,7 @@ function Page({ heading }: { heading: string }) {
         <span className="size-3 rounded-full bg-muted-foreground/40" />
         <span className="size-3 rounded-full bg-muted-foreground/40" />
         <span className="ml-4 font-mono text-[1.1rem] text-muted-foreground">
-          /articles/{heading.toLowerCase().replaceAll(" ", "-")}
+          /articles/{heading.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-6 px-10 pt-8">
@@ -124,7 +128,8 @@ export function Schema() {
   const step = useStep()
   const still = useStill()
   const shown = step >= 1
-  const answered = step >= 2
+  const shared = step >= 2
+  const answered = step >= 3
 
   return (
     <section className="relative h-full w-full overflow-hidden">
@@ -139,7 +144,9 @@ export function Schema() {
         }}
       >
         {answered ? (
-          <Words key="answer" text="A schema is the shape they share." />
+          <Words key="answer" text="The schema is all of them." />
+        ) : shared ? (
+          <Words key="shared" text="A Document Type is the shape they share." />
         ) : (
           <Words key="question" text="What is a schema?" />
         )}
@@ -155,11 +162,11 @@ export function Schema() {
             left: PAGE.left + depth * 28,
             top: PAGE.top - depth * 28,
             width: PAGE.width,
-            ...fade(answered, (2 - depth) * 160, still, 0),
+            ...fade(shared, (2 - depth) * 160, still, 0),
             filter: "brightness(0.55)",
           }}
         >
-          <Page heading={depth === 1 ? "Spring product update" : "Meet the support team"} />
+          <Page heading={depth === 1 ? "Umbraco DK meetup recap" : "What\u2019s new in Umbraco 17"} />
         </div>
       ))}
 
@@ -173,11 +180,32 @@ export function Schema() {
           ...fade(shown, PAGE_AT, still),
         }}
       >
-        <Page heading="New office in Aarhus" />
+        <Page heading="Building an Umbraco package" />
       </div>
 
+      {/* More Document Types behind this one, so the schema reads as all of them. */}
+      {OTHER_TYPES.map((name, index) => {
+        const depth = OTHER_TYPES.length - index
+        return (
+          <div
+            className="absolute border border-[var(--slide-surface-border)] bg-card px-8 pt-2"
+            key={name}
+            style={{
+              height: 660,
+              left: PANEL.left + depth * 22,
+              top: PANEL.top - depth * 40,
+              width: PANEL.width,
+              ...fade(answered, index * 140, still, 0),
+              filter: `brightness(${1 - depth * 0.15})`,
+            }}
+          >
+            <p className="font-bold text-[1.4rem] text-foreground">{name}</p>
+          </div>
+        )
+      })}
+
       <div
-        className="absolute border border-[var(--slide-surface-border)] bg-[var(--slide-surface)] px-8 py-6"
+        className="absolute border border-[var(--slide-surface-border)] bg-card px-8 py-6"
         data-slide-surface=""
         style={{ left: PANEL.left, top: PANEL.top, width: PANEL.width, ...fade(shown, PANEL_AT, still) }}
       >
@@ -234,6 +262,9 @@ export function Schema() {
                 strokeWidth={2.5}
                 style={{
                   filter: "drop-shadow(0 0 4px var(--primary))",
+                  // A round cap still draws a dot at a fully offset dash, so a
+                  // hidden wire is also transparent.
+                  opacity: shown ? 1 : 0,
                   transition: still
                     ? "none"
                     : `stroke-dashoffset 700ms ease-in-out ${shown ? WIRES_AT + index * WIRE_GAP : 0}ms`,

@@ -56,12 +56,12 @@ export const slides: SlideDefinition[] = [
     slug: "schema",
     title: "What is a schema?",
     notes:
-      "1:45, 45 seconds. Ask it, and give the room a second. Click: an article as a reader sees it, and the Article page Document Type beside it. The wires show where each part comes from: heading, date, authors, image, introduction, body. Click: more articles behind it, same shape. That shape is the schema. In Umbraco it is your Document Types, and the next screen is where you look at them.",
+      "1:45, 45 seconds. Ask it, and give the room a second. Click: an article as a reader sees it, and the Article page Document Type beside it. The wires show where each part comes from: heading, date, authors, image, introduction, body. Click: more articles behind it, same shape. That shape is a Document Type. Click: more Document Types behind it. The schema is all of them together, the whole content model. The next screen is where you look at it today.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     // SCHEMA_STEPS in deck/parts/schema.tsx.
-    stepCount: 3,
+    stepCount: 4,
     body: <Schema />,
   },
   {
@@ -120,7 +120,7 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "10:15, about 9 minutes, wrap up by 19:15. Now ask the question the opening left open: what does a change to Page Meta reach? Ask the room. Say it, then click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. That answers the question from before. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
+      "10:15, about 9 minutes, wrap up by 19:15. Click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
