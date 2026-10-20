@@ -135,7 +135,7 @@ export function Schema() {
     <section className="relative h-full w-full overflow-hidden">
       {/* The question starts as the slide and moves up to label it. */}
       <p
-        className="absolute left-[120px] origin-top-left font-semibold text-[length:var(--slide-title-size)] text-primary leading-[1.06] tracking-[-0.02em]"
+        className="absolute left-[120px] origin-top-left whitespace-nowrap font-semibold text-[length:var(--slide-title-size)] text-primary leading-[1.06] tracking-[-0.02em]"
         data-slide-statement-text=""
         style={{
           top: 0,
@@ -258,13 +258,12 @@ export function Schema() {
                 stroke="var(--primary)"
                 strokeDasharray={1}
                 strokeDashoffset={shown ? 0 : 1}
-                strokeLinecap="round"
+                // A round cap draws a dot at a fully offset dash, so the wire
+                // would show its end before it has drawn.
+                strokeLinecap="butt"
                 strokeWidth={2.5}
                 style={{
                   filter: "drop-shadow(0 0 4px var(--primary))",
-                  // A round cap still draws a dot at a fully offset dash, so a
-                  // hidden wire is also transparent.
-                  opacity: shown ? 1 : 0,
                   transition: still
                     ? "none"
                     : `stroke-dashoffset 700ms ease-in-out ${shown ? WIRES_AT + index * WIRE_GAP : 0}ms`,
@@ -275,7 +274,8 @@ export function Schema() {
                 cy={from.y}
                 fill="var(--primary)"
                 r={6}
-                style={fade(shown, WIRES_AT + index * WIRE_GAP, still, 0)}
+                // The dot lands once its wire has drawn.
+                style={fade(shown, WIRES_AT + index * WIRE_GAP + 700, still, 0)}
               />
             </g>
           )
