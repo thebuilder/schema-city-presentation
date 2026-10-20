@@ -797,7 +797,9 @@ function initAudio() {
   AC = new (window.AudioContext || window.webkitAudioContext)();
   // A recorded roar, when it has loaded; the synthesised one stands in until then.
   fetch('roar.mp3').then(r => r.arrayBuffer()).then(b => AC.decodeAudioData(b)).then(b => { roarBuf = b; }).catch(() => {});
-  const comp = AC.createDynamicsCompressor(); master = AC.createGain(); master.gain.value = .9; master.connect(comp); comp.connect(AC.destination);
+  const comp = AC.createDynamicsCompressor(); master = AC.createGain(); master.connect(comp);
+  // The whole scene fades up with the picture, so the slide opens on a swell.
+  master.gain.setValueAtTime(0, AC.currentTime); master.gain.linearRampToValueAtTime(.9, AC.currentTime + .8); comp.connect(AC.destination);
   noiseBuf = AC.createBuffer(1, AC.sampleRate * 3, AC.sampleRate);
   const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   // The rain is a recording, looped with its seam crossfaded. It is a WAV
@@ -805,7 +807,7 @@ function initAudio() {
   // gap every lap.
   fetch('rain.wav').then(r => r.arrayBuffer()).then(b => AC.decodeAudioData(b)).then(b => {
     const rec = AC.createBufferSource(), rg = AC.createGain(), now = AC.currentTime;
-    rec.buffer = b; rec.loop = true; rg.gain.setValueAtTime(0, now); rg.gain.linearRampToValueAtTime(.55, now + 1.2);
+    rec.buffer = b; rec.loop = true; rg.gain.setValueAtTime(0, now); rg.gain.linearRampToValueAtTime(.55, now + .8);
     rec.connect(rg).connect(master); rec.start();
   }).catch(() => {});
 }

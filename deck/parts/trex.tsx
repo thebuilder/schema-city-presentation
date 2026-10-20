@@ -23,11 +23,21 @@ const LINE = "UI was perfected in 1993."
 // Milliseconds after the slide arrives.
 const LINE_AT = 1000
 const ROAR_AT = 1400
+// Matches the sound fade in public/trex/index.html.
+const FADE_MS = 800
 
 export function Trex() {
   const frame = useRef<HTMLIFrameElement>(null)
   const still = useStill()
   const [said, setSaid] = useState(still)
+  const [loaded, setLoaded] = useState(false)
+
+  // A frame that loaded before React was listening never fires onLoad, so the
+  // storm comes up on its own after a moment either way.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoaded(true), 1500)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   useLayoutEffect(() => {
     if (still) {
@@ -53,12 +63,19 @@ export function Trex() {
         allow="autoplay"
         className="pointer-events-none absolute inset-0 h-full w-full border-0"
         onLoad={() => {
+          setLoaded(true)
           if (!still) {
             frame.current?.contentWindow?.postMessage("sound", window.location.origin)
           }
         }}
         ref={frame}
         src="/trex/index.html"
+        // The storm fades up with its sound once the frame can draw, rather
+        // than cutting in from the slide before.
+        style={{
+          opacity: still || loaded ? 1 : 0,
+          transition: still ? "none" : `opacity ${FADE_MS}ms ease-out`,
+        }}
         tabIndex={-1}
         title="A pixel T-rex roaring in a rainy night jungle"
       />
