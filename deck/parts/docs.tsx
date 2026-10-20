@@ -10,12 +10,13 @@ import { useStill } from "@/deck/parts/beats"
  * the docs family's violet on purpose, inside a browser frame, so it reads as
  * another site and not as part of the deck.
  *
- * The copy and the logo are the hub's entry for the package, in
- * thebuilder/umbraco-docs apps/hub/src/packages.ts.
+ * The copy is the docs site's own hero, as it reads on schema-city.thebuilder.dk.
+ * The logo is the hub's, from thebuilder/umbraco-docs apps/hub/public/logos.
  */
 const SITE = "schema-city.thebuilder.dk"
+const EYEBROW = "Content model visualisation for Umbraco"
 const SUMMARY =
-  "Shows your Document Types as a city in the backoffice, with the links between them, and flags schema problems before they ship."
+  "Each Document Type is a building and each property group a floor. Traces show allowed children, compositions, block targets and picker references, and Findings flags schema problems before they ship."
 const INSTALL = "dotnet add package TheBuilder.SchemaCity"
 const LOGO = "/docs/schema-city.svg"
 
@@ -82,20 +83,20 @@ export function Docs() {
             ref={canvas}
           />
 
-          <div className="relative grid h-full grid-cols-[1.15fr_1fr] items-center gap-16 px-24">
-            <div className="flex flex-col items-start gap-9">
+          <div className="relative grid h-full grid-cols-[1.6fr_1fr] items-center gap-12 px-24">
+            <div className="flex flex-col items-start gap-7">
               <p className="font-bold text-[1.1rem] uppercase tracking-[0.1em]" style={{ color: ACCENT }}>
-                Umbraco package
+                {EYEBROW}
               </p>
               {/* A paragraph, since the deck's theme dresses every heading in its
                   own face and glow, and this is the docs site's title. */}
-              <p className="m-0 font-semibold text-[6.5rem] text-white leading-[1.02] tracking-[-0.02em]">
-                Schema{" "}
+              <p className="m-0 font-semibold max-w-[60rem] text-[5.5rem] text-white leading-[1.02] tracking-[-0.03em]">
+                See your content model{" "}
                 <span className="bg-clip-text text-transparent" style={{ backgroundImage: GRADIENT }}>
-                  City
+                  as a city.
                 </span>
               </p>
-              <p className="max-w-[40rem] text-[1.75rem] text-white/80 leading-[1.55]">{SUMMARY}</p>
+              <p className="max-w-[52rem] text-[1.6rem] text-white/80 leading-[1.5]">{SUMMARY}</p>
               <div className="flex gap-4">
                 <span
                   className="rounded-[0.5rem] px-7 py-3.5 font-semibold text-[1.35rem] text-[#09090b]"
@@ -104,18 +105,18 @@ export function Docs() {
                   Get started
                 </span>
                 <span className="rounded-[0.5rem] border border-white/20 px-7 py-3.5 font-semibold text-[1.35rem] text-white">
-                  GitHub
+                  Try the demo
                 </span>
               </div>
               <div className="flex items-center gap-4 rounded-[0.5rem] border border-white/15 bg-white/5 px-6 py-3.5 font-mono text-[1.3rem]">
                 <span className="text-white/50">$</span>
                 <code className="text-white">{INSTALL}</code>
               </div>
-              <p className="text-[1.2rem] text-white/60">Umbraco 17 and 18 · .NET 10</p>
+              <p className="text-[1.2rem] text-white/60">Umbraco CMS 17 and 18 · .NET 10</p>
             </div>
 
             {/* Where the particle logo forms, and the still logo when it cannot. */}
-            <div className="relative h-[560px]" ref={art}>
+            <div className="relative h-[480px]" ref={art}>
               {fallback || still ? (
                 // biome-ignore lint/performance/noImgElement: a fixed logo standing in for the particles
                 <img alt="" className="absolute inset-[5%] h-[90%] w-[90%] object-contain" src={LOGO} />
