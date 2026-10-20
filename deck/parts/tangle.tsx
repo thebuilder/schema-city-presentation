@@ -140,7 +140,7 @@ export function Tangle() {
           data-slide-statement-text=""
           data-slide-surface=""
         >
-          <Words delay={LINE_AT} text="It gets tangled fast." />
+          <Words delay={LINE_AT} text="It gets messy fast." />
         </p>
       </div>
     </section>

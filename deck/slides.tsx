@@ -79,7 +79,7 @@ export const slides: SlideDefinition[] = [
   },
   {
     slug: "tangle",
-    title: "It gets tangled",
+    title: "It gets messy",
     notes:
       "5:15, 30 seconds. No click. Every Document Type in the demo site lands, then every link between them draws: compositions, allowed children, blocks, references. This is a small site, 32 types. Let the line land, then say it: and you are expected to keep all of this in your head before you change anything.",
     layout: "fullscreen",
