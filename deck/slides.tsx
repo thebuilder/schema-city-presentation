@@ -1,14 +1,12 @@
 import "server-only"
 
 import type { SlideDefinition } from "@thebuilder/deckard-core"
-import { ADD_PROPERTY_STEPS, DELETED_BLOCK_STEPS } from "@/deck/examples/site-results"
 import { Backoffice } from "@/deck/parts/backoffice"
 import { Buildup } from "@/deck/parts/buildup"
 import { Close } from "@/deck/parts/close"
 import { FakeOut } from "@/deck/parts/fake-out"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
-import { AddProperty, DeletedBlock } from "@/deck/parts/site-examples"
 import { Takeover } from "@/deck/parts/takeover"
 import { Schema } from "@/deck/parts/schema"
 import { Tangle } from "@/deck/parts/tangle"
@@ -140,50 +138,17 @@ export const slides: SlideDefinition[] = [
     slug: "live",
     title: "Let's see it",
     notes:
-      "10:30, about 9 minutes, wrap up by 19:30. Click the button. Three questions the content tree cannot answer. Spend the time on the first two. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. Then a quick look at the third, what is already broken: the findings. The two example slides after this go deeper on reach and on a broken block.",
+      "10:30, about 12 minutes, wrap up by 22:30. Click the button. Three questions the content tree cannot answer, all on this one site. What is in here: the overview. What touches what: open Page Meta. Six page types get its properties, Home, Content, Articles, Article, Not found and Search results, and the panel counts the content behind them. Then the third, what is already broken: the findings. ct-baseline already carries real problems, so take your time here and open one or two of them.",
     header: "hidden",
     footer: "hidden",
     background: "breaker",
     body: <Live />,
   },
   {
-    slug: "examples",
-    title: "A messier site",
-    notes:
-      "19:30, 20 seconds. After the demo. ct-baseline is tidy, so this is a site built to go wrong. An ordinary company site in two languages, 39 types, every problem planted on purpose. Every type, count and clash on the next two slides is Schema City's own.",
-    header: "hidden",
-    footer: "hidden",
-    body: <Statement text="Now, a messier site." />,
-  },
-  {
-    slug: "add-property",
-    title: "Can I add a phone property?",
-    notes:
-      "19:50, 2 minutes. You want a phone property on Location Details. Click, this is what Umbraco tells you, two types compose it. Click, Schema City keeps going. Location is a parent, so all six location types inherit the property too, 8 types and 8 pages. Click, Store already has a phone property of its own. Umbraco would refuse the save. Here you see it before you start.",
-    layout: "fullscreen",
-    header: "hidden",
-    footer: "hidden",
-    background: "none",
-    stepCount: ADD_PROPERTY_STEPS,
-    body: <AddProperty />,
-  },
-  {
-    slug: "deleted-block",
-    title: "Someone deleted the Video block",
-    notes:
-      "21:50, 2 minutes. A cleanup removed the Video Element Type. Click, About Us and the Element Types its block list offers. Click, one link runs to an empty plot, because the type it points at is gone. Click, content still holds 12 of those blocks. Schema City lists it as a broken block, before an editor opens the page and finds out.",
-    layout: "fullscreen",
-    header: "hidden",
-    footer: "hidden",
-    background: "none",
-    stepCount: DELETED_BLOCK_STEPS,
-    body: <DeletedBlock />,
-  },
-  {
     slug: "close",
     title: "Thank you",
     notes:
-      "23:50. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "22:30. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",
