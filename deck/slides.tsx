@@ -81,17 +81,26 @@ export const slides: SlideDefinition[] = [
     slug: "tangle",
     title: "It gets messy",
     notes:
-      "5:15, 30 seconds. No click. Every Document Type in the demo site lands, then every link between them draws: compositions, allowed children, blocks, references. This is a small site, 32 types. Let the line land, then say it: and you are expected to keep all of this in your head before you change anything.",
+      "5:15, 20 seconds. No click. Every Document Type in the demo site lands, then every link between them draws: compositions, allowed children, blocks, references. This is a small site, 32 types. Let the line land, then say it: and you are expected to keep all of this in your head before you change anything.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
     body: <Tangle />,
   },
   {
+    slug: "better-way",
+    title: "Is there a better way?",
+    notes:
+      "5:35, 10 seconds. Ask it straight, as if you mean it. One beat, then click.",
+    header: "hidden",
+    footer: "hidden",
+    body: <Statement text="Is there a better way?" />,
+  },
+  {
     slug: "trex",
     title: "Perfected",
     notes:
-      "5:45, 15 seconds. The storm is up over the tangle. No click: the line fades in after a second, then the T-rex roars. Deadpan. Then straight on to fsn.",
+      "5:45, 15 seconds. The joke answer to the question. No click: the line fades in after a second, then the T-rex roars. Deadpan, as if the perfect UI really was invented in 1993. Then straight on to fsn.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
