@@ -71,7 +71,7 @@ export function Docs() {
         <div className="relative flex-1">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-[-10%] top-[-30%] h-[130%]"
+            className="pointer-events-none absolute inset-x-0 top-0 h-full"
             style={{
               background: `radial-gradient(ellipse at top, color-mix(in oklab, ${ACCENT} 24%, transparent), transparent 70%)`,
             }}
