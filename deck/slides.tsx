@@ -8,6 +8,7 @@ import { Docs } from "@/deck/parts/docs"
 import { FakeOut } from "@/deck/parts/fake-out"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
+import { Rotunda } from "@/deck/parts/rotunda"
 import { Takeover } from "@/deck/parts/takeover"
 import { Schema } from "@/deck/parts/schema"
 import { Tangle } from "@/deck/parts/tangle"
@@ -156,10 +157,22 @@ export const slides: SlideDefinition[] = [
     body: <Docs />,
   },
   {
+    slug: "reflection",
+    title: "Developers ruled the earth",
+    notes:
+      "23:00, 45 seconds. The callback to the T-rex, and your one honest beat. No click to start: the T-rex roars and the banner comes down, so stay quiet until it lands. The first line comes up on its own. Then tell it plainly: it started as a silly idea, a ridiculous 3D world for a content model, and it kept turning out useful. Click for the second line, let it sit, then thank them.",
+    layout: "fullscreen",
+    header: "hidden",
+    footer: "hidden",
+    background: "none",
+    stepCount: 2,
+    body: <Rotunda />,
+  },
+  {
     slug: "close",
     title: "Thank you",
     notes:
-      "23:00. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "23:45. Thank them. The links are your site and the package library, and the install line was on the docs slide. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",

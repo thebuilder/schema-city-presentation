@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>When Developers Ruled the Earth</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0704; }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" width="320" height="180" aria-label="Pixel art: a Tyrannosaurus rex roaring in the visitor centre rotunda as a banner reading When Developers Ruled the Earth falls to the floor"></canvas>
+
+<script src="rig.js"></script>
+<script>
+// The rotunda: the last shot of the film, redrawn for the reflection slide. The
+// same T-rex as the storm, in the visitor centre's evening light, roars once,
+// and the banner over the hall comes down in front of it.
+//
+// The slide drives it from outside with two messages, 'sound' and 'start'. The
+// scene tells the slide 'landed' once the banner is on the floor, so the line
+// waits for the picture rather than for a guessed timer. ?still draws the end
+// state: a screenshot, a PDF and a viewer who asked for less motion all get
+// the banner on the floor.
+(() => {
+
+const W = 320, H = 180, FLOOR = 150, FEET = 166;
+const cv = document.getElementById('scene');
+const ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const still = new URLSearchParams(location.search).has('still')
+  || matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const R = Math.random;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const sst = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const hx = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mixc = (a, b, t) => a.map((v, i) => Math.round(lerp(v, b[i], t)));
+const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16);
+const bay = (x, y) => BAY[(y & 3) * 4 + (x & 3)];
+function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; return [c, g]; }
+// A two-colour ramp, dithered, so a gradient still reads as placed pixels.
+function ramp(stops, t, x, y) {
+  t = clamp(t, 0, 1) * (stops.length - 1);
+  const i = Math.min(stops.length - 2, Math.floor(t)), f = t - i;
+  return f > bay(x, y) ? stops[i + 1] : stops[i];
+}
+
+// ---------- the hall ----------
+const DOME = ['#5a2f17', '#8e5428', '#c98a45', '#eab26a', '#ffd896'].map(hx);
+const RIB = hx('#22110a');
+const WALL = ['#4a2b17', '#3a2112', '#28160b'].map(hx);
+const GLASS = ['#fff0c4', '#ffd38c', '#e59a52'].map(hx);
+const FLOORC = ['#8a5c34', '#62401f', '#3a2312', '#24150a'].map(hx);
+const SEAM = hx('#2a170b');
+
+// The back wall is a drum seen from inside, so the windows narrow towards the
+// edges of the frame.
+const WINDOWS = [-3, -2, -1, 0, 1, 2, 3].map(k => {
+  const th = k * .36;
+  return { x: Math.round(160 + 172 * Math.sin(th)), hw: Math.max(3, Math.round(8 * Math.cos(th))), k };
+});
+const WIN_TOP = 56, WIN_BOT = 96;
+
+const [bg, bgc] = mk(W, H);
+{
+  const img = bgc.createImageData(W, H), d = img.data;
+  const put = (x, y, c) => { const i = (y * W + x) * 4; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255; };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    let c;
+    if (y < 44) {
+      // the glass dome: ribs fan out from a crown above the frame
+      const dx = x - 160, dy = y + 90, r = Math.hypot(dx, dy), a = Math.atan2(dx, dy);
+      const f = ((a / .15) % 1 + 1) % 1;
+      const rib = Math.abs(f - .5) > .43 || (r % 24) < 1.3;
+      const lift = 1 - Math.abs(dx) / 210 - y / 70 + (((Math.floor(a / .15) * 7 + Math.floor(r / 24) * 3) % 5) - 2) * .03;
+      c = rib ? RIB : ramp(DOME, lift, x, y);
+    } else if (y < 51) {
+      c = hx(['#1a0d06', '#c08a44', '#3a2214', '#3a2214', '#2a170c', '#8a5a2e', '#1a0d06'][y - 44]);
+      if ((y === 46 || y === 47) && x % 4 === 0) c = hx('#1a0d06');
+    } else if (y < 100) {
+      c = ramp(WALL, (y - 51) / 70, x, y);
+    } else if (y < 110) {
+      // the balcony: a rail, its balusters, the slab under them
+      if (y === 100) c = hx('#a06a36');
+      else if (y === 101 || y >= 107) c = hx('#1e0f07');
+      else c = x % 3 === 0 ? hx('#7a4c26') : hx('#140a05');
+    } else if (y < FLOOR) {
+      c = ramp(WALL.slice(1), (y - 110) / 40, x, y);
+    } else {
+      const t = (y - FLOOR) / (H - FLOOR);
+      c = ramp(FLOORC, t * 1.15, x, y);
+      const a = Math.atan2(x - 160, y - 96), f = ((a / .2) % 1 + 1) % 1;
+      if ([153, 157, 162, 168, 175].includes(y) || Math.abs(f - .5) > .465) c = mixc(c, SEAM, .65);
+    }
+    put(x, y, c);
+  }
+  bgc.putImageData(img, 0, 0);
+
+  // windows, with an arched head and their glazing bars
+  for (const w of WINDOWS) {
+    for (let y = WIN_TOP; y < WIN_BOT; y++) for (let x = w.x - w.hw; x <= w.x + w.hw; x++) {
+      const ay = WIN_TOP + w.hw;
+      if (y < ay && Math.hypot(x - w.x, y - ay) > w.hw + .3) continue;
+      const edge = x === w.x - w.hw || x === w.x + w.hw || (y < ay && Math.hypot(x - w.x, y - ay) > w.hw - .7);
+      const bar = x === w.x || y === 70 || y === 83;
+      bgc.fillStyle = edge ? '#24130a' : bar ? '#6a3e1c' : rgb(ramp(GLASS, (y - WIN_TOP) / (WIN_BOT - WIN_TOP), x, y));
+      bgc.fillRect(x, y, 1, 1);
+    }
+    // a pilaster halfway to the next window
+    if (w.k < 3) {
+      const px = Math.round(160 + 172 * Math.sin((w.k + .5) * .36)), pw = Math.max(2, Math.round(3 * Math.cos((w.k + .5) * .36)));
+      bgc.fillStyle = '#5c3820'; bgc.fillRect(px - pw, 51, pw * 2, 49);
+      bgc.fillStyle = '#1e0f07'; bgc.fillRect(px + pw, 51, 1, 49);
+      bgc.fillStyle = '#7a4c28'; bgc.fillRect(px - pw, 51, 1, 49);
+    }
+  }
+
+  // doorways under the balcony
+  for (const [x0, x1] of [[62, 86], [234, 258], [138, 182]]) {
+    const top = 118, mid = (x0 + x1) / 2, rr = (x1 - x0) / 2;
+    for (let y = top - rr; y < FLOOR; y++) for (let x = x0; x <= x1; x++) {
+      if (y < top && Math.hypot(x - mid, y - top) > rr) continue;
+      bgc.fillStyle = (x === x0 || x === x1) ? '#4a2c16' : rgb(ramp([hx('#170b05'), hx('#0c0603')], (y - top + rr) / 40, x, y));
+      bgc.fillRect(x, y, 1, 1);
+    }
+  }
+
+  // the scaffold the film left standing on the left
+  bgc.fillStyle = '#170b05';
+  for (const x of [22, 44]) bgc.fillRect(x, 52, 2, FLOOR - 52);
+  for (const y of [76, 112]) bgc.fillRect(16, y, 36, 2);
+  bgc.fillStyle = '#7a4e2a';
+  for (const x of [22, 44]) bgc.fillRect(x, 52, 1, FLOOR - 52);
+  for (const y of [76, 112]) bgc.fillRect(16, y, 36, 1);
+  bgc.fillStyle = '#170b05';
+  for (const [x0, y0, x1, y1] of [[23, 78, 45, 110], [45, 114, 23, 148]]) {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let i = 0; i <= n; i++) bgc.fillRect(Math.round(lerp(x0, x1, i / n)), Math.round(lerp(y0, y1, i / n)), 1, 1);
+  }
+
+  // the polished floor gives the windows back
+  for (const w of WINDOWS) for (let y = FLOOR + 1; y < H; y++) {
+    const fade = 1 - (y - FLOOR) / (H - FLOOR);
+    for (let x = w.x - w.hw + 2; x <= w.x + w.hw - 2; x++) if (fade * .7 > bay(x, y)) { bgc.fillStyle = 'rgba(255,200,130,.28)'; bgc.fillRect(x, y, 1, 1); }
+  }
+}
+
+// shafts of evening light from the windows to the floor
+const SHAFTS = WINDOWS.filter(w => Math.abs(w.k) <= 2).map(w => ({ x0: w.x - w.hw + 1, x1: w.x + w.hw - 1, top: 62, run: 44 }));
+const [shafts, sg] = mk(W, H);
+for (const s of SHAFTS) {
+  const gr = sg.createLinearGradient(0, s.top, 0, FLOOR + 10);
+  gr.addColorStop(0, 'rgba(255,214,150,.22)'); gr.addColorStop(1, 'rgba(255,214,150,.03)');
+  sg.fillStyle = gr; sg.beginPath();
+  sg.moveTo(s.x0, s.top); sg.lineTo(s.x1, s.top); sg.lineTo(s.x1 + s.run + 6, FLOOR + 10); sg.lineTo(s.x0 + s.run - 6, FLOOR + 10); sg.closePath(); sg.fill();
+}
+
+const [vig, vg] = mk(W, H);
+{ const gr = vg.createRadialGradient(W / 2, H * .5, 70, W / 2, H * .5, 200); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(8,3,0,.65)'); vg.fillStyle = gr; vg.fillRect(0, 0, W, H); }
+
+// ---------- the tyrant, in the hall's warm light ----------
+const K = 1.15;
+const P = TrexRig.PAL, key = h => { const c = hx(h); return (c[0] << 16) | (c[1] << 8) | c[2]; };
+const KEEP = new Set([P.eye, P.pupil, P.tongue, P.tongueHi].map(key)), BONE = new Set([P.teeth, P.claw].map(key));
+function warm(raw) {
+  const [c, g] = mk(raw.w, raw.h);
+  const im = new ImageData(new Uint8ClampedArray(raw.img.data), raw.w, raw.h), d = im.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (!d[i + 3]) continue;
+    const r = d[i], gg = d[i + 1], b = d[i + 2], k = (r << 16) | (gg << 8) | b;
+    if (KEEP.has(k)) continue;
+    if (BONE.has(k)) { d[i] = r * .95; d[i + 1] = gg * .85; d[i + 2] = b * .7; continue; }
+    d[i] = r * .7 + gg * .4 + 12; d[i + 1] = gg * .55 + r * .1 + 8; d[i + 2] = b * .3 + 6;
+  }
+  g.putImageData(im, 0, 0); return c;
+}
+const cache = { idle: [], roar: [] };
+function frameOf(clip, i) {
+  let f = cache[clip][i];
+  if (!f) {
+    const raw = TrexRig.render(clip === 'idle' ? TrexRig.idle(i / TrexRig.IDLE.frames) : TrexRig.roar(i / TrexRig.ROAR.fps), K);
+    f = cache[clip][i] = { img: warm(raw), ground: raw.ground, eye: raw.eye, mouth: raw.mouth };
+  }
+  return f;
+}
+const heroX = 74, heroY = FEET - frameOf('idle', 0).ground;
+
+// ---------- the banner ----------
+const TEXT = 'WHEN DEVELOPERS RULED THE EARTH';
+const GLYPHS = {
+  W: '1100011 1100011 1101011 1101011 1111111 1110111 1100011', H: '110011 110011 110011 111111 110011 110011 110011',
+  E: '111111 110000 110000 111110 110000 110000 111111', N: '110011 111011 111011 111111 110111 110111 110011',
+  D: '111110 110011 110011 110011 110011 110011 111110', V: '110011 110011 110011 110011 110011 011110 001100',
+  L: '110000 110000 110000 110000 110000 110000 111111', O: '011110 110011 110011 110011 110011 110011 011110',
+  P: '111110 110011 110011 111110 110000 110000 110000', R: '111110 110011 110011 111110 111100 110110 110011',
+  S: '011111 110000 110000 011110 000011 000011 111110', U: '110011 110011 110011 110011 110011 110011 011110',
+  T: '111111 001100 001100 001100 001100 001100 001100', A: '011110 110011 110011 111111 110011 110011 110011'
+};
+// Two-pixel stems, so the letters read as the film's heavy poster type at the
+// size of a projector. The width rounds up to whole slices of the fall below.
+const SPACE = 4, SLICE = 4;
+const adv = ch => ch === ' ' ? SPACE : GLYPHS[ch].indexOf(' ') + 1;
+const textW = [...TEXT].reduce((w, ch) => w + adv(ch), 0) - 1;
+const BW = Math.ceil((textW + 12) / SLICE) * SLICE, BH = 15, PAD = Math.floor((BW - textW) / 2);
+const [front, fg] = mk(BW, BH), [back, bkg] = mk(BW, BH);
+{
+  const rows = ['#e8b04c', '#8a5a1e', '#1a0c07', '#1a0c07', null, null, null, null, null, null, null, '#1a0c07', '#1a0c07', '#8a5a1e', '#e8b04c'];
+  for (let y = 0; y < BH; y++) {
+    fg.fillStyle = rows[y] || '#1a0c07'; fg.fillRect(0, y, BW, 1);
+    bkg.fillStyle = rows[y] ? (rows[y] === '#1a0c07' ? '#2e1a10' : '#6a4418') : '#2e1a10'; bkg.fillRect(0, y, BW, 1);
+  }
+  const LETTER = ['#ffd27a', '#ffb347', '#ff8a2e', '#f46a24', '#e4501f', '#d43d1b', '#c22f16'];
+  let x = PAD;
+  for (const ch of TEXT) {
+    if (ch === ' ') { x += SPACE; continue; }
+    const g = GLYPHS[ch].split(' ');
+    for (const pass of ['shadow', 'fill']) for (let gy = 0; gy < 7; gy++) for (let gx = 0; gx < g[gy].length; gx++) {
+      if (g[gy][gx] !== '1') continue;
+      const o = pass === 'shadow' ? 1 : 0;
+      fg.fillStyle = pass === 'shadow' ? '#000' : LETTER[gy];
+      fg.fillRect(x + gx + o, 4 + gy + o, 1, 1);
+    }
+    x += adv(ch);
+  }
+}
+
+// Hung across the hall below the dome, then on the floor in front of the
+// tyrant's feet. Every point of the banner is a function of time, so the fall
+// is the same each run and the still is exact.
+const N = BW / SLICE;
+const HANG = s => [158 - BW / 2 + BW * s + 2, 32 + 8 * 4 * s * (1 - s)];
+// Flat and on whole pixels at rest, so the line the room reads is the texture
+// exactly, with no column lost to a rotated slice.
+const REST_X = Math.round(160 - BW / 2), REST_Y = 169;
+const REST = s => [REST_X + BW * s, REST_Y];
+// The left cord goes a beat before the right.
+const LEAD = .35, FALL = 2.4;
+const fallEase = p => p * p * (3 - 2 * p);
+let released = null, landedSent = false;
+
+function bannerPoints(t) {
+  const pts = [];
+  for (let i = 0; i <= N; i++) {
+    const s = i / N, h = HANG(s), r = REST(s);
+    if (released === null) { pts.push([h[0], h[1] + .6 * Math.sin(t * 1.3 + s * 3), 0]); continue; }
+    // the left cord gives first, so the banner peels away from that side
+    const p = clamp((t - released - LEAD * (1 - s)) / FALL, 0, 1), e = fallEase(p), air = Math.sin(Math.PI * p);
+    const x = lerp(h[0], r[0], e) + 12 * air * Math.sin(2.2 * Math.PI * p + s * 2);
+    const y = lerp(h[1], r[1], e) + 9 * air * Math.sin(2 * Math.PI * (1.4 * s - 1.1 * (t - released)));
+    pts.push([x, y, 2 * Math.PI * sst((p - .15) / .7)]);
+  }
+  return pts;
+}
+function drawBanner(t) {
+  if (released !== null && t >= released + LEAD + FALL) { ctx.drawImage(front, REST_X, REST_Y - Math.floor(BH / 2)); return; }
+  const pts = bannerPoints(t), sw = SLICE;
+  for (let i = 0; i < N; i++) {
+    const [x0, y0, tw0] = pts[i], [x1, y1, tw1] = pts[i + 1];
+    const len = Math.hypot(x1 - x0, y1 - y0), c = Math.cos((tw0 + tw1) / 2), h = Math.max(.12, Math.abs(c));
+    ctx.save();
+    ctx.translate(x0, y0); ctx.rotate(Math.atan2(y1 - y0, x1 - x0));
+    ctx.drawImage(c >= 0 ? front : back, i * sw, 0, sw, BH, 0, -BH * h / 2, len + .7, BH * h);
+    ctx.restore();
+  }
+  if (released === null) {
+    // the cords it hangs from, up into the dome
+    ctx.fillStyle = '#1a0c07';
+    for (const s of [0, 1]) { const [x, y] = HANG(s); ctx.fillRect(Math.round(x), 0, 1, Math.round(y - BH / 2)); }
+  }
+}
+
+// ---------- world state ----------
+let t = 0, last = 0, idlePh = 0, roarT = null, cued = null, releaseAt = null, roarAt = null, shake = 0, fired = {};
+
+// The roar lands as the banner passes the tyrant's open mouth, as in the film.
+// The jaw is fully open at .85 into the roar, and the recording, started at
+// .5, opens its burst .35 after that. Solve for when the banner's line reaches
+// the mouth, and start the roar that long before.
+const JAW_OPEN = .85;
+const CROSS = (() => {
+  const m = frameOf('roar', Math.floor(JAW_OPEN * TrexRig.ROAR.fps)).mouth;
+  const mx = heroX + m[0], my = heroY + m[1], s = clamp((mx - HANG(0)[0]) / BW, 0, 1);
+  const hy = HANG(s)[1], ry = REST(s)[1];
+  let p = 0;
+  while (p < 1 && lerp(hy, ry, fallEase(p)) < my) p += .005;
+  return LEAD * (1 - s) + p * FALL;
+})();
+const motes = Array.from({ length: 46 }, () => newMote(true)), debris = [];
+function newMote(init) {
+  const s = SHAFTS[(R() * SHAFTS.length) | 0], v = R();
+  return { x: lerp(s.x0, s.x1, R()) + s.run * v, y: lerp(s.top, FLOOR, v), vx: 1 + R() * 2, vy: (R() - .3) * 2, ph: R() * 6, life: init ? R() * 6 : 6 };
+}
+const roaring = () => roarT !== null && roarT > .85 && roarT < 2.2;
+function currentFrame() {
+  return roarT !== null
+    ? frameOf('roar', Math.min(TrexRig.ROAR.frames - 1, Math.floor(roarT * TrexRig.ROAR.fps)))
+    : frameOf('idle', Math.floor(idlePh * TrexRig.IDLE.frames) % TrexRig.IDLE.frames);
+}
+
+function update(dt) {
+  t += dt;
+  if (roarT === null) {
+    const prev = idlePh;
+    idlePh = (idlePh + dt / TrexRig.IDLE.period) % 1;
+    // the cue waits for a breath boundary so the idle loop hands over cleanly
+    const crossed = (prev < .5 && idlePh >= .5) || idlePh < prev;
+    if (cued !== null && crossed) {
+      releaseAt = t + Math.max(0, JAW_OPEN - CROSS); roarAt = t + Math.max(0, CROSS - JAW_OPEN); cued = null;
+    }
+    if (roarAt !== null && t >= roarAt) { roarT = 0; roarAt = null; idlePh = 0; }
+  } else {
+    roarT += dt;
+    if (roarT > .5 && !fired.sound) { fired.sound = true; roarSound(); }
+    if (roarT > JAW_OPEN && !fired.burst) {
+      fired.burst = true; shake = 1.8;
+      for (let i = 0; i < 40; i++) debris.push({ x: 30 + R() * 260, y: -2 - R() * 30, vy: 5 + R() * 25, c: R() < .5 ? '#2a160c' : '#c9935a' });
+    }
+    if (roaring()) {
+      shake = Math.max(shake, .9);
+      if (R() < dt * 40) debris.push({ x: 40 + R() * 240, y: -2, vy: 10 + R() * 20, c: R() < .5 ? '#2a160c' : '#c9935a' });
+    }
+    if (roarT >= TrexRig.ROAR.dur) { roarT = null; idlePh = 0; }
+  }
+  shake = Math.max(0, shake - dt * 3);
+  if (releaseAt !== null && t >= releaseAt) { released = t; releaseAt = null; whoosh(); }
+  if (released !== null && !landedSent && t > released + LEAD + FALL) {
+    landedSent = true; thud();
+    parent.postMessage('landed', location.origin);
+  }
+  for (const m of motes) {
+    m.x += m.vx * dt; m.y += m.vy * dt; m.ph += dt * 2; m.life -= dt;
+    if (m.life <= 0) Object.assign(m, newMote(false));
+  }
+  for (let i = debris.length - 1; i >= 0; i--) { const p = debris[i]; p.vy += 90 * dt; p.y += p.vy * dt; if (p.y > FEET + 6) debris.splice(i, 1); }
+}
+
+function render() {
+  ctx.save();
+  if (shake > 0) ctx.translate(Math.round((R() - .5) * 2 * shake), Math.round((R() - .5) * 2 * shake));
+  ctx.fillStyle = '#0d0704'; ctx.fillRect(-4, -4, W + 8, H + 8);
+  ctx.drawImage(bg, 0, 0);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = .9 + .1 * Math.sin(t * .7);
+  ctx.drawImage(shafts, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+
+  // the tyrant's shadow, then the tyrant
+  ctx.fillStyle = 'rgba(10,4,0,.4)';
+  for (let y = 0; y < 4; y++) { const hw = 52 - y * 7; ctx.fillRect(heroX + 88 - hw, FEET - 1 + y, hw * 2, 1); }
+  const fr = currentFrame();
+  ctx.drawImage(fr.img, heroX, heroY);
+
+  for (const p of debris) { ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1); }
+  drawBanner(t);
+  for (const m of motes) {
+    const a = .35 + .35 * Math.sin(m.ph);
+    if (a < .15) continue;
+    ctx.fillStyle = `rgba(255,226,170,${a.toFixed(2)})`; ctx.fillRect(Math.round(m.x), Math.round(m.y), 1, 1);
+  }
+
+  // pillars framing the hall, close to the camera
+  ctx.fillStyle = '#100703'; ctx.fillRect(0, 0, 8, H); ctx.fillRect(W - 8, 0, 8, H);
+  ctx.fillStyle = '#4a2a14'; ctx.fillRect(8, 0, 1, H); ctx.fillRect(W - 9, 0, 1, H);
+  ctx.restore();
+  ctx.drawImage(vig, 0, 0);
+}
+
+// ---------- sound ----------
+let AC = null, master = null, roarBuf = null;
+function initAudio() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = AC.createDynamicsCompressor(); master = AC.createGain(); master.gain.value = .9;
+    master.connect(comp); comp.connect(AC.destination);
+    fetch('roar.mp3').then(r => r.arrayBuffer()).then(b => AC.decodeAudioData(b)).then(b => { roarBuf = b; }).catch(() => {});
+  } catch (e) { AC = null; }
+}
+function noise(dur) {
+  const b = AC.createBuffer(1, Math.ceil(AC.sampleRate * dur), AC.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const s = AC.createBufferSource(); s.buffer = b; return s;
+}
+function roarSound() {
+  if (!AC || !roarBuf) return;
+  const src = AC.createBufferSource(), g = AC.createGain();
+  src.buffer = roarBuf; g.gain.value = .9; src.connect(g).connect(master); src.start();
+}
+// cloth through the air, then cloth on stone
+function whoosh() {
+  if (!AC) return;
+  const t0 = AC.currentTime, dur = LEAD + FALL, s = noise(dur), bp = AC.createBiquadFilter(), g = AC.createGain();
+  bp.type = 'bandpass'; bp.Q.value = .8; bp.frequency.setValueAtTime(500, t0); bp.frequency.linearRampToValueAtTime(1300, t0 + dur * .5); bp.frequency.linearRampToValueAtTime(400, t0 + dur);
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.14, t0 + dur * .4); g.gain.linearRampToValueAtTime(0, t0 + dur);
+  s.connect(bp).connect(g).connect(master); s.start(t0);
+}
+function thud() {
+  if (!AC) return;
+  const t0 = AC.currentTime, s = noise(.5), lp = AC.createBiquadFilter(), g = AC.createGain();
+  lp.type = 'lowpass'; lp.frequency.value = 260;
+  g.gain.setValueAtTime(.5, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + .45);
+  s.connect(lp).connect(g).connect(master); s.start(t0);
+}
+
+// ---------- messages from the slide ----------
+addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
+  if (e.data === 'sound') initAudio();
+  else if (e.data === 'start' && !still && cued === null && releaseAt === null && roarAt === null && released === null) cued = t;
+});
+
+// ---------- go ----------
+if (still) {
+  released = -10; t = 0; landedSent = true;
+  parent.postMessage('landed', location.origin);
+}
+// draw one not-yet-cached frame per tick, so the roar never stalls
+let warmI = 0;
+function warmUp() {
+  const ni = TrexRig.IDLE.frames, nr = TrexRig.ROAR.frames;
+  if (warmI < ni) frameOf('idle', warmI++); else if (warmI < ni + nr) frameOf('roar', warmI++ - ni);
+}
+function frame(now) {
+  const dt = Math.min(.05, last ? (now - last) / 1000 : .016); last = now;
+  warmUp(); update(dt); render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
