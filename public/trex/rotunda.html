@@ -246,8 +246,9 @@ const HANG = s => [158 - BW / 2 + BW * s + 2, 32 + 8 * 4 * s * (1 - s)];
 const REST_X = Math.round(160 - BW / 2), REST_Y = 169;
 const REST = s => [REST_X + BW * s, REST_Y];
 // The left cord goes a beat before the right.
-const LEAD = .35, FALL = 2.4;
-const fallEase = p => p * p * (3 - 2 * p);
+const LEAD = .25, FALL = 2.4;
+// It drops hard as the cords snap, then floats the rest of the way down.
+const fallEase = p => 1 - Math.pow(1 - p, 2.2);
 let released = null, landedSent = false;
 
 function bannerPoints(t) {
@@ -284,19 +285,10 @@ function drawBanner(t) {
 // ---------- world state ----------
 let t = 0, last = 0, idlePh = 0, roarT = null, cued = null, releaseAt = null, roarAt = null, shake = 0, fired = {};
 
-// The roar lands as the banner passes the tyrant's open mouth, as in the film.
-// The jaw is fully open at .85 into the roar, and the recording, started at
-// .5, opens its burst .35 after that. Solve for when the banner's line reaches
-// the mouth, and start the roar that long before.
+// The roar brings the banner down. The jaw is fully open at .85 into the roar,
+// and the recording, started at .5, opens its burst .35 after that, so the
+// cords give on that frame.
 const JAW_OPEN = .85;
-const CROSS = (() => {
-  const m = frameOf('roar', Math.floor(JAW_OPEN * TrexRig.ROAR.fps)).mouth;
-  const mx = heroX + m[0], my = heroY + m[1], s = clamp((mx - HANG(0)[0]) / BW, 0, 1);
-  const hy = HANG(s)[1], ry = REST(s)[1];
-  let p = 0;
-  while (p < 1 && lerp(hy, ry, fallEase(p)) < my) p += .005;
-  return LEAD * (1 - s) + p * FALL;
-})();
 const motes = Array.from({ length: 46 }, () => newMote(true)), debris = [];
 function newMote(init) {
   const s = SHAFTS[(R() * SHAFTS.length) | 0], v = R();
@@ -317,7 +309,7 @@ function update(dt) {
     // the cue waits for a breath boundary so the idle loop hands over cleanly
     const crossed = (prev < .5 && idlePh >= .5) || idlePh < prev;
     if (cued !== null && crossed) {
-      releaseAt = t + Math.max(0, JAW_OPEN - CROSS); roarAt = t + Math.max(0, CROSS - JAW_OPEN); cued = null;
+      roarAt = t; releaseAt = t + JAW_OPEN; cued = null;
     }
     if (roarAt !== null && t >= roarAt) { roarT = 0; roarAt = null; idlePh = 0; }
   } else {
