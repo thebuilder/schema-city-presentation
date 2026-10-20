@@ -4,6 +4,7 @@ import type { SlideDefinition } from "@thebuilder/deckard-core"
 import { Backoffice } from "@/deck/parts/backoffice"
 import { Buildup } from "@/deck/parts/buildup"
 import { Close } from "@/deck/parts/close"
+import { Docs } from "@/deck/parts/docs"
 import { FakeOut } from "@/deck/parts/fake-out"
 import { Statement } from "@/deck/parts/line"
 import { Live } from "@/deck/parts/live"
@@ -145,10 +146,20 @@ export const slides: SlideDefinition[] = [
     body: <Live />,
   },
   {
+    slug: "docs",
+    title: "Read more",
+    notes:
+      "22:30, 30 seconds. Back from the demo. This is the docs site, schema-city.thebuilder.dk: the guide, the install line and how it works. The logo forms out of particles, let it settle. Say it is free and in preview, and that it runs on Umbraco 17 and 18.",
+    layout: "fullscreen",
+    header: "hidden",
+    footer: "hidden",
+    body: <Docs />,
+  },
+  {
     slug: "close",
     title: "Thank you",
     notes:
-      "22:30. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "23:00. Point at the GitHub link, the install is one dotnet add. End on one honest line: why you built it, and that it still cannot see your code. Then thank them. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",
