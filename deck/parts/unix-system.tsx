@@ -120,6 +120,14 @@ export function UnixSystem() {
         {"It's a UNIX system! I know this!"}
       </p>
 
+      {/* Where to try it, kept small so it never competes with the scene. */}
+      <p
+        className="absolute right-[var(--slide-padding-inline)] bottom-[var(--slide-padding-block)] font-mono text-[length:var(--slide-support-size)] text-muted-foreground transition-opacity duration-500"
+        style={{ opacity: booted ? 0.8 : 0 }}
+      >
+        fsn.thebuilder.dk
+      </p>
+
       <FsnWindow
         className="top-[8%] right-[var(--slide-padding-inline)] w-[40%]"
         open={raptorOpen}

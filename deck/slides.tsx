@@ -111,7 +111,7 @@ export const slides: SlideDefinition[] = [
     slug: "unix-system",
     title: "I know this",
     notes:
-      "6:00, 2 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer. The line lands on its own once the camera settles, let it sit. Click, fly into security and open velociraptor.webp: it's inside. Click, the doors, and she locks them. Wait for the green light.",
+      "6:00, 2 minutes. The turn. Get the laugh. fsn was real SGI software from 1992. Directories were platforms, files were blocks, height was size. A kid read a filesystem in seconds because it was a place. What they are watching is your rebuild at fsn.thebuilder.dk, on its own renderer, and the link in the corner is there for anyone who wants to try it. The line lands on its own once the camera settles, let it sit. Click, fly into security and open velociraptor.webp: it's inside. Click, the doors, and she locks them. Wait for the green light.",
     layout: "fullscreen",
     stepCount: 3,
     body: <UnixSystem />,
