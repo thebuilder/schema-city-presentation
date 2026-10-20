@@ -11,10 +11,14 @@ import { useBeat, useStill } from "@/deck/parts/beats"
  * the rig with.
  *
  * The first line waits for the scene to say the banner has landed, so the room
- * reads the banner and then the line. The second line is the presenter's click,
- * since the pause between the two is where the story gets told.
+ * reads the banner and then the line. Each line after it is the presenter's
+ * click, since the pauses between them are where the story gets told. Add or
+ * change a line here, and match the slide's stepCount to the number of lines.
  */
-const LINES = ["UI wasn't perfected in 1993.", "It just took 33 years to try the idea again."]
+const LINES = [
+  "UI wasn't perfected in 1993.",
+  "But maybe it had the right idea?",
+]
 
 // Milliseconds after the frame loads before the roar is cued, so the hall is
 // seen standing still first.
@@ -28,7 +32,7 @@ const FADE_MS = 800
 export function Rotunda() {
   const frame = useRef<HTMLIFrameElement>(null)
   const still = useStill()
-  const beat = useBeat([0])
+  const beat = useBeat(LINES.slice(1).map(() => 0))
   const [loaded, setLoaded] = useState(false)
   const [landed, setLanded] = useState(still)
 
@@ -68,7 +72,7 @@ export function Rotunda() {
     return () => window.clearTimeout(timer)
   }, [still, loaded])
 
-  const shown = [landed, landed && beat >= 1]
+  const shown = LINES.map((_, index) => landed && beat >= index)
 
   return (
     <section className="relative h-full w-full overflow-hidden bg-black">

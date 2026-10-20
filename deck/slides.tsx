@@ -160,7 +160,7 @@ export const slides: SlideDefinition[] = [
     slug: "reflection",
     title: "Developers ruled the earth",
     notes:
-      "23:00, 45 seconds. The callback to the T-rex, and your one honest beat. No click to start: the T-rex roars and the banner comes down, so stay quiet until it lands. The first line comes up on its own. Then tell it plainly: it started as a silly idea, a ridiculous 3D world for a content model, and it kept turning out useful. Click for the second line, let it sit, then thank them.",
+      "23:00, 45 seconds. The callback to the T-rex, and your one honest beat. No click to start: the T-rex roars and the banner comes down, so stay quiet until it lands. The first line comes up on its own. Click for the second, and let the question hang. Then tell it plainly: it started as a silly idea, a ridiculous 3D world for a content model, and it kept turning out useful. Then thank them.",
     layout: "fullscreen",
     header: "hidden",
     footer: "hidden",
