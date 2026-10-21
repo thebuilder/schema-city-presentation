@@ -3,6 +3,7 @@
 import { isCapturing } from "@thebuilder/deckard-core"
 import { useIsPresenterPreview } from "@thebuilder/deckard-core/components"
 import { type ReactNode, useEffect, useRef, useState } from "react"
+import { playCue } from "@/deck/parts/takeover/cue"
 import type { Takeover } from "@/deck/parts/takeover/engine"
 import { resolveColour, type TextBox } from "@/deck/parts/takeover/glyphs"
 import { claimTakeover } from "@/deck/parts/takeover/takeover-state"
@@ -25,20 +26,6 @@ declare global {
 }
 
 export const fallbackVideo = "/takeover/takeover.webm"
-
-// Seven ElevenLabs clips mixed onto the timeline above, 15 s from the click:
-// the glitch on the click, the tube going off at crtStart, the drone under
-// the second line, the riser peaking at the tear, the hit on titleStart.
-const cueSound = "/takeover/cue.mp3"
-
-// The click that advanced the deck is the user activation that lets this
-// play without a prompt. Only a sequence that runs from the top gets it, so
-// stepping back to the settled title stays quiet.
-function playCue() {
-  const cue = new Audio(cueSound)
-  cue.play().catch(() => undefined)
-  return () => cue.pause()
-}
 
 const scrambleSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+<>"
 
