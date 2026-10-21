@@ -172,7 +172,7 @@ export const slides: SlideDefinition[] = [
     slug: "close",
     title: "Thank you",
     notes:
-      "23:45. Thank them. The links are your site and the package library, and the install line was on the docs slide. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and open an issue.",
+      "23:45. Thank them. The links are your site and the package library, and the install line was on the docs slide. The world behind you is your own site, thebuilder.dk. If someone asks how it is built: yes, it is an Umbraco package. Leave this up through questions. Ask people to try it on their worst schema and tell you what it finds.",
     layout: "fullscreen",
     background: "none",
     header: "hidden",
