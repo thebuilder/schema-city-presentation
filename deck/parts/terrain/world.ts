@@ -1,19 +1,13 @@
 import * as THREE from "three"
 import { CrtPipeline } from "@/deck/parts/terrain/crt"
-import type { Music } from "@/deck/parts/terrain/music"
-import { createWires } from "@/deck/parts/terrain/wires"
 
 /*
  * The terrain flight from thebuilder.dk, rebuilt for one slide. The ground,
  * the striped sun, the stars and the ringed planet are the site's own shaders
  * (lib/scene/terrain.ts, sky.ts, hero.ts and textures.ts in thebuilder-dk),
- * cut down to what a slide needs: no beacons and no river. The camera flies
- * the valley floor forever instead of following the scroll, and the planet
- * rides with the camera so it stays where the slide puts it.
- *
- * When the site's soundtrack plays, the world moves to it the way the site
- * does: the sweep lines cross the valley on the bar, the ground and the wire
- * cages flash on the beat, and a ring of the spectrum turns round the planet.
+ * cut down to what a slide needs: no beacons, no river, no soundtrack. The
+ * camera flies the valley floor forever instead of following the scroll, and
+ * the planet rides with the camera so it stays where the slide puts it.
  */
 
 const VOID = 0x05_09_0a
@@ -36,14 +30,14 @@ const SPEED = 30
 const SWEEP_SPAN = 950
 const SWEEP_LEAD = 240
 const BEATS_PER_BAR = 4
-// The soundtrack's tempo, from lib/beat.ts on the site.
-const BPM = 120
 const BAR_SECONDS = 2.4
 
 // Where a screenshot or a PDF export lands, far enough in for a sweep line to
 // be crossing the valley.
 const STILL_TIME = 7.4
 const POWER_ON_SECONDS = 1.4
+// How long the planet takes to build itself after the power-on.
+const ASSEMBLE_SECONDS = 2.6
 
 const SWEEP = /* glsl */ `
   uniform float uSweep;
@@ -206,9 +200,11 @@ const PLANET_VERTEX = /* glsl */ `
   out vec3 vNormal;
   out vec3 vWorld;
   out vec2 vUv;
+  out float vLocalY;
 
   void main() {
     vUv = uv;
+    vLocalY = position.y;
     vNormal = normalize(mat3(modelMatrix) * normal);
     vec4 world = modelMatrix * vec4(position, 1.0);
     vWorld = world.xyz;
@@ -227,10 +223,12 @@ const PLANET_FRAGMENT = /* glsl */ `
   uniform vec3 uRim;
   uniform float uTime;
   uniform float uBands;
+  uniform float uAssembly;
 
   in vec3 vNormal;
   in vec3 vWorld;
   in vec2 vUv;
+  in float vLocalY;
 
   layout(location = 0) out vec4 fragColor;
 
@@ -247,6 +245,10 @@ const PLANET_FRAGMENT = /* glsl */ `
   }
 
   void main() {
+    // The ball fills in from the bottom up behind a glowing cut.
+    float plane = mix(-15.0, 15.0, uAssembly);
+    if (vLocalY > plane) discard;
+
     vec3 normal = normalize(vNormal);
     vec3 view = normalize(cameraPosition - vWorld);
 
@@ -266,6 +268,8 @@ const PLANET_FRAGMENT = /* glsl */ `
     body += uKeyColor * step(0.55, specular) * 0.85;
 
     body += uRim * fresnel * (0.55 + sin(uTime * 1.6) * 0.18);
+
+    body += uRim * smoothstep(plane - 3.0, plane, vLocalY) * 1.8 * (1.0 - step(1.0, uAssembly));
 
     fragColor = vec4(body, 1.0);
   }
@@ -386,7 +390,7 @@ function createTerrain() {
       material.dispose()
     },
     mesh,
-    update(camera: THREE.Camera, elapsed: number, bar: number, beat: number) {
+    update(camera: THREE.Camera, elapsed: number) {
       // Snapped to the vertex rows, so the ground moves under the camera
       // without its samples sliding through the heightfield.
       mesh.position.z =
@@ -394,11 +398,11 @@ function createTerrain() {
         GROUND_STEP
       uniforms.uTime.value = elapsed
       uniforms.uCamera.value.copy(camera.position)
+      const bar = (elapsed / BAR_SECONDS) % 1
       uniforms.uSweep.value = camera.position.z + SWEEP_LEAD - bar * SWEEP_SPAN
       uniforms.uPeak.value
         .copy(signal)
         .lerp(violet, 0.5 + Math.sin(elapsed * 0.35) * 0.5)
-        .multiplyScalar(1 + beat * 0.9)
     },
   }
 }
@@ -485,6 +489,7 @@ function createPlanet(environment: THREE.Texture) {
 
   const geometry = new THREE.SphereGeometry(14, 96, 64)
   const uniforms = {
+    uAssembly: { value: 0 },
     uBands: { value: 5 },
     uCheckA: { value: new THREE.Color(0x12_0a_1c) },
     uCheckB: { value: new THREE.Color(SIGNAL) },
@@ -518,6 +523,7 @@ function createPlanet(environment: THREE.Texture) {
   })
   const cage = new THREE.LineSegments(cageGeometry, cageMaterial)
   pivot.add(cage)
+  const cageLines = cageGeometry.getAttribute("position").count / 2
 
   const ringGeometry = new THREE.TorusGeometry(31, 0.22, 8, 160)
   const ringColors = [PHOSPHOR, SIGNAL, VIOLET]
@@ -536,27 +542,8 @@ function createPlanet(environment: THREE.Texture) {
     return ring
   })
 
-  // The spectrum, as spokes round the rings: low notes at the top, running
-  // both ways round so the ring stays balanced.
-  const spokes = new Float32Array(SPOKES * 2 * 3)
-  const spokeGeometry = new THREE.BufferGeometry()
-  spokeGeometry.setAttribute("position", new THREE.BufferAttribute(spokes, 3))
-  const spokeMaterial = new THREE.LineBasicMaterial({
-    blending: THREE.AdditiveBlending,
-    color: PHOSPHOR_BRIGHT,
-    depthWrite: false,
-    fog: false,
-    opacity: 0.85,
-    transparent: true,
-  })
-  const spectrumRing = new THREE.LineSegments(spokeGeometry, spokeMaterial)
-  spectrumRing.frustumCulled = false
-  group.add(spectrumRing)
-
   return {
     dispose() {
-      spokeGeometry.dispose()
-      spokeMaterial.dispose()
       geometry.dispose()
       material.dispose()
       cageGeometry.dispose()
@@ -567,26 +554,20 @@ function createPlanet(environment: THREE.Texture) {
       }
     },
     group,
-    update(elapsed: number, spectrum: Uint8Array | null, beat: number) {
-      uniforms.uTime.value = elapsed
-      cageMaterial.opacity = 0.34 + beat * 0.4
-      spectrumRing.visible = Boolean(spectrum?.length)
-      if (spectrum?.length) {
-        const half = SPOKES / 2
-        for (let index = 0; index < SPOKES; index += 1) {
-          const fromTop = index < half ? index : SPOKES - 1 - index
-          // Spaced by octave, the way an ear hears it, or the bass would get
-          // three spokes and the hats the rest.
-          const bin = Math.round(SPECTRUM_FIRST * (SPECTRUM_LAST / SPECTRUM_FIRST) ** (fromTop / half))
-          const level = (spectrum[bin] ?? 0) / 255
-          const angle = Math.PI / 2 + (index / SPOKES) * Math.PI * 2
-          const cos = Math.cos(angle)
-          const sin = Math.sin(angle)
-          const outer = SPOKE_INNER + 0.5 + level ** 1.4 * SPOKE_REACH
-          spokes.set([cos * SPOKE_INNER, sin * SPOKE_INNER, 0, cos * outer, sin * outer, 0], index * 6)
-        }
-        spokeGeometry.attributes.position.needsUpdate = true
+    /**
+     * `assembly` runs 0 to 1 the way the site's hero does: the cage draws
+     * itself a line at a time, the ball fills in from the bottom up behind a
+     * glowing cut, and then the rings come on one after the other.
+     */
+    update(elapsed: number, assembly: number) {
+      const drawn = Math.round(smoothstep(0, 0.42, assembly) * cageLines) * 2
+      cageGeometry.setDrawRange(0, drawn)
+      uniforms.uAssembly.value = smoothstep(0.3, 0.86, assembly)
+      for (const [index, ring] of rings.entries()) {
+        ring.material.opacity =
+          0.5 * smoothstep(0.72 + index * 0.07, 0.9 + index * 0.05, assembly)
       }
+      uniforms.uTime.value = elapsed
       ball.rotation.y = elapsed * 0.42
       ball.rotation.z = Math.sin(elapsed * 0.3) * 0.22
       cage.rotation.y = -elapsed * 0.16
@@ -599,13 +580,6 @@ function createPlanet(environment: THREE.Texture) {
   }
 }
 
-const SPOKES = 128
-const SPOKE_INNER = 33
-const SPOKE_REACH = 15
-// The analyser's bins from about 90 Hz to 6 kHz, where the track has its music.
-const SPECTRUM_FIRST = 1
-const SPECTRUM_LAST = 70
-
 // The planet's whole width, rings included, in its own units.
 const PLANET_SPAN = 62
 const PLANET_DISTANCE = 140
@@ -614,8 +588,6 @@ export interface TerrainWorldOptions {
   /** Where the planet sits, in canvas pixels, and how wide it is drawn. */
   planet: { size: number; x: number; y: number }
   still: boolean
-  /** The soundtrack, when it plays. Without it the world keeps its own time. */
-  music?: Music | null
 }
 
 export interface TerrainWorld {
@@ -651,8 +623,6 @@ export function createTerrainWorld(
   scene.add(sky.group)
   const planet = createPlanet(skyTexture)
   camera.add(planet.group)
-  const wires = createWires()
-  scene.add(wires.group)
 
   const crt = new CrtPipeline(renderer, { bloom: true, samples: 4 })
 
@@ -691,25 +661,14 @@ export function createTerrainWorld(
   }
 
   const aim = new THREE.Vector3()
-  const frame = (elapsed: number, delta: number) => {
+  const frame = (elapsed: number, delta: number, assembly: number) => {
     const z = -elapsed * SPEED
     camera.position.set(Math.sin(elapsed * 0.21) * 5, CAMERA_HEIGHT, z)
     aim.set(Math.sin(elapsed * 0.21 + 0.6) * 3, 30, z - 100)
     camera.lookAt(aim)
-    const music = options.music
-    let bar = (elapsed / BAR_SECONDS) % 1
-    let beat = 0
-    if (music) {
-      const beats = (music.at() * BPM) / 60
-      bar = (beats / BEATS_PER_BAR) % 1
-      // A flash on each beat, lifted by how much bass is under it.
-      const bands = music.bands()
-      beat = Math.exp(-(beats % 1) * 6) * (0.35 + bands.low * 0.9)
-    }
-    terrain.update(camera, elapsed, bar, beat)
+    terrain.update(camera, elapsed)
     sky.update(camera, elapsed)
-    planet.update(elapsed, music ? music.spectrum() : null, beat)
-    wires.update(camera, elapsed, beat)
+    planet.update(elapsed, assembly)
     crt.render(scene, camera, elapsed, delta)
   }
 
@@ -720,14 +679,16 @@ export function createTerrainWorld(
   let raf = 0
   if (options.still) {
     crt.setPower(1)
-    frame(STILL_TIME, 0)
+    frame(STILL_TIME, 0, 1)
   } else {
     let last = performance.now()
     const start = last
     const tick = (now: number) => {
       const elapsed = (now - start) / 1000
       crt.setPower(smoothstep(0, POWER_ON_SECONDS, elapsed))
-      frame(elapsed, (now - last) / 1000)
+      // The planet builds itself once the tube has lit, as the site's does.
+      const assembly = Math.min(1, Math.max(0, (elapsed - POWER_ON_SECONDS) / ASSEMBLE_SECONDS))
+      frame(elapsed, (now - last) / 1000, assembly)
       last = now
       raf = requestAnimationFrame(tick)
     }
@@ -742,7 +703,6 @@ export function createTerrainWorld(
       terrain.dispose()
       sky.dispose()
       planet.dispose()
-      wires.dispose()
       skyTexture.dispose()
       renderer.dispose()
       canvas.remove()

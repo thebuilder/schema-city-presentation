@@ -1,20 +1,15 @@
 "use client"
 
-import { useIsPresenterPreview } from "@thebuilder/deckard-core/components"
 import { useEffect, useRef, useState } from "react"
 import { useStill } from "@/deck/parts/beats"
 import { Words } from "@/deck/parts/line"
 import styles from "@/deck/parts/line.module.css"
-import { preloadMusic, startMusic } from "@/deck/parts/terrain/music"
 import type { TerrainWorldOptions } from "@/deck/parts/terrain/world"
 
 /*
  * The closing slide flies the terrain from thebuilder.dk, with the site's
- * ringed planet standing in as an icon across from the words, its wireframes
- * drawing themselves in along the valley, and its soundtrack playing. The
- * world is loaded when the slide mounts, so three stays out of every other
- * slide's bundle. The track is fetched as the deck loads, so it starts on the
- * key press that reaches the slide. A preview or a capture stays silent.
+ * ringed planet standing in as an icon across from the words. The world is loaded
+ * when the slide mounts, so three stays out of every other slide's bundle.
  *
  * The colours are the site's and not the theme's tokens, because the world
  * under the words is dark in both colour modes.
@@ -31,11 +26,6 @@ const AFTER_POWER_ON = 1300
 const LINKS_AT = AFTER_POWER_ON + 700
 const LINE_GAP = 260
 
-// Fetched with the deck rather than with the slide, so the first bars are not late.
-if (typeof window !== "undefined") {
-  preloadMusic()
-}
-
 const links = [
   "thebuilder.dk",
   "umbraco.thebuilder.dk",
@@ -44,7 +34,6 @@ const links = [
 export function Close() {
   const host = useRef<HTMLDivElement>(null)
   const still = useStill()
-  const preview = useIsPresenterPreview()
   // Counted from the world existing, not from the slide mounting, because the
   // world is imported first and the power-on starts only once it is built.
   const [lit, setLit] = useState(false)
@@ -56,14 +45,13 @@ export function Close() {
     }
     let cancelled = false
     let teardown: (() => void) | undefined
-    const music = still || preview ? null : startMusic()
 
     import("@/deck/parts/terrain/world")
       .then(({ createTerrainWorld }) => {
         if (cancelled) {
           return
         }
-        const world = createTerrainWorld(element, { music, planet, still })
+        const world = createTerrainWorld(element, { planet, still })
         teardown = world.dispose
         setLit(true)
       })
@@ -73,9 +61,8 @@ export function Close() {
     return () => {
       cancelled = true
       teardown?.()
-      music?.stop()
     }
-  }, [preview, still])
+  }, [still])
 
   return (
     <section className="relative h-full w-full overflow-hidden bg-[#05090a]">
