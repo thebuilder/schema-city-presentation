@@ -27,6 +27,11 @@ declare global {
 
 export const fallbackVideo = "/takeover/takeover.webm"
 
+// Charlie Tango, the host, signed at the foot of the title once it has settled.
+const hostLogo = "/takeover/charlie-tango.svg"
+// After the credits have landed, in seconds from the start of the sequence.
+const logoAt = timeline.settle + 0.4
+
 const scrambleSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+<>"
 
 function seeded(index: number) {
@@ -110,6 +115,9 @@ export function MatrixTakeover({
   // Strict mode runs effects twice, and the claim must be spent only once.
   const claim = useRef<boolean | null>(null)
   const [mode, setMode] = useState<Mode | null>(null)
+  // The logo waits for the sequence to settle, and is simply there on a
+  // settled title.
+  const [logo, setLogo] = useState(false)
 
   useEffect(() => {
     if (claim.current === null) {
@@ -140,6 +148,7 @@ export function MatrixTakeover({
     let disposed = false
     let takeover: Takeover | undefined
     let stopCue: (() => void) | undefined
+    let logoTimer = 0
     let shown = false
 
     const onFrame = (time: number) => {
@@ -227,6 +236,9 @@ export function MatrixTakeover({
         created.play(mode === "idle" ? timeline.settle : 0)
         if (mode === "live") {
           stopCue = playCue()
+          logoTimer = window.setTimeout(() => setLogo(true), logoAt * 1000)
+        } else {
+          setLogo(true)
         }
       })
       .catch((error: unknown) => {
@@ -241,6 +253,7 @@ export function MatrixTakeover({
       disposed = true
       takeover?.dispose()
       stopCue?.()
+      window.clearTimeout(logoTimer)
       window.takeoverRecorder = undefined
     }
   }, [credits, mode, title])
@@ -248,6 +261,18 @@ export function MatrixTakeover({
   // The fallback is only ever reached from a live run, and the recording
   // starts at the click like the cue does.
   useEffect(() => (mode === "fallback" ? playCue() : undefined), [mode])
+
+  useEffect(() => {
+    if (mode === "still") {
+      setLogo(true)
+      return
+    }
+    if (mode !== "fallback") {
+      return
+    }
+    const timer = window.setTimeout(() => setLogo(true), logoAt * 1000)
+    return () => window.clearTimeout(timer)
+  }, [mode])
 
   const settled = mode === "still" || mode === "fallback"
 
@@ -326,6 +351,29 @@ export function MatrixTakeover({
         >
           {credits}
         </p>
+      </div>
+
+      {/* The logo is drawn in the theme's phosphor by masking it, so it takes
+          the same tint and glow as the title above it. */}
+      {/* A mask clips a filter on the same element, so the glow is on the
+          wrapper. */}
+      <div
+        aria-label="Charlie Tango"
+        className="absolute bottom-[calc(var(--slide-padding-block)+1rem)] left-1/2 w-[22rem] -translate-x-1/2"
+        role="img"
+        style={{
+          filter: "drop-shadow(0 0 10px color-mix(in oklab, var(--primary) 55%, transparent))",
+          opacity: logo ? 1 : 0,
+          transition: mode === "still" ? "none" : "opacity 1200ms ease-out",
+        }}
+      >
+        <div
+          className="aspect-[800/73] w-full bg-primary"
+          style={{
+            mask: `url(${hostLogo}) center / contain no-repeat`,
+            WebkitMask: `url(${hostLogo}) center / contain no-repeat`,
+          }}
+        />
       </div>
     </div>
   )
