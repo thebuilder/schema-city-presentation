@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { Scramble } from "@/components/scramble"
 import { useStill } from "@/deck/parts/beats"
-import { Words } from "@/deck/parts/line"
-import styles from "@/deck/parts/line.module.css"
 import type { TerrainWorldOptions } from "@/deck/parts/terrain/world"
 
 /*
@@ -22,7 +21,7 @@ const planet: TerrainWorldOptions["planet"] = { size: 620, x: 1440, y: 330 }
 // The words wait for the screen to finish powering on (1.4s in world.ts), so
 // they land on the lit world rather than in the dark.
 const AFTER_POWER_ON = 1300
-// The links follow once both words of the line have landed.
+// The links follow once the title has resolved.
 const LINKS_AT = AFTER_POWER_ON + 700
 const LINE_GAP = 260
 
@@ -30,6 +29,26 @@ const links = [
   "thebuilder.dk",
   "umbraco.thebuilder.dk",
 ]
+
+/**
+ * Afterglow's scramble, started `delay` ms after the world lights. Until then
+ * the line holds its place invisibly, so nothing below it moves when it lands.
+ */
+function Reveal({ delay, still, text }: { delay: number; still: boolean; text: string }) {
+  const [due, setDue] = useState(still)
+  useEffect(() => {
+    if (still) {
+      setDue(true)
+      return
+    }
+    const timer = window.setTimeout(() => setDue(true), delay)
+    return () => window.clearTimeout(timer)
+  }, [delay, still])
+  if (!due) {
+    return <span className="invisible">{text}</span>
+  }
+  return still ? <span>{text}</span> : <Scramble className="font-[family-name:inherit]" text={text} />
+}
 
 export function Close() {
   const host = useRef<HTMLDivElement>(null)
@@ -75,16 +94,12 @@ export function Close() {
       {lit || still ? (
         <div className="absolute top-[24rem] left-[var(--slide-padding-inline)] flex flex-col gap-12">
           <h1 className="text-[length:var(--slide-title-size)] text-[#d9ffef] leading-none">
-            <Words delay={still ? 0 : AFTER_POWER_ON} text="Thank you" />
+            <Reveal delay={AFTER_POWER_ON} still={still} text="Thank you" />
           </h1>
           <div className="flex flex-col gap-3 font-[family-name:var(--slide-font-mono)] text-[length:var(--slide-support-size)] text-[#87a39d]">
             {links.map((line, index) => (
-              <p
-                className={`${still ? styles.still : styles.word} ${index === 0 ? "text-[#86fadd]" : ""}`}
-                key={line}
-                style={{ animationDelay: `${LINKS_AT + index * LINE_GAP}ms` }}
-              >
-                {line}
+              <p className={index === 0 ? "text-[#86fadd]" : ""} key={line}>
+                <Reveal delay={LINKS_AT + index * LINE_GAP} still={still} text={line} />
               </p>
             ))}
           </div>
