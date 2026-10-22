@@ -1,13 +1,19 @@
 import * as THREE from "three"
 import { CrtPipeline } from "@/deck/parts/terrain/crt"
+import type { Music } from "@/deck/parts/terrain/music"
+import { createWires } from "@/deck/parts/terrain/wires"
 
 /*
  * The terrain flight from thebuilder.dk, rebuilt for one slide. The ground,
  * the striped sun, the stars and the ringed planet are the site's own shaders
  * (lib/scene/terrain.ts, sky.ts, hero.ts and textures.ts in thebuilder-dk),
- * cut down to what a slide needs: no beacons, no river, no soundtrack. The
- * camera flies the valley floor forever instead of following the scroll, and
- * the planet rides with the camera so it stays where the slide puts it.
+ * cut down to what a slide needs: no beacons and no river. The camera flies
+ * the valley floor forever instead of following the scroll, and the planet
+ * rides with the camera so it stays where the slide puts it.
+ *
+ * When the site's soundtrack plays, the world moves to it the way the site
+ * does: the sweep lines cross the valley on the bar, the ground and the wire
+ * cages flash on the beat, and a ring of the spectrum turns round the planet.
  */
 
 const VOID = 0x05_09_0a
@@ -30,6 +36,8 @@ const SPEED = 30
 const SWEEP_SPAN = 950
 const SWEEP_LEAD = 240
 const BEATS_PER_BAR = 4
+// The soundtrack's tempo, from lib/beat.ts on the site.
+const BPM = 120
 const BAR_SECONDS = 2.4
 
 // Where a screenshot or a PDF export lands, far enough in for a sweep line to
@@ -378,7 +386,7 @@ function createTerrain() {
       material.dispose()
     },
     mesh,
-    update(camera: THREE.Camera, elapsed: number) {
+    update(camera: THREE.Camera, elapsed: number, bar: number, beat: number) {
       // Snapped to the vertex rows, so the ground moves under the camera
       // without its samples sliding through the heightfield.
       mesh.position.z =
@@ -386,11 +394,11 @@ function createTerrain() {
         GROUND_STEP
       uniforms.uTime.value = elapsed
       uniforms.uCamera.value.copy(camera.position)
-      const bar = (elapsed / BAR_SECONDS) % 1
       uniforms.uSweep.value = camera.position.z + SWEEP_LEAD - bar * SWEEP_SPAN
       uniforms.uPeak.value
         .copy(signal)
         .lerp(violet, 0.5 + Math.sin(elapsed * 0.35) * 0.5)
+        .multiplyScalar(1 + beat * 0.9)
     },
   }
 }
@@ -528,8 +536,27 @@ function createPlanet(environment: THREE.Texture) {
     return ring
   })
 
+  // The spectrum, as spokes round the rings: low notes at the top, running
+  // both ways round so the ring stays balanced.
+  const spokes = new Float32Array(SPOKES * 2 * 3)
+  const spokeGeometry = new THREE.BufferGeometry()
+  spokeGeometry.setAttribute("position", new THREE.BufferAttribute(spokes, 3))
+  const spokeMaterial = new THREE.LineBasicMaterial({
+    blending: THREE.AdditiveBlending,
+    color: PHOSPHOR_BRIGHT,
+    depthWrite: false,
+    fog: false,
+    opacity: 0.85,
+    transparent: true,
+  })
+  const spectrumRing = new THREE.LineSegments(spokeGeometry, spokeMaterial)
+  spectrumRing.frustumCulled = false
+  group.add(spectrumRing)
+
   return {
     dispose() {
+      spokeGeometry.dispose()
+      spokeMaterial.dispose()
       geometry.dispose()
       material.dispose()
       cageGeometry.dispose()
@@ -540,8 +567,26 @@ function createPlanet(environment: THREE.Texture) {
       }
     },
     group,
-    update(elapsed: number) {
+    update(elapsed: number, spectrum: Uint8Array | null, beat: number) {
       uniforms.uTime.value = elapsed
+      cageMaterial.opacity = 0.34 + beat * 0.4
+      spectrumRing.visible = Boolean(spectrum?.length)
+      if (spectrum?.length) {
+        const half = SPOKES / 2
+        for (let index = 0; index < SPOKES; index += 1) {
+          const fromTop = index < half ? index : SPOKES - 1 - index
+          // Spaced by octave, the way an ear hears it, or the bass would get
+          // three spokes and the hats the rest.
+          const bin = Math.round(SPECTRUM_FIRST * (SPECTRUM_LAST / SPECTRUM_FIRST) ** (fromTop / half))
+          const level = (spectrum[bin] ?? 0) / 255
+          const angle = Math.PI / 2 + (index / SPOKES) * Math.PI * 2
+          const cos = Math.cos(angle)
+          const sin = Math.sin(angle)
+          const outer = SPOKE_INNER + 0.5 + level ** 1.4 * SPOKE_REACH
+          spokes.set([cos * SPOKE_INNER, sin * SPOKE_INNER, 0, cos * outer, sin * outer, 0], index * 6)
+        }
+        spokeGeometry.attributes.position.needsUpdate = true
+      }
       ball.rotation.y = elapsed * 0.42
       ball.rotation.z = Math.sin(elapsed * 0.3) * 0.22
       cage.rotation.y = -elapsed * 0.16
@@ -554,6 +599,13 @@ function createPlanet(environment: THREE.Texture) {
   }
 }
 
+const SPOKES = 128
+const SPOKE_INNER = 33
+const SPOKE_REACH = 15
+// The analyser's bins from about 90 Hz to 6 kHz, where the track has its music.
+const SPECTRUM_FIRST = 1
+const SPECTRUM_LAST = 70
+
 // The planet's whole width, rings included, in its own units.
 const PLANET_SPAN = 62
 const PLANET_DISTANCE = 140
@@ -562,6 +614,8 @@ export interface TerrainWorldOptions {
   /** Where the planet sits, in canvas pixels, and how wide it is drawn. */
   planet: { size: number; x: number; y: number }
   still: boolean
+  /** The soundtrack, when it plays. Without it the world keeps its own time. */
+  music?: Music | null
 }
 
 export interface TerrainWorld {
@@ -597,6 +651,8 @@ export function createTerrainWorld(
   scene.add(sky.group)
   const planet = createPlanet(skyTexture)
   camera.add(planet.group)
+  const wires = createWires()
+  scene.add(wires.group)
 
   const crt = new CrtPipeline(renderer, { bloom: true, samples: 4 })
 
@@ -640,9 +696,20 @@ export function createTerrainWorld(
     camera.position.set(Math.sin(elapsed * 0.21) * 5, CAMERA_HEIGHT, z)
     aim.set(Math.sin(elapsed * 0.21 + 0.6) * 3, 30, z - 100)
     camera.lookAt(aim)
-    terrain.update(camera, elapsed)
+    const music = options.music
+    let bar = (elapsed / BAR_SECONDS) % 1
+    let beat = 0
+    if (music) {
+      const beats = (music.at() * BPM) / 60
+      bar = (beats / BEATS_PER_BAR) % 1
+      // A flash on each beat, lifted by how much bass is under it.
+      const bands = music.bands()
+      beat = Math.exp(-(beats % 1) * 6) * (0.35 + bands.low * 0.9)
+    }
+    terrain.update(camera, elapsed, bar, beat)
     sky.update(camera, elapsed)
-    planet.update(elapsed)
+    planet.update(elapsed, music ? music.spectrum() : null, beat)
+    wires.update(camera, elapsed, beat)
     crt.render(scene, camera, elapsed, delta)
   }
 
@@ -675,6 +742,7 @@ export function createTerrainWorld(
       terrain.dispose()
       sky.dispose()
       planet.dispose()
+      wires.dispose()
       skyTexture.dispose()
       renderer.dispose()
       canvas.remove()
